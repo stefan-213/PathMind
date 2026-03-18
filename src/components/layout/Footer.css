@@ -1,0 +1,67 @@
+/* ============================================
+   Footer - 现代 SaaS 风格
+============================================ */
+
+.footer {
+    background: var(--bg-soft);
+    padding: 60px var(--padding-mobile) 40px;
+    text-align: center;
+    border-top: 1px solid var(--border-light);
+}
+
+@media (min-width: 768px) {
+    .footer {
+        padding: 60px var(--padding-tablet) 40px;
+    }
+}
+
+@media (min-width: 1024px) {
+    .footer {
+        padding: 60px var(--padding-desktop) 40px;
+    }
+}
+
+.footer-logo {
+    font-weight: 600;
+    font-size: 1.3rem;
+    color: var(--primary-blue);
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+}
+
+.footer-logo i {
+    color: var(--primary-blue);
+}
+
+.footer-tagline {
+    color: var(--text-body);
+    font-size: 0.95rem;
+    margin-bottom: 24px;
+}
+
+.footer-links {
+    display: flex;
+    gap: 24px;
+    justify-content: center;
+    margin: 24px 0;
+    flex-wrap: wrap;
+}
+
+.footer-links a {
+    color: var(--text-body);
+    text-decoration: none;
+    font-size: 0.9rem;
+    transition: color 0.2s;
+}
+
+.footer-links a:hover {
+    color: var(--primary-blue);
+}
+
+.footer-copy {
+    color: var(--text-caption);
+    font-size: 0.85rem;
+}

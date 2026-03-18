@@ -1,0 +1,133 @@
+/* ============================================
+   Header - 现代 SaaS 风格
+============================================ */
+
+.header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px var(--padding-mobile);
+    background: var(--bg-white);
+    border-bottom: 1px solid var(--border-light);
+    flex-wrap: wrap;
+    gap: 16px;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+}
+
+@media (min-width: 768px) {
+    .header {
+        padding: 0 var(--padding-tablet);
+        height: 72px;
+        flex-wrap: nowrap;
+    }
+}
+
+@media (min-width: 1024px) {
+    .header {
+        padding: 0 var(--padding-desktop);
+    }
+}
+
+.logo {
+    font-weight: 600;
+    font-size: 1.5rem;
+    color: var(--primary-blue);
+    letter-spacing: -0.02em;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    text-decoration: none;
+}
+
+.logo i {
+    color: var(--primary-blue);
+}
+
+.nav-links {
+    display: flex;
+    gap: 1.5rem;
+    order: 3;
+    width: 100%;
+    justify-content: center;
+}
+
+.nav-links a {
+    text-decoration: none;
+    color: var(--text-body);
+    font-weight: 500;
+    font-size: 0.95rem;
+    transition: color 0.2s;
+    cursor: pointer;
+}
+
+.nav-links a:hover {
+    color: var(--primary-blue);
+}
+
+.nav-links a.active {
+    color: var(--primary-blue);
+    position: relative;
+}
+
+.nav-links a.active::after {
+    content: '';
+    position: absolute;
+    bottom: -8px;
+    left: 0;
+    width: 100%;
+    height: 2px;
+    background-color: var(--primary-blue);
+    border-radius: 2px;
+}
+
+.nav-buttons {
+    display: flex;
+    gap: 1rem;
+    align-items: center;
+}
+
+@media (min-width: 768px) {
+    .nav-links {
+        order: 0;
+        width: auto;
+        gap: 2.5rem;
+    }
+}
+
+.btn-text {
+    background: transparent;
+    border: none;
+    color: var(--text-body);
+    font-weight: 500;
+    font-size: 0.95rem;
+    cursor: pointer;
+    padding: 0 0.5rem;
+    transition: color 0.2s;
+}
+
+.btn-text:hover {
+    color: var(--primary-blue);
+}
+
+.btn-primary-blue {
+    background: var(--primary-blue);
+    color: white;
+    border: none;
+    padding: 8px 16px;
+    border-radius: var(--radius-btn);
+    font-weight: 500;
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: transform 0.2s, background 0.2s;
+    box-shadow: 0 4px 8px rgba(0, 49, 82, 0.1);
+    white-space: nowrap;
+    text-decoration: none;
+    display: inline-block;
+}
+
+.btn-primary-blue:hover {
+    background: var(--blue-hover);
+    transform: scale(1.05);
+}

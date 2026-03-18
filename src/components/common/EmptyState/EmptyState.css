@@ -1,0 +1,32 @@
+.empty-state-component {
+  text-align: center;
+  padding: var(--space-2xl);
+}
+
+.empty-state-icon {
+  font-size: 64px;
+  margin-bottom: var(--space-lg);
+  color: var(--text-light);
+}
+
+.empty-state-title {
+  font-size: 20px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin: 0 0 var(--space-sm);
+}
+
+.empty-state-description {
+  font-size: 15px;
+  color: var(--text-secondary);
+  margin: 0 0 var(--space-lg);
+  max-width: 400px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.empty-state-action {
+  display: flex;
+  justify-content: center;
+  gap: var(--space-md);
+}

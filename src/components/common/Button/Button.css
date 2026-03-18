@@ -1,0 +1,114 @@
+/* ============================================
+   Button 统一样式 - 现代 SaaS 风格
+   完全匹配设计模板规格
+============================================ */
+
+.btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 12px 28px;
+    border-radius: 999px;
+    font-weight: 600;
+    font-size: 1rem;
+    font-family: var(--sans, system-ui, -apple-system, sans-serif);
+    cursor: pointer;
+    transition: all 0.2s;
+    border: none;
+    text-decoration: none;
+    white-space: nowrap;
+    line-height: 1;
+}
+
+.btn:focus-visible {
+    outline: 2px solid var(--primary-blue);
+    outline-offset: 2px;
+}
+
+.btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.btn-icon {
+    display: inline-flex;
+    align-items: center;
+}
+
+/* Primary - 橙色主按钮 */
+.btn-primary {
+    background: #F59E0B;
+    color: white;
+    box-shadow: 0 8px 16px rgba(245, 158, 11, 0.15);
+}
+
+.btn-primary:hover:not(:disabled) {
+    background: #D97706;
+    transform: scale(1.05);
+}
+
+/* Secondary - 次要按钮 */
+.btn-secondary {
+    background: #FFFFFF;
+    color: #475569;
+    border: 1px solid #E2E8F0;
+}
+
+.btn-secondary:hover:not(:disabled) {
+    border-color: #003152;
+    color: #003152;
+    transform: scale(1.05);
+}
+
+/* Primary Blue - 蓝色主按钮 (Header 开始按钮) */
+.btn-primary-blue {
+    background: #003152;
+    color: white;
+    padding: 8px 16px;
+    border-radius: 999px;
+    font-weight: 500;
+    font-size: 0.9rem;
+    box-shadow: 0 4px 8px rgba(0, 49, 82, 0.1);
+    border: none;
+}
+
+.btn-primary-blue:hover:not(:disabled) {
+    background: #0A4A75;
+    transform: scale(1.05);
+}
+
+/* Text - 文本按钮 (Header 登录) */
+.btn-text {
+    background: transparent;
+    border: none;
+    color: #475569;
+    font-weight: 500;
+    font-size: 0.95rem;
+    cursor: pointer;
+    padding: 0 0.5rem;
+}
+
+.btn-text:hover:not(:disabled) {
+    color: #003152;
+}
+
+/* CTA White - CTA 白色按钮 (Final CTA) */
+.btn-cta-white {
+    background: white;
+    color: #003152;
+    border: none;
+    padding: 14px 40px;
+    border-radius: 999px;
+    font-weight: 600;
+    font-size: 1rem;
+    cursor: pointer;
+    transition: transform 0.2s;
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.15);
+    text-decoration: none;
+    display: inline-block;
+}
+
+.btn-cta-white:hover:not(:disabled) {
+    transform: scale(1.05);
+}
