@@ -111,6 +111,23 @@
     color: var(--primary-blue);
 }
 
+.user-info {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    color: var(--text-body);
+    font-weight: 500;
+    font-size: 0.95rem;
+    padding: 8px 12px;
+    /* background: rgba(0, 49, 82, 0.05); */
+    border-radius: var(--radius-sm);
+}
+
+.user-info i {
+    color: var(--primary-blue);
+    font-size: 1.1rem;
+}
+
 .btn-primary-blue {
     background: var(--primary-blue);
     color: white;

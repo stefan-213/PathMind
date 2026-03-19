@@ -1,0 +1,28 @@
+.spin-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+}
+
+.spin-icon {
+    color: var(--primary-blue);
+}
+
+.spin-small .spin-icon {
+    font-size: 14px;
+}
+
+.spin-default .spin-icon {
+    font-size: 24px;
+}
+
+.spin-large .spin-icon {
+    font-size: 40px;
+}
+
+.spin-tip {
+    color: var(--text-secondary);
+    font-size: 14px;
+}

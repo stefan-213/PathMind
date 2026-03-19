@@ -12,6 +12,10 @@
     --text-title: #0F172A;
     --text-body: #475569;
     --text-caption: #94A3B8;
+    --text-tertiary: #64748B;
+    --text-placeholder: #94A3B8;
+    --text-primary: #1E293B;
+    --text-secondary: #475569;
 
     /* 背景 */
     --bg-white: #FFFFFF;
