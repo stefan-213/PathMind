@@ -364,16 +364,39 @@ section {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    cursor: default;
+    cursor: pointer;
     gap: 16px;
     font-size: 1rem;
+    transition: color 0.2s;
+}
+
+.faq-question:hover {
+    color: var(--primary-blue);
+}
+
+.faq-question i {
+    transition: transform 0.3s ease;
+    font-size: 0.85rem;
+    color: var(--text-body);
+}
+
+.faq-question.open i {
+    color: var(--primary-blue);
 }
 
 .faq-answer {
     color: var(--text-body);
-    margin-top: 12px;
+    margin-top: 0;
     font-size: 0.95rem;
     line-height: 1.6;
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.3s ease, margin-top 0.3s ease;
+}
+
+.faq-answer.open {
+    max-height: 200px;
+    margin-top: 12px;
 }
 
 /* Final CTA */

@@ -75,7 +75,7 @@
 
 .progress-fill {
   height: 100%;
-  background: linear-gradient(90deg, var(--accent), #34d399);
+  background: linear-gradient(90deg, #00315200, var(--accent));
   border-radius: var(--radius-full);
   transition: width 0.5s ease;
 }

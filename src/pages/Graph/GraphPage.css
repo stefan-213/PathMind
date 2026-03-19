@@ -370,6 +370,7 @@
   padding: var(--space-lg);
   background: var(--primary-bg);
   border-bottom: 1px solid var(--border-light);
+  border-radius: 16px 16px 0 0;
 }
 
 .node-detail-icon {
@@ -450,6 +451,7 @@
 .node-actions {
   display: flex;
   gap: var(--space-sm);
+  margin-left: -8px;
 }
 
 .btn-close {

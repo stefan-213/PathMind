@@ -126,9 +126,7 @@ export function TasksPage() {
                     <div className="task-week">{task.day}</div>
                     <div className="task-title">{task.title}</div>
                   </div>
-                  <div className="task-action">
-                    {task.status === 'completed' ? <i className="fas fa-check-circle"></i> : <i className="far fa-circle"></i>}
-                  </div>
+
                 </Card>
               ))}
             </div>

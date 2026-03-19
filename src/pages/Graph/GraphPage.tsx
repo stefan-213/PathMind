@@ -598,7 +598,7 @@ export function GraphPage() {
                     ))}
                   </div>
                   <div className="node-actions">
-                    <Link to="/copilot" className="btn btn-primary">开始学习 →</Link>
+                    <Link to="/copilot" className="btn btn-primary">开始学习</Link>
                     <button
                       className="btn btn-secondary"
                       onClick={() => {
@@ -641,7 +641,7 @@ export function GraphPage() {
         </div>
 
         {/* Stats */}
-        <div className="graph-stats">
+        {/* <div className="graph-stats">
           <Card className="stat-card">
             <div className="stat-value">{graphData.nodes.length}</div>
             <div className="stat-label">知识点</div>
@@ -654,7 +654,7 @@ export function GraphPage() {
             <div className="stat-value">{graphData.corePath.length}</div>
             <div className="stat-label">推荐路径</div>
           </Card>
-        </div>
+        </div> */}
       </div>
 
       <Footer />
