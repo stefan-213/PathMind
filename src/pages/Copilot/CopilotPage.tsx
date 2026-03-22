@@ -3,7 +3,7 @@ import { Header, Footer } from '../../components/layout';
 import { quickTags, questionnaireData, resultsData } from '../../data/copilotData';
 import { saveUserGoal, saveUserAnswers, saveUserProfile, saveUserTasks, getUserProfile, getUserProgress, hasActivePlan, clearUserData } from '../../utils/storage';
 import type { ResultData, Task, Question } from '../../types/copilot';
-import './CopilotPage.css';
+import './CopilotPage.scss';
 
 type Step = 1 | 2 | 3;
 

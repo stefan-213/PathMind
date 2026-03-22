@@ -4,7 +4,7 @@ import { Header, Footer } from '../../components/layout';
 import { Card, CardContent, Badge, EmptyState } from '../../components/common';
 import { getUserProfile, getUserTasks, getUserProgress, saveUserTasks, clearUserData } from '../../utils/storage';
 import type { Task, UserProfile, UserProgress } from '../../types/copilot';
-import './TasksPage.css';
+import './TasksPage.scss';
 
 type TasksByWeek = Record<string, Task[]>;
 

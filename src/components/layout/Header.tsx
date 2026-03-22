@@ -1,6 +1,6 @@
 import { Link, useLocation } from 'react-router-dom';
 import { useAuthStore } from '../../stores/authStore';
-import './Header.css';
+import './Header.scss';
 
 type NavItem = 'home' | 'graph' | 'copilot' | 'proposal' | 'tasks';
 

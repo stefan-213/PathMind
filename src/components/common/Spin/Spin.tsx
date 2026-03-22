@@ -1,4 +1,4 @@
-import './Spin.css';
+import './Spin.scss';
 
 interface SpinProps {
   size?: 'small' | 'default' | 'large';

@@ -2,7 +2,7 @@ import { Link } from 'react-router-dom';
 import { useState } from 'react';
 import { Header, Footer } from '../../components/layout';
 import { Card } from '../../components/common/Card';
-import './HomePage.css';
+import './HomePage.scss';
 import sampleImage from '../../assets/img/sample.png';
 
 const faqData = [

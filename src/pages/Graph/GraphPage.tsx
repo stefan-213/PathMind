@@ -13,7 +13,7 @@ import {
   type GraphNode,
   type GraphEdge
 } from '../../data/graphData';
-import './GraphPage.css';
+import './GraphPage.scss';
 
 interface D3Node extends d3.SimulationNodeDatum, GraphNode {
   isCore: boolean;

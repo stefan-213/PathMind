@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom';
 import { Header, Footer } from '../../components/layout';
-import './ProposalPage.css';
+import './ProposalPage.scss';
 
 export function ProposalPage() {
   return (

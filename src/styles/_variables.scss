@@ -1,0 +1,214 @@
+// ============================================
+// PathMind Design Tokens
+// Design System Variables
+// ============================================
+
+// -------------------------------------------
+// Colors - 主色
+// -------------------------------------------
+$primary-blue: #003152;
+$blue-hover: #0A4A75;
+$blue-soft: rgba(0, 49, 82, 0.04);
+$blue-light: rgba(0, 49, 82, 0.08);
+$blue-active: #002842;
+
+$accent-orange: #F59E0B;
+$orange-hover: #D97706;
+
+// -------------------------------------------
+// Colors - 文本色
+// -------------------------------------------
+$text-title: #0F172A;
+$text-body: #475569;
+$text-caption: #94A3B8;
+$text-tertiary: #64748B;
+$text-placeholder: #94A3B8;
+$text-primary: #1E293B;
+$text-secondary: #475569;
+
+// -------------------------------------------
+// Colors - 背景色
+// -------------------------------------------
+$bg-white: #FFFFFF;
+$bg-soft: #F8FAFC;
+$bg-secondary: #F1F5F9;
+
+// -------------------------------------------
+// Colors - 边框色
+// -------------------------------------------
+$border-light: #E2E8F0;
+$border-color: #e5e7eb;
+$border-focus: $primary-blue;
+
+// -------------------------------------------
+// Colors - 功能色
+// -------------------------------------------
+$color-success: #22C55E;
+$color-warning: #F59E0B;
+$color-danger: #EF4444;
+$color-info: #3B82F6;
+
+// -------------------------------------------
+// Border Radius
+// -------------------------------------------
+$radius-xs: 4px;
+$radius-sm: 8px;
+$radius-card: 12px;
+$radius-btn: 999px;
+$radius-full: 999px;
+$radius-xl: 16px;
+$radius-2xl: 24px;
+$radius-3xl: 32px;
+
+// Auth specific
+$radius-auth-input: 40px;
+$radius-auth-btn: 40px;
+$radius-auth-card: 32px;
+
+// -------------------------------------------
+// Shadows
+// -------------------------------------------
+$shadow-card: 0 4px 16px rgba(0, 49, 82, 0.06);
+$shadow-hover: 0 20px 30px -10px rgba(0, 49, 82, 0.12);
+$shadow-sm: 0 2px 8px rgba(0, 49, 82, 0.08);
+$shadow-md: 0 4px 12px rgba(0, 49, 82, 0.1);
+$shadow-lg: 0 8px 20px rgba(0, 49, 82, 0.15);
+$shadow-xl: 0 20px 40px -20px rgba(0, 49, 82, 0.12);
+
+// Auth specific shadows
+$shadow-auth-focus: 0 0 0 4px rgba(0, 49, 82, 0.08);
+$shadow-auth-card: 0 20px 40px -20px rgba(0, 49, 82, 0.12);
+
+// -------------------------------------------
+// Spacing
+// -------------------------------------------
+$space-xs: 4px;
+$space-sm: 8px;
+$space-md: 16px;
+$space-lg: 24px;
+$space-xl: 32px;
+$space-2xl: 48px;
+$space-3xl: 64px;
+
+// Responsive padding
+$padding-mobile: 20px;
+$padding-tablet: 40px;
+$padding-desktop: 60px;
+
+// -------------------------------------------
+// Typography
+// -------------------------------------------
+$font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+$font-size-xs: 0.75rem;   // 12px
+$font-size-sm: 0.875rem;  // 14px
+$font-size-base: 1rem;    // 16px
+$font-size-lg: 1.125rem;  // 18px
+$font-size-xl: 1.25rem;   // 20px
+$font-size-2xl: 1.5rem;  // 24px
+$font-size-3xl: 1.875rem; // 30px
+$font-size-4xl: 2.25rem;  // 36px
+
+$font-weight-normal: 400;
+$font-weight-medium: 500;
+$font-weight-semibold: 600;
+$font-weight-bold: 700;
+
+// -------------------------------------------
+// Transitions
+// -------------------------------------------
+$transition-fast: 0.15s ease;
+$transition-base: 0.2s ease;
+$transition-slow: 0.3s ease;
+$transition-bounce: 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+
+// -------------------------------------------
+// Z-Index
+// -------------------------------------------
+$z-dropdown: 100;
+$z-sticky: 200;
+$z-fixed: 300;
+$z-modal-backdrop: 400;
+$z-modal: 500;
+$z-popover: 600;
+$z-tooltip: 700;
+
+// -------------------------------------------
+// Breakpoints
+// -------------------------------------------
+$breakpoint-sm: 640px;
+$breakpoint-md: 768px;
+$breakpoint-lg: 1024px;
+$breakpoint-xl: 1280px;
+
+// -------------------------------------------
+// Component-specific
+// -------------------------------------------
+
+// Button
+$btn-padding-y: 12px;
+$btn-padding-x: 28px;
+$btn-font-size: $font-size-base;
+$btn-font-weight: $font-weight-semibold;
+$btn-border-radius: $radius-btn;
+
+// Card
+$card-padding: $space-xl;
+$card-border-radius: $radius-card;
+$card-hover-transform: translateY(-4px);
+
+// Input
+$input-padding-y: 12px;
+$input-padding-x: 16px;
+$input-border-radius: $radius-card;
+$input-border-radius-auth: $radius-auth-input;
+$input-focus-shadow: 0 0 0 3px rgba(0, 49, 82, 0.1);
+
+// Badge
+$badge-padding-y: 4px;
+$badge-padding-x: 12px;
+$badge-font-size: $font-size-xs;
+$badge-border-radius: $radius-full;
+
+// -------------------------------------------
+// CSS Custom Properties (for runtime use)
+// -------------------------------------------
+:root {
+    // Colors
+    --primary-blue: #{$primary-blue};
+    --blue-hover: #{$blue-hover};
+    --accent-orange: #{$accent-orange};
+    --orange-hover: #{$orange-hover};
+
+    // Text
+    --text-title: #{$text-title};
+    --text-body: #{$text-body};
+    --text-caption: #{$text-caption};
+    --text-tertiary: #{$text-tertiary};
+    --text-placeholder: #{$text-placeholder};
+    --text-primary: #{$text-primary};
+    --text-secondary: #{$text-secondary};
+
+    // Background
+    --bg-white: #{$bg-white};
+    --bg-soft: #{$bg-soft};
+
+    // Border
+    --border-light: #{$border-light};
+
+    // Radius
+    --radius-card: #{$radius-card};
+    --radius-btn: #{$radius-btn};
+    --radius-sm: #{$radius-sm};
+
+    // Shadows
+    --shadow-card: #{$shadow-card};
+    --shadow-hover: #{$shadow-hover};
+
+    // Compatibility
+    --primary: #{$primary-blue};
+    --primary-light: #{$blue-hover};
+    --accent: #{$accent-orange};
+    --accent-light: rgba(245, 158, 11, 0.1);
+    --text: #{$text-body};
+    --border-color: #{$border-color};
+}

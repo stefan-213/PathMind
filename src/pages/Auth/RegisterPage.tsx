@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../../stores/authStore';
-import './Auth.css';
+import './Auth.scss';
 
 export function RegisterPage() {
   const navigate = useNavigate();

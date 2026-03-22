@@ -1,0 +1,399 @@
+// ============================================
+// PathMind Mixins
+// Reusable Style Mixins
+// ============================================
+
+// -------------------------------------------
+// Responsive Breakpoints
+// -------------------------------------------
+@mixin mobile {
+    @media (max-width: 767px) {
+        @content;
+    }
+}
+
+@mixin tablet {
+    @media (min-width: 768px) and (max-width: 1023px) {
+        @content;
+    }
+}
+
+@mixin desktop {
+    @media (min-width: 1024px) {
+        @content;
+    }
+}
+
+@mixin tablet-up {
+    @media (min-width: 768px) {
+        @content;
+    }
+}
+
+@mixin desktop-up {
+    @media (min-width: 1024px) {
+        @content;
+    }
+}
+
+// -------------------------------------------
+// Flexbox
+// -------------------------------------------
+@mixin flex-center {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+@mixin flex-between {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+@mixin flex-column {
+    display: flex;
+    flex-direction: column;
+}
+
+@mixin flex-center-column {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+}
+
+// -------------------------------------------
+// Grid
+// -------------------------------------------
+@mixin grid($columns: 2, $gap: 24px) {
+    display: grid;
+    grid-template-columns: repeat($columns, 1fr);
+    gap: $gap;
+}
+
+@mixin auto-grid($min-width: 280px) {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax($min-width, 1fr));
+    gap: 24px;
+}
+
+// -------------------------------------------
+// Cards
+// -------------------------------------------
+@mixin card {
+    background: var(--bg-white);
+    border-radius: var(--radius-card);
+    padding: 24px;
+    box-shadow: var(--shadow-card);
+    transition: all 0.2s;
+}
+
+@mixin card-hoverable {
+    @include card;
+    border: 1px solid transparent;
+    cursor: pointer;
+
+    &:hover {
+        transform: translateY(-4px);
+        box-shadow: var(--shadow-hover);
+        border-color: var(--primary-blue);
+    }
+}
+
+@mixin card-bordered {
+    background: var(--bg-white);
+    border: 1px solid var(--border-light);
+    border-radius: var(--radius-card);
+    padding: 24px;
+}
+
+// -------------------------------------------
+// Buttons
+// -------------------------------------------
+@mixin button-base {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 12px 28px;
+    border-radius: var(--radius-btn);
+    font-weight: 600;
+    font-size: 1rem;
+    cursor: pointer;
+    transition: all 0.2s;
+    border: none;
+    text-decoration: none;
+    white-space: nowrap;
+    line-height: 1;
+
+    &:focus-visible {
+        outline: 2px solid var(--primary-blue);
+        outline-offset: 2px;
+    }
+
+    &:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+    }
+}
+
+@mixin button-primary {
+    @include button-base;
+    background: var(--accent-orange);
+    color: white;
+    box-shadow: 0 8px 16px rgba(245, 158, 11, 0.15);
+
+    &:hover:not(:disabled) {
+        background: var(--orange-hover);
+        transform: scale(1.05);
+    }
+}
+
+@mixin button-secondary {
+    @include button-base;
+    background: white;
+    color: var(--text-body);
+    border: 1px solid var(--border-light);
+
+    &:hover:not(:disabled) {
+        border-color: var(--primary-blue);
+        color: var(--primary-blue);
+        transform: scale(1.05);
+    }
+}
+
+@mixin button-primary-blue {
+    @include button-base;
+    background: var(--primary-blue);
+    color: white;
+    padding: 8px 16px;
+    border-radius: 999px;
+    font-weight: 500;
+    font-size: 0.9rem;
+    box-shadow: 0 4px 8px rgba(0, 49, 82, 0.1);
+
+    &:hover:not(:disabled) {
+        background: var(--blue-hover);
+        transform: scale(1.05);
+    }
+}
+
+@mixin button-text {
+    @include button-base;
+    background: transparent;
+    border: none;
+    color: var(--text-body);
+    font-weight: 500;
+    font-size: 0.95rem;
+    padding: 0 8px;
+
+    &:hover:not(:disabled) {
+        color: var(--primary-blue);
+    }
+}
+
+// -------------------------------------------
+// Forms
+// -------------------------------------------
+@mixin input-base {
+    width: 100%;
+    padding: 12px 16px;
+    border: 1px solid var(--border-light);
+    border-radius: var(--radius-card);
+    font-size: 1rem;
+    color: var(--text-title);
+    background: var(--bg-white);
+    transition: all 0.2s;
+
+    &:focus {
+        outline: none;
+        border-color: var(--primary-blue);
+        box-shadow: 0 0 0 3px rgba(0, 49, 82, 0.1);
+    }
+
+    &::placeholder {
+        color: var(--text-caption);
+    }
+}
+
+@mixin input-auth {
+    width: 100%;
+    padding: 16px 20px 16px 50px;
+    font-size: 1rem;
+    background: white;
+    border: 1px solid rgba(203, 213, 225, 0.5);
+    border-radius: 40px;
+    transition: all 0.2s;
+    color: var(--text-primary);
+
+    &:focus {
+        outline: none;
+        border-color: var(--primary-blue);
+        box-shadow: 0 0 0 4px rgba(0, 49, 82, 0.08);
+    }
+
+    &::placeholder {
+        color: var(--text-placeholder);
+        font-weight: 400;
+        opacity: 0.7;
+    }
+}
+
+// -------------------------------------------
+// Badges
+// -------------------------------------------
+@mixin badge-base {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 4px 12px;
+    border-radius: 999px;
+    font-size: 13px;
+    font-weight: 500;
+}
+
+@mixin badge-primary {
+    @include badge-base;
+    background: rgba(0, 49, 82, 0.08);
+    color: var(--primary-blue);
+}
+
+@mixin badge-accent {
+    @include badge-base;
+    background: rgba(245, 158, 11, 0.1);
+    color: var(--accent-orange);
+}
+
+// -------------------------------------------
+// Text
+// -------------------------------------------
+@mixin text-truncate {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+@mixin text-clamp($lines: 2) {
+    display: -webkit-box;
+    -webkit-line-clamp: $lines;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+@mixin heading-1 {
+    font-size: 2.25rem;
+    font-weight: 700;
+    line-height: 1.2;
+    color: var(--text-title);
+}
+
+@mixin heading-2 {
+    font-size: 1.875rem;
+    font-weight: 700;
+    line-height: 1.3;
+    color: var(--text-title);
+}
+
+@mixin heading-3 {
+    font-size: 1.5rem;
+    font-weight: 600;
+    line-height: 1.4;
+    color: var(--text-title);
+}
+
+// -------------------------------------------
+// Scrollbar
+// -------------------------------------------
+@mixin custom-scrollbar {
+    &::-webkit-scrollbar {
+        width: 6px;
+        height: 6px;
+    }
+
+    &::-webkit-scrollbar-track {
+        background: transparent;
+    }
+
+    &::-webkit-scrollbar-thumb {
+        background: var(--border-light);
+        border-radius: 3px;
+
+        &:hover {
+            background: var(--text-caption);
+        }
+    }
+}
+
+@mixin hide-scrollbar {
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+
+    &::-webkit-scrollbar {
+        display: none;
+    }
+}
+
+// -------------------------------------------
+// Animations
+// -------------------------------------------
+@mixin fade-in {
+    animation: fadeIn 0.3s ease forwards;
+}
+
+@mixin fade-in-up {
+    animation: fadeInUp 0.5s ease forwards;
+}
+
+@mixin spin {
+    animation: spin 1s linear infinite;
+}
+
+// -------------------------------------------
+// Overlay
+// -------------------------------------------
+@mixin overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: $z-modal-backdrop;
+}
+
+@mixin glass-effect {
+    background: rgba(255, 255, 255, 0.7);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+}
+
+// -------------------------------------------
+// Spacing Helpers
+// -------------------------------------------
+@mixin section-padding {
+    padding: $space-xl $padding-mobile;
+
+    @include tablet-up {
+        padding: $space-2xl $padding-tablet;
+    }
+
+    @include desktop-up {
+        padding: $space-3xl $padding-desktop;
+    }
+}
+
+@mixin container {
+    width: 100%;
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 $padding-mobile;
+
+    @include tablet-up {
+        padding: 0 $padding-tablet;
+    }
+
+    @include desktop-up {
+        padding: 0 $padding-desktop;
+    }
+}

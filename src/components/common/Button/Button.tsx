@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom';
 import type { ButtonProps } from '../../../types';
-import './Button.css';
+import './Button.scss';
 
 export function Button({
   className = '',
