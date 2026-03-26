@@ -2,8 +2,8 @@
  * 学习任务 Store
  */
 import { create } from 'zustand';
-import type { UserTask, UserProgress } from '../types/api';
-import { tasksApi, isMockMode } from '../api/useApi';
+import type { UserTask, UserProgress, PaginatedResponse } from '../types/api';
+import { tasksApi } from '../api/useApi';
 
 interface TasksState {
   tasks: UserTask[];
@@ -19,7 +19,7 @@ interface TasksState {
   clearError: () => void;
 }
 
-export const useTasksStore = create<TasksState>((set) => ({
+export const useTasksStore = create<TasksState>((set, get) => ({
   tasks: [],
   progress: null,
   isLoading: false,
@@ -28,79 +28,63 @@ export const useTasksStore = create<TasksState>((set) => ({
   fetchTasks: async (goalId?: string) => {
     set({ isLoading: true, error: null });
     try {
-      const response = isMockMode()
-        ? await tasksApi.getTasks(goalId ? { goalId } : undefined)
-        : await tasksApi.getTasks(goalId ? { goalId } : undefined);
-
-      const tasks = isMockMode() ? response : (response as any).data.items || response;
-
+      const response = await tasksApi.getTasks(goalId ? { goalId } : undefined);
+      const tasks: UserTask[] = Array.isArray(response.data)
+        ? response.data
+        : (response.data as PaginatedResponse<UserTask>).items || [];
       set({ tasks, isLoading: false });
-    } catch (error: any) {
-      set({ error: error.message || '获取任务失败', isLoading: false });
+    } catch (err) {
+      const message = err instanceof Error ? err.message : '获取任务失败';
+      set({ error: message, isLoading: false });
     }
   },
 
   fetchProgress: async () => {
     set({ isLoading: true, error: null });
     try {
-      const response = isMockMode()
-        ? await tasksApi.getProgress()
-        : await tasksApi.getProgress();
-
-      const progress = isMockMode() ? response : (response as any).data;
-
-      set({ progress, isLoading: false });
-    } catch (error: any) {
-      set({ error: error.message || '获取进度失败', isLoading: false });
+      const response = await tasksApi.getProgress();
+      set({ progress: response.data as UserProgress, isLoading: false });
+    } catch (err) {
+      const message = err instanceof Error ? err.message : '获取进度失败';
+      set({ error: message, isLoading: false });
     }
   },
 
   completeTask: async (id: string) => {
     set({ isLoading: true, error: null });
     try {
-      const response = isMockMode()
-        ? await tasksApi.completeTask(id)
-        : await tasksApi.completeTask(id);
-
-      const updatedTask = isMockMode() ? response : (response as any).data;
-
+      const response = await tasksApi.completeTask(id);
+      const updatedTask = response.data as UserTask;
       set(state => ({
         tasks: state.tasks.map(t => t.id === id ? updatedTask : t),
         isLoading: false
       }));
-
       // 完成后重新获取进度
       get().fetchProgress();
-    } catch (error: any) {
-      set({ error: error.message || '完成任务失败', isLoading: false });
-      throw error;
+    } catch (err) {
+      const message = err instanceof Error ? err.message : '完成任务失败';
+      set({ error: message, isLoading: false });
+      throw err;
     }
   },
 
   uncompleteTask: async (id: string) => {
     set({ isLoading: true, error: null });
     try {
-      const response = isMockMode()
-        ? await tasksApi.uncompleteTask(id)
-        : await tasksApi.uncompleteTask(id);
-
-      const updatedTask = isMockMode() ? response : (response as any).data;
-
+      const response = await tasksApi.uncompleteTask(id);
+      const updatedTask = response.data as UserTask;
       set(state => ({
         tasks: state.tasks.map(t => t.id === id ? updatedTask : t),
         isLoading: false
       }));
-
       // 重新获取进度
       get().fetchProgress();
-    } catch (error: any) {
-      set({ error: error.message || '取消任务失败', isLoading: false });
-      throw error;
+    } catch (err) {
+      const message = err instanceof Error ? err.message : '取消任务失败';
+      set({ error: message, isLoading: false });
+      throw err;
     }
   },
 
   clearError: () => set({ error: null })
 }));
-
-// Helper function to get store instance for recursive calls
-const get = () => useTasksStore.getState();

@@ -1,8 +1,7 @@
-import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import { useSearchParams, Link } from 'react-router-dom';
 import * as d3 from 'd3';
 import { Header, Footer } from '../../components/layout';
-import { Card } from '../../components/common';
 import { getUserProfile } from '../../utils/storage';
 import {
   getFilteredGraphData,
@@ -10,8 +9,7 @@ import {
   getCategoryName,
   categoryColors,
   categoryStats,
-  type GraphNode,
-  type GraphEdge
+  type GraphNode
 } from '../../data/graphData';
 import './GraphPage.scss';
 
@@ -35,9 +33,8 @@ export function GraphPage() {
   const [activeCategory, setActiveCategory] = useState<string>('all');
   const [physicsEnabled, setPhysicsEnabled] = useState(true);
   const [pathResult, setPathResult] = useState<D3Node[] | null>(null);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [aiQuery, setAiQuery] = useState('');
-  const [loading, setLoading] = useState(false);
+  const [_searchQuery, _setSearchQuery] = useState('');
+  const [loading] = useState(false);
 
   const profile = getUserProfile();
   const goal = goalParam || profile?.goal || '';
@@ -101,7 +98,7 @@ export function GraphPage() {
       .enter()
       .append('line')
       .attr('class', 'link')
-      .attr('stroke', d => categoryColors[d.source.category || 'basic']);
+      .attr('stroke', d => categoryColors[(d.source as D3Node).category || 'basic']);
 
     // 节点组
     const node = g.append('g')
@@ -159,14 +156,14 @@ export function GraphPage() {
 
     // 悬停效果
     node
-      .on('mouseenter', function(event, d) {
+      .on('mouseenter', function(_event, d) {
         setHoveredNode(d);
         d3.select(this).select('circle')
           .transition()
           .duration(200)
           .attr('r', d.isCore ? 32 : 26);
       })
-      .on('mouseleave', function(event, d) {
+      .on('mouseleave', function(_event, d) {
         setHoveredNode(null);
         d3.select(this).select('circle')
           .transition()
@@ -186,7 +183,9 @@ export function GraphPage() {
     });
 
     // 存储 simulation 引用供后续使用
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     (svgRef.current as any).simulation = simulation;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     (svgRef.current as any).nodeElements = node;
 
     return () => {
@@ -278,7 +277,8 @@ export function GraphPage() {
   // 物理效果切换
   const togglePhysics = () => {
     if (!svgRef.current) return;
-    const simulation: d3.Simulation<D3Node> = (svgRef.current as any).simulation;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const simulation = (svgRef.current as any).simulation as d3.Simulation<D3Node, d3.SimulationLinkDatum<D3Node>>;
 
     if (physicsEnabled) {
       simulation.alphaTarget(0);
@@ -287,53 +287,6 @@ export function GraphPage() {
       simulation.alphaTarget(0.3).restart();
     }
     setPhysicsEnabled(!physicsEnabled);
-  };
-
-  // BFS 路径查找
-  const findPath = useCallback((startId: string, endId: string): D3Node[] | null => {
-    const queue = [[startId]];
-    const visited = new Set([startId]);
-
-    while (queue.length > 0) {
-      const path = queue.shift()!;
-      const current = path[path.length - 1];
-
-      if (current === endId) {
-        return path.map(id => graphData.nodes.find(n => n.id === id) as D3Node);
-      }
-
-      graphData.edges.forEach(edge => {
-        let next: string | null = null;
-        if (edge.source === current && !visited.has(edge.target)) {
-          next = edge.target;
-        } else if (edge.target === current && !visited.has(edge.source)) {
-          next = edge.source;
-        }
-
-        if (next) {
-          visited.add(next);
-          queue.push([...path, next]);
-        }
-      });
-    }
-
-    return null;
-  }, [graphData]);
-
-  // AI 搜索
-  const handleAISearch = () => {
-    if (!aiQuery.trim()) return;
-    setLoading(true);
-
-    // 模拟 AI 处理
-    setTimeout(() => {
-      // 简单演示：找到 Python 到 RAG 的路径
-      const path = findPath('python', 'rag');
-      if (path) {
-        setPathResult(path);
-      }
-      setLoading(false);
-    }, 1500);
   };
 
   // 聚焦节点
@@ -355,25 +308,6 @@ export function GraphPage() {
     }
   };
 
-  // 分类筛选
-  const filteredNodes = useMemo(() => {
-    let nodes = graphData.nodes;
-
-    if (activeCategory !== 'all') {
-      nodes = nodes.filter(n => n.category === activeCategory);
-    }
-
-    if (searchQuery) {
-      const query = searchQuery.toLowerCase();
-      nodes = nodes.filter(n =>
-        n.label.toLowerCase().includes(query) ||
-        n.name.toLowerCase().includes(query)
-      );
-    }
-
-    return nodes;
-  }, [graphData, activeCategory, searchQuery]);
-
   // 显示全部节点
   const showAllNodes = () => {
     if (!svgRef.current) return;
@@ -381,7 +315,7 @@ export function GraphPage() {
     svg.selectAll('.node').style('opacity', 1);
     svg.selectAll('.link').style('opacity', 1);
     setActiveCategory('all');
-    setSearchQuery('');
+    _setSearchQuery('');
     handleZoom('reset');
   };
 
@@ -408,8 +342,8 @@ export function GraphPage() {
                 type="text"
                 className="search-box"
                 placeholder="搜索技术、概念..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
+                value={_searchQuery}
+                onChange={(e) => _setSearchQuery(e.target.value)}
               />
             </div> */}
 
@@ -418,7 +352,7 @@ export function GraphPage() {
               <div className="category-list">
                 <button
                   className={`category-btn ${activeCategory === 'all' ? 'active' : ''}`}
-                  onClick={() => { setActiveCategory('all'); setSearchQuery(''); }}
+                  onClick={() => { setActiveCategory('all'); _setSearchQuery(''); }}
                 >
                   <span><i className="fas fa-globe"></i> 全部技术</span>
                   <span className="count">{graphData.nodes.length}</span>
@@ -532,27 +466,27 @@ export function GraphPage() {
             <div className="graph-legend">
               <div className="legend-title">图例</div>
               <div className="legend-item">
-                <span className="legend-dot" style={{ background: '#3b82f6' }}></span>
+                <span className="legend-dot" style={{ background: 'var(--graph-frontend)' }}></span>
                 <span>前端</span>
               </div>
               <div className="legend-item">
-                <span className="legend-dot" style={{ background: '#8b5cf6' }}></span>
+                <span className="legend-dot" style={{ background: 'var(--graph-backend)' }}></span>
                 <span>后端</span>
               </div>
               <div className="legend-item">
-                <span className="legend-dot" style={{ background: '#f59e0b' }}></span>
+                <span className="legend-dot" style={{ background: 'var(--graph-ai)' }}></span>
                 <span>AI</span>
               </div>
               <div className="legend-item">
-                <span className="legend-dot" style={{ background: '#ef4444' }}></span>
+                <span className="legend-dot" style={{ background: 'var(--graph-devops)' }}></span>
                 <span>DevOps</span>
               </div>
               <div className="legend-item">
-                <span className="legend-dot" style={{ background: '#64748b' }}></span>
+                <span className="legend-dot" style={{ background: 'var(--graph-basic)' }}></span>
                 <span>基础</span>
               </div>
               <div className="legend-item recommended">
-                <span className="legend-dot" style={{ border: '3px solid #10b981', background: 'transparent' }}></span>
+                <span className="legend-dot" style={{ border: '3px solid var(--graph-recommended)', background: 'transparent' }}></span>
                 <span>推荐路径</span>
               </div>
             </div>

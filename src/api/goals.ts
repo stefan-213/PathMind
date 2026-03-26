@@ -2,7 +2,7 @@
  * 学习目标 API 服务
  */
 import { get, post, put, del } from './axios';
-import type { UserGoal, CreateGoalRequest, ApiResponse, PaginatedResponse } from '../types/api';
+import type { UserGoal, CreateGoalRequest, PaginatedResponse } from '../types/api';
 
 /**
  * 获取用户所有学习目标

@@ -2,7 +2,7 @@
  * 认证 API 服务
  */
 import { get, post } from './axios';
-import type { User, LoginRequest, RegisterRequest, AuthResponse, ApiResponse } from '../types/api';
+import type { User, LoginRequest, RegisterRequest, AuthResponse } from '../types/api';
 
 /**
  * 用户登录

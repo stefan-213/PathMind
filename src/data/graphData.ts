@@ -137,7 +137,7 @@ export function getFilteredGraphData(goal: string): { nodes: GraphNode[]; edges:
   const lowerGoal = goal.toLowerCase();
   let targetMapping = null;
 
-  for (const [key, mapping] of Object.entries(goalMapping)) {
+  for (const [_key, mapping] of Object.entries(goalMapping)) {
     if (mapping.keywords.some(k => lowerGoal.includes(k))) {
       targetMapping = mapping;
       break;

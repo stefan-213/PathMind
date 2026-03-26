@@ -4,7 +4,7 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import type { User } from '../types/api';
-import { authApi, isMockMode } from '../api/useApi';
+import { authApi } from '../api/useApi';
 
 interface AuthState {
   user: User | null;
@@ -33,11 +33,12 @@ export const useAuthStore = create<AuthState>()(
       login: async (email: string, password: string) => {
         set({ isLoading: true, error: null });
         try {
-          const response = isMockMode()
-            ? await authApi.login({ email, password })
-            : await authApi.login({ email, password });
+          const response = await authApi.login({ email, password });
+          const data = response.data;
 
-          const data = isMockMode() ? response : (response as any).data;
+          if (!data) {
+            throw new Error('登录响应数据异常');
+          }
 
           set({
             user: data.user,
@@ -50,23 +51,22 @@ export const useAuthStore = create<AuthState>()(
           if (data.token) {
             localStorage.setItem('token', data.token);
           }
-        } catch (error: any) {
-          set({
-            error: error.message || '登录失败',
-            isLoading: false
-          });
-          throw error;
+        } catch (err) {
+          const message = err instanceof Error ? err.message : '登录失败';
+          set({ error: message, isLoading: false });
+          throw err;
         }
       },
 
       register: async (email: string, username: string, password: string) => {
         set({ isLoading: true, error: null });
         try {
-          const response = isMockMode()
-            ? await authApi.register({ email, username, password })
-            : await authApi.register({ email, username, password });
+          const response = await authApi.register({ email, username, password });
+          const data = response.data;
 
-          const data = isMockMode() ? response : (response as any).data;
+          if (!data) {
+            throw new Error('注册响应数据异常');
+          }
 
           set({
             user: data.user,
@@ -78,22 +78,18 @@ export const useAuthStore = create<AuthState>()(
           if (data.token) {
             localStorage.setItem('token', data.token);
           }
-        } catch (error: any) {
-          set({
-            error: error.message || '注册失败',
-            isLoading: false
-          });
-          throw error;
+        } catch (err) {
+          const message = err instanceof Error ? err.message : '注册失败';
+          set({ error: message, isLoading: false });
+          throw err;
         }
       },
 
       logout: async () => {
         set({ isLoading: true });
         try {
-          if (!isMockMode()) {
-            await authApi.logout();
-          }
-        } catch (error) {
+          await authApi.logout();
+        } catch {
           // 忽略登出错误
         } finally {
           localStorage.removeItem('token');
@@ -115,11 +111,12 @@ export const useAuthStore = create<AuthState>()(
 
         set({ isLoading: true });
         try {
-          const response = isMockMode()
-            ? await authApi.getCurrentUser()
-            : await authApi.getCurrentUser();
+          const response = await authApi.getCurrentUser();
+          const user = response.data;
 
-          const user = isMockMode() ? response : (response as any).data;
+          if (!user) {
+            throw new Error('获取用户信息失败');
+          }
 
           set({
             user,
@@ -127,7 +124,7 @@ export const useAuthStore = create<AuthState>()(
             isAuthenticated: true,
             isLoading: false
           });
-        } catch (error) {
+        } catch {
           localStorage.removeItem('token');
           set({
             user: null,

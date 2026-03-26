@@ -6,8 +6,7 @@ import type {
   GenerateProposalRequest,
   GeneratedProposal,
   AIChatMessage,
-  AIChatRequest,
-  ApiResponse
+  AIChatRequest
 } from '../types/api';
 
 /**

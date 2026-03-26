@@ -2,7 +2,7 @@
  * 技术节点 API 服务
  */
 import { get, post, put, del } from './axios';
-import type { Technology, TechnologyRelation, ApiResponse, PaginatedResponse } from '../types/api';
+import type { Technology, TechnologyRelation, PaginatedResponse } from '../types/api';
 
 /**
  * 获取所有技术节点

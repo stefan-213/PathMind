@@ -3,9 +3,9 @@
 ============================================ */
 
 // Use SASS module system
-@use 'variables';
-@use 'mixins';
-@use 'animations';
+@use 'variables' as *;
+@use 'mixins' as *;
+@use 'animations' as *;
 
 /* ============================================
    Button 统一样式
@@ -40,33 +40,33 @@
 
 /* Primary - 橙色主按钮 */
 .btn-primary {
-    background: #F59E0B;
-    color: white;
+    background: $accent-orange;
+    color: $bg-white;
     box-shadow: 0 8px 16px rgba(245, 158, 11, 0.15);
 }
 
 .btn-primary:hover:not(:disabled) {
-    background: #D97706;
+    background: $orange-hover;
     transform: scale(1.05);
 }
 
 /* Secondary - 次要按钮 */
 .btn-secondary {
-    background: #FFFFFF;
-    color: #475569;
-    border: 1px solid #E2E8F0;
+    background: $bg-white;
+    color: $text-body;
+    border: 1px solid $border-light;
 }
 
 .btn-secondary:hover:not(:disabled) {
-    border-color: #003152;
-    color: #003152;
+    border-color: $primary-blue;
+    color: $primary-blue;
     transform: scale(1.05);
 }
 
 /* Primary Blue - 蓝色主按钮 (Header 开始按钮) */
 .btn-primary-blue {
-    background: #003152;
-    color: white;
+    background: $primary-blue;
+    color: $bg-white;
     padding: 8px 16px;
     border-radius: 999px;
     font-weight: 500;
@@ -76,7 +76,7 @@
 }
 
 .btn-primary-blue:hover:not(:disabled) {
-    background: #0A4A75;
+    background: $blue-hover;
     transform: scale(1.05);
 }
 
@@ -84,7 +84,7 @@
 .btn-text {
     background: transparent;
     border: none;
-    color: #475569;
+    color: $text-body;
     font-weight: 500;
     font-size: 0.95rem;
     cursor: pointer;
@@ -92,13 +92,13 @@
 }
 
 .btn-text:hover:not(:disabled) {
-    color: #003152;
+    color: $primary-blue;
 }
 
 /* CTA White - CTA 白色按钮 (Final CTA) */
 .btn-cta-white {
-    background: white;
-    color: var(--primary-blue);
+    background: $bg-white;
+    color: $primary-blue;
     border: none;
     padding: 14px 40px;
     border-radius: 999px;
@@ -171,8 +171,8 @@
 }
 
 .badge-primary {
-    background: rgba(0, 49, 82, 0.08);
-    color: var(--primary-blue);
+    background: $blue-light;
+    color: $primary-blue;
 }
 
 .badge-accent {
@@ -198,7 +198,7 @@
 .input:focus {
     outline: none;
     border-color: var(--primary-blue);
-    box-shadow: 0 0 0 3px rgba(0, 49, 82, 0.1);
+    box-shadow: $input-focus-shadow;
 }
 
 .input::placeholder {
@@ -223,7 +223,7 @@
 .textarea:focus {
     outline: none;
     border-color: var(--primary-blue);
-    box-shadow: 0 0 0 3px rgba(0, 49, 82, 0.1);
+    box-shadow: $input-focus-shadow;
 }
 
 .textarea::placeholder {
@@ -425,7 +425,7 @@
 
 .progress-fill {
     height: 100%;
-    background: linear-gradient(90deg, var(--accent-orange), #34d399);
+    background: linear-gradient(90deg, $accent-orange, $color-success);
     border-radius: var(--radius-full, 999px);
     transition: width 0.5s ease;
 }

@@ -2,8 +2,8 @@
  * 学习目标 Store
  */
 import { create } from 'zustand';
-import type { UserGoal } from '../types/api';
-import { goalsApi, isMockMode } from '../api/useApi';
+import type { UserGoal, PaginatedResponse } from '../types/api';
+import { goalsApi } from '../api/useApi';
 
 interface GoalsState {
   goals: UserGoal[];
@@ -21,7 +21,7 @@ interface GoalsState {
   clearError: () => void;
 }
 
-export const useGoalsStore = create<GoalsState>((set, get) => ({
+export const useGoalsStore = create<GoalsState>((set) => ({
   goals: [],
   currentGoal: null,
   isLoading: false,
@@ -30,90 +30,81 @@ export const useGoalsStore = create<GoalsState>((set, get) => ({
   fetchGoals: async () => {
     set({ isLoading: true, error: null });
     try {
-      const response = isMockMode()
-        ? await goalsApi.getGoals()
-        : await goalsApi.getGoals();
-
-      const goals = isMockMode() ? response : (response as any).data.items || response;
-
+      const response = await goalsApi.getGoals();
+      // 兼容 PaginatedResponse 和直接数组两种响应格式
+      const goals: UserGoal[] = Array.isArray(response.data)
+        ? response.data
+        : (response.data as PaginatedResponse<UserGoal>).items || [];
       set({ goals, isLoading: false });
-    } catch (error: any) {
-      set({ error: error.message || '获取目标失败', isLoading: false });
+    } catch (err) {
+      const message = err instanceof Error ? err.message : '获取目标失败';
+      set({ error: message, isLoading: false });
     }
   },
 
   fetchGoalById: async (id: string) => {
     set({ isLoading: true, error: null });
     try {
-      const response = isMockMode()
-        ? await goalsApi.getGoalById(id)
-        : await goalsApi.getGoalById(id);
-
-      const goal = isMockMode() ? response : (response as any).data;
-
-      set({ currentGoal: goal, isLoading: false });
-    } catch (error: any) {
-      set({ error: error.message || '获取目标详情失败', isLoading: false });
+      const response = await goalsApi.getGoalById(id);
+      const goal = response.data;
+      if (!goal) {
+        throw new Error('目标不存在');
+      }
+      set({ currentGoal: goal as UserGoal, isLoading: false });
+    } catch (err) {
+      const message = err instanceof Error ? err.message : '获取目标详情失败';
+      set({ error: message, isLoading: false });
     }
   },
 
   createGoal: async (goalText: string) => {
     set({ isLoading: true, error: null });
     try {
-      const response = isMockMode()
-        ? await goalsApi.createGoal(goalText)
-        : await goalsApi.createGoal(goalText);
-
-      const newGoal = isMockMode() ? response : (response as any).data;
-
+      const response = await goalsApi.createGoal({ goal: goalText });
+      const newGoal = response.data as UserGoal;
       set(state => ({
         goals: [newGoal, ...state.goals],
         currentGoal: newGoal,
         isLoading: false
       }));
-
       return newGoal;
-    } catch (error: any) {
-      set({ error: error.message || '创建目标失败', isLoading: false });
-      throw error;
+    } catch (err) {
+      const message = err instanceof Error ? err.message : '创建目标失败';
+      set({ error: message, isLoading: false });
+      throw err;
     }
   },
 
   updateGoal: async (id: string, data: Partial<UserGoal>) => {
     set({ isLoading: true, error: null });
     try {
-      const response = isMockMode()
-        ? await goalsApi.updateGoal(id, data)
-        : await goalsApi.updateGoal(id, data);
-
-      const updatedGoal = isMockMode() ? response : (response as any).data;
-
+      const response = await goalsApi.updateGoal(id, data);
+      const updatedGoal = response.data as UserGoal;
       set(state => ({
         goals: state.goals.map(g => g.id === id ? updatedGoal : g),
         currentGoal: state.currentGoal?.id === id ? updatedGoal : state.currentGoal,
         isLoading: false
       }));
-    } catch (error: any) {
-      set({ error: error.message || '更新目标失败', isLoading: false });
-      throw error;
+    } catch (err) {
+      const message = err instanceof Error ? err.message : '更新目标失败';
+      set({ error: message, isLoading: false });
+      throw err;
     }
   },
 
   deleteGoal: async (id: string) => {
     set({ isLoading: true, error: null });
     try {
-      if (!isMockMode()) {
-        await goalsApi.deleteGoal(id);
-      }
-
+      await goalsApi.deleteGoal(id);
       set(state => ({
         goals: state.goals.filter(g => g.id !== id),
         currentGoal: state.currentGoal?.id === id ? null : state.currentGoal,
         isLoading: false
       }));
-    } catch (error: any) {
-      set({ error: error.message || '删除目标失败', isLoading: false });
-      throw error;
+    } catch (err) {
+      const message = err instanceof Error ? err.message : '删除目标失败';
+      set({ error: message, isLoading: false });
+      throw err;
     }
   },
 

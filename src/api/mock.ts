@@ -11,10 +11,10 @@ import type {
   UserGoal,
   UserTask,
   UserProgress,
-  Technology,
   GeneratedProposal,
   QuestionAnswer,
-  AIChatMessage
+  AIChatMessage,
+  ApiResponse
 } from '../types/api';
 
 // 模拟延迟
@@ -106,11 +106,11 @@ const mockProgress: UserProgress = {
 // ==================== Mock 技术方案 ====================
 const mockProposal: GeneratedProposal = {
   title: 'RAG 知识库系统',
-  desc: '适合快速入门，市场需求大，容易做出效果',
-  path: ['Python 基础', 'LangChain', 'RAG', '向量数据库'],
-  branch: [
+  description: '适合快速入门，市场需求大，容易做出效果',
+  mainPath: ['Python 基础', 'LangChain', 'RAG', '向量数据库'],
+  branches: [
     { text: 'RAG (推荐)', recommended: true },
-    { text: 'Agent' }
+    { text: 'Agent', recommended: false }
   ],
   comparison: [
     { dim: '难度', a: '⭐⭐ 入门简单', b: '⭐⭐⭐⭐ 较复杂' },
@@ -131,56 +131,68 @@ const mockChatHistory: AIChatMessage[] = [];
 
 // ==================== Auth Mock API ====================
 export const mockAuth = {
-  login: async (data: LoginRequest): Promise<AuthResponse> => {
+  login: async (data: LoginRequest): Promise<ApiResponse<AuthResponse>> => {
     await delay(500);
     if (data.email && data.password) {
       return {
-        user: mockUser,
-        token: 'mock-token-' + generateId()
+        success: true,
+        data: {
+          user: mockUser,
+          token: 'mock-token-' + generateId()
+        }
       };
     }
     throw new Error('用户名或密码错误');
   },
 
-  register: async (data: RegisterRequest): Promise<AuthResponse> => {
+  register: async (data: RegisterRequest): Promise<ApiResponse<AuthResponse>> => {
     await delay(500);
     return {
-      user: { ...mockUser, email: data.email, username: data.username },
-      token: 'mock-token-' + generateId()
+      success: true,
+      data: {
+        user: { ...mockUser, email: data.email, username: data.username },
+        token: 'mock-token-' + generateId()
+      }
     };
   },
 
-  logout: async (): Promise<void> => {
+  logout: async (): Promise<ApiResponse<void>> => {
     await delay(200);
+    return { success: true };
   },
 
-  getCurrentUser: async (): Promise<User> => {
+  getCurrentUser: async (): Promise<ApiResponse<User>> => {
     await delay(300);
-    return mockUser;
+    return { success: true, data: mockUser };
   }
 };
 
 // ==================== Goals Mock API ====================
 export const mockGoalsApi = {
-  getGoals: async (params?: { status?: string }): Promise<UserGoal[]> => {
+  getGoals: async (params?: { status?: string }): Promise<ApiResponse<UserGoal[]>> => {
     await delay(300);
+    let goals = [...mockGoals];
     if (params?.status) {
-      return mockGoals.filter(g => g.status === params.status);
+      goals = goals.filter(g => g.status === params.status);
     }
-    return mockGoals;
+    return { success: true, data: goals };
   },
 
-  getGoalById: async (id: string): Promise<UserGoal | undefined> => {
+  getGoalById: async (id: string): Promise<ApiResponse<UserGoal>> => {
     await delay(200);
-    return mockGoals.find(g => g.id === id);
+    const goal = mockGoals.find(g => g.id === id);
+    if (!goal) {
+      throw new Error('目标不存在');
+    }
+    return { success: true, data: goal };
   },
 
-  createGoal: async (goal: string): Promise<UserGoal> => {
+  createGoal: async (data: { goal: string }): Promise<ApiResponse<UserGoal>> => {
     await delay(500);
     const newGoal: UserGoal = {
       id: generateId(),
       userId: mockUser.id,
-      goal,
+      goal: data.goal,
       recommendTitle: '',
       answers: [],
       status: 'active',
@@ -188,27 +200,28 @@ export const mockGoalsApi = {
       updatedAt: new Date().toISOString()
     };
     mockGoals.push(newGoal);
-    return newGoal;
+    return { success: true, data: newGoal };
   },
 
-  updateGoal: async (id: string, data: Partial<UserGoal>): Promise<UserGoal> => {
+  updateGoal: async (id: string, data: Partial<UserGoal>): Promise<ApiResponse<UserGoal>> => {
     await delay(300);
     const index = mockGoals.findIndex(g => g.id === id);
     if (index === -1) throw new Error('目标不存在');
     mockGoals[index] = { ...mockGoals[index], ...data, updatedAt: new Date().toISOString() };
-    return mockGoals[index];
+    return { success: true, data: mockGoals[index] };
   },
 
-  deleteGoal: async (id: string): Promise<void> => {
+  deleteGoal: async (id: string): Promise<ApiResponse<void>> => {
     await delay(300);
     const index = mockGoals.findIndex(g => g.id === id);
     if (index !== -1) mockGoals.splice(index, 1);
+    return { success: true };
   }
 };
 
 // ==================== Tasks Mock API ====================
 export const mockTasksApi = {
-  getTasks: async (params?: { goalId?: string; status?: string }): Promise<UserTask[]> => {
+  getTasks: async (params?: { goalId?: string; status?: string }): Promise<ApiResponse<UserTask[]>> => {
     await delay(300);
     let tasks = [...mockTasks];
     if (params?.goalId) {
@@ -217,15 +230,15 @@ export const mockTasksApi = {
     if (params?.status) {
       tasks = tasks.filter(t => t.status === params.status);
     }
-    return tasks;
+    return { success: true, data: tasks };
   },
 
-  getTasksByGoal: async (goalId: string): Promise<UserTask[]> => {
+  getTasksByGoal: async (goalId: string): Promise<ApiResponse<UserTask[]>> => {
     await delay(300);
-    return mockTasks.filter(t => t.goalId === goalId);
+    return { success: true, data: mockTasks.filter(t => t.goalId === goalId) };
   },
 
-  completeTask: async (id: string): Promise<UserTask> => {
+  completeTask: async (id: string): Promise<ApiResponse<UserTask>> => {
     await delay(200);
     const index = mockTasks.findIndex(t => t.id === id);
     if (index === -1) throw new Error('任务不存在');
@@ -234,10 +247,10 @@ export const mockTasksApi = {
       status: 'completed',
       completedAt: new Date().toISOString()
     };
-    return mockTasks[index];
+    return { success: true, data: mockTasks[index] };
   },
 
-  uncompleteTask: async (id: string): Promise<UserTask> => {
+  uncompleteTask: async (id: string): Promise<ApiResponse<UserTask>> => {
     await delay(200);
     const index = mockTasks.findIndex(t => t.id === id);
     if (index === -1) throw new Error('任务不存在');
@@ -246,32 +259,38 @@ export const mockTasksApi = {
       status: 'pending',
       completedAt: undefined
     };
-    return mockTasks[index];
+    return { success: true, data: mockTasks[index] };
   },
 
-  getProgress: async (): Promise<UserProgress> => {
+  getProgress: async (): Promise<ApiResponse<UserProgress>> => {
     await delay(200);
     const completed = mockTasks.filter(t => t.status === 'completed').length;
     return {
-      ...mockProgress,
-      completedTasks: completed,
-      percentage: Math.round((completed / mockProgress.totalTasks) * 100)
+      success: true,
+      data: {
+        ...mockProgress,
+        completedTasks: completed,
+        percentage: Math.round((completed / mockProgress.totalTasks) * 100)
+      }
     };
   }
 };
 
 // ==================== AI Mock API ====================
 export const mockAI = {
-  generateProposal: async (goal: string, answers: QuestionAnswer[]): Promise<GeneratedProposal> => {
+  generateProposal: async (_goal: string, _answers: QuestionAnswer[]): Promise<ApiResponse<GeneratedProposal>> => {
     await delay(1500); // 模拟 AI 生成时间
     return {
-      ...mockProposal,
-      title: mockProposal.title,
-      desc: mockProposal.desc
+      success: true,
+      data: {
+        ...mockProposal,
+        title: mockProposal.title,
+        description: mockProposal.description
+      }
     };
   },
 
-  chat: async (goalId: string, message: string): Promise<AIChatMessage> => {
+  chat: async (_goalId: string, message: string): Promise<ApiResponse<{ message: AIChatMessage }>> => {
     await delay(800);
     const reply: AIChatMessage = {
       id: generateId(),
@@ -280,11 +299,11 @@ export const mockAI = {
       createdAt: new Date().toISOString()
     };
     mockChatHistory.push(reply);
-    return reply;
+    return { success: true, data: { message: reply } };
   },
 
-  getChatHistory: async (goalId: string): Promise<AIChatMessage[]> => {
+  getChatHistory: async (_goalId: string): Promise<ApiResponse<AIChatMessage[]>> => {
     await delay(200);
-    return mockChatHistory;
+    return { success: true, data: mockChatHistory };
   }
 };

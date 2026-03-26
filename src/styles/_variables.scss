@@ -170,6 +170,25 @@ $badge-font-size: $font-size-xs;
 $badge-border-radius: $radius-full;
 
 // -------------------------------------------
+// Colors - 状态色透明度变体
+// -------------------------------------------
+$accent-light: rgba(245, 158, 11, 0.1);
+$color-success-light: rgba(34, 197, 94, 0.1);
+$color-warning-light: rgba(245, 158, 11, 0.1);
+$color-danger-light: rgba(239, 68, 68, 0.1);
+$color-info-light: rgba(59, 130, 246, 0.1);
+
+// -------------------------------------------
+// Colors - 知识图谱分类色
+// -------------------------------------------
+$graph-frontend: #3B82F6;
+$graph-backend: #8B5CF6;
+$graph-ai: #F59E0B;
+$graph-devops: #EF4444;
+$graph-basic: #64748B;
+$graph-recommended: #10B981;
+
+// -------------------------------------------
 // CSS Custom Properties (for runtime use)
 // -------------------------------------------
 :root {
@@ -208,7 +227,24 @@ $badge-border-radius: $radius-full;
     --primary: #{$primary-blue};
     --primary-light: #{$blue-hover};
     --accent: #{$accent-orange};
-    --accent-light: rgba(245, 158, 11, 0.1);
+    --accent-light: #{$accent-light};
+    --accent-hover: #{$orange-hover};
     --text: #{$text-body};
     --border-color: #{$border-color};
+
+    // Status colors
+    --color-success: #{$color-success};
+    --color-warning: #{$color-warning};
+    --color-danger: #{$color-danger};
+    --color-info: #{$color-info};
+    --color-success-light: #{$color-success-light};
+    --color-danger-light: #{$color-danger-light};
+
+    // Graph category colors
+    --graph-frontend: #{$graph-frontend};
+    --graph-backend: #{$graph-backend};
+    --graph-ai: #{$graph-ai};
+    --graph-devops: #{$graph-devops};
+    --graph-basic: #{$graph-basic};
+    --graph-recommended: #{$graph-recommended};
 }

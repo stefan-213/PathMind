@@ -1,3 +1,5 @@
+@use '../../../styles/variables' as *;
+
 .badge-component {
   display: inline-flex;
   align-items: center;
@@ -25,27 +27,27 @@
 
 /* Variants */
 .badge-default {
-  background: var(--border-light);
-  color: var(--text-secondary);
+  background: $border-light;
+  color: $text-secondary;
 }
 
 .badge-primary {
-  background: var(--primary-bg);
-  color: var(--primary);
+  background: $blue-light;
+  color: $primary-blue;
 }
 
 .badge-accent,
 .badge-success {
-  background: var(--accent-light);
-  color: var(--accent);
+  background: $accent-light;
+  color: $accent-orange;
 }
 
 .badge-warning {
-  background: rgba(245, 158, 11, 0.1);
-  color: #f59e0b;
+  background: $color-warning-light;
+  color: $accent-orange;
 }
 
 .badge-error {
-  background: rgba(239, 68, 68, 0.1);
-  color: #ef4444;
+  background: $color-danger-light;
+  color: $color-danger;
 }

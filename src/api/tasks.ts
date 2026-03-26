@@ -2,7 +2,7 @@
  * 学习任务 API 服务
  */
 import { get, post, put, del } from './axios';
-import type { UserTask, UserProgress, CreateTasksRequest, ApiResponse, PaginatedResponse } from '../types/api';
+import type { UserTask, UserProgress, CreateTasksRequest, PaginatedResponse } from '../types/api';
 
 /**
  * 获取用户所有任务
