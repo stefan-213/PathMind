@@ -6,42 +6,43 @@ import type { User, LoginRequest, RegisterRequest, AuthResponse } from '../types
 
 /**
  * 用户登录
+ * 后端返回 data 为 token 字符串（可能是 "Bearer xxx" 格式）
  */
 export const login = (data: LoginRequest) => {
-  return post<AuthResponse>('/auth/login', data);
+  return post<string>('/api/auth/login', data);
 };
 
 /**
  * 用户注册
  */
 export const register = (data: RegisterRequest) => {
-  return post<AuthResponse>('/auth/register', data);
+  return post<AuthResponse>('/api/auth/register', data);
 };
 
 /**
  * 退出登录
  */
 export const logout = () => {
-  return post<void>('/auth/logout');
+  return post<void>('/api/user/quitLogin');
 };
 
 /**
  * 获取当前用户信息
  */
 export const getCurrentUser = () => {
-  return get<User>('/auth/me');
+  return get<User>('/api/user/info');
 };
 
 /**
  * 更新用户信息
  */
 export const updateUser = (data: Partial<User>) => {
-  return post<User>('/auth/update', data);
+  return post<User>('/api/auth/update', data);
 };
 
 /**
  * 修改密码
  */
 export const changePassword = (oldPassword: string, newPassword: string) => {
-  return post<void>('/auth/change-password', { oldPassword, newPassword });
+  return post<void>('/api/auth/change-password', { oldPassword, newPassword });
 };

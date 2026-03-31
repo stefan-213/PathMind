@@ -7,28 +7,24 @@ export function RegisterPage() {
   const navigate = useNavigate();
   const { register, isLoading, error, clearError } = useAuthStore();
 
-  const [email, setEmail] = useState('');
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [email, setEmail] = useState('');
+  const [phone, setPhone] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [agreeTerms, setAgreeTerms] = useState(false);
   const [formErrors, setFormErrors] = useState<{
-    email?: string;
     username?: string;
     password?: string;
     confirmPassword?: string;
+    email?: string;
+    phone?: string;
   }>({});
 
   const validate = () => {
     const errors: typeof formErrors = {};
-
-    if (!email) {
-      errors.email = '请输入邮箱';
-    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-      errors.email = '请输入有效的邮箱地址';
-    }
 
     if (!username) {
       errors.username = '请输入用户名';
@@ -48,6 +44,16 @@ export function RegisterPage() {
       errors.confirmPassword = '请确认密码';
     } else if (password !== confirmPassword) {
       errors.confirmPassword = '两次输入的密码不一致';
+    }
+
+    if (!email) {
+      errors.email = '请输入邮箱';
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      errors.email = '请输入有效的邮箱地址';
+    }
+
+    if (phone && !/^1[3-9]\d{9}$/.test(phone)) {
+      errors.phone = '请输入有效的手机号';
     }
 
     if (!agreeTerms) {
@@ -78,7 +84,7 @@ export function RegisterPage() {
     if (!validate()) return;
 
     try {
-      await register(email, username, password);
+      await register(username, password, email, phone || undefined);
       navigate('/', { replace: true });
     } catch (err) {
       // 错误已在 store 中处理
@@ -143,6 +149,21 @@ export function RegisterPage() {
                 />
               </div>
               {formErrors.email && <span className="error-text">{formErrors.email}</span>}
+            </div>
+
+            <div className="form-group">
+              <label className="form-label">手机号 <span className="optional">(选填)</span></label>
+              <div className="input-wrapper">
+                <i className="fas fa-phone input-icon"></i>
+                <input
+                  type="tel"
+                  className={`form-input ${formErrors.phone ? 'error' : ''}`}
+                  placeholder="请输入手机号"
+                  value={phone}
+                  onChange={(e) => setPhone(e.target.value)}
+                />
+              </div>
+              {formErrors.phone && <span className="error-text">{formErrors.phone}</span>}
             </div>
 
             <div className="form-group">

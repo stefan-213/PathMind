@@ -8,21 +8,19 @@ export function LoginPage() {
   const location = useLocation();
   const { login, isLoading, error, clearError } = useAuthStore();
 
-  const [email, setEmail] = useState('hello@pathmind.ai');
-  const [password, setPassword] = useState('12345678');
+  const [username, setUsername] = useState('');
+  const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
-  const [formErrors, setFormErrors] = useState<{ email?: string; password?: string }>({});
+  const [formErrors, setFormErrors] = useState<{ username?: string; password?: string }>({});
 
   const from = (location.state as any)?.from?.pathname || '/';
 
   const validate = () => {
-    const errors: { email?: string; password?: string } = {};
+    const errors: { username?: string; password?: string } = {};
 
-    if (!email) {
-      errors.email = '请输入邮箱';
-    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-      errors.email = '请输入有效的邮箱地址';
+    if (!username) {
+      errors.username = '请输入用户名';
     }
 
     if (!password) {
@@ -42,7 +40,7 @@ export function LoginPage() {
     if (!validate()) return;
 
     try {
-      await login(email, password);
+      await login(username, password);
       navigate(from, { replace: true });
     } catch (err) {
       // 错误已在 store 中处理
@@ -78,18 +76,18 @@ export function LoginPage() {
           {/* 表单 */}
           <form onSubmit={handleSubmit}>
             <div className="form-group">
-              <label className="form-label">邮箱</label>
+              <label className="form-label">用户名</label>
               <div className="input-wrapper">
-                <i className="fas fa-envelope input-icon"></i>
+                <i className="fas fa-user input-icon"></i>
                 <input
-                  type="email"
-                  className={`form-input ${formErrors.email ? 'error' : ''}`}
-                  placeholder="your@email.com"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
+                  type="text"
+                  className={`form-input ${formErrors.username ? 'error' : ''}`}
+                  placeholder="请输入用户名"
+                  value={username}
+                  onChange={(e) => setUsername(e.target.value)}
                 />
               </div>
-              {formErrors.email && <span className="error-text">{formErrors.email}</span>}
+              {formErrors.username && <span className="error-text">{formErrors.username}</span>}
             </div>
 
             <div className="form-group">

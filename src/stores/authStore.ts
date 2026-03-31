@@ -14,8 +14,8 @@ interface AuthState {
   error: string | null;
 
   // Actions
-  login: (email: string, password: string) => Promise<void>;
-  register: (email: string, username: string, password: string) => Promise<void>;
+  login: (username: string, password: string) => Promise<void>;
+  register: (username: string, password: string, email: string, phone?: string) => Promise<void>;
   logout: () => Promise<void>;
   checkAuth: () => Promise<void>;
   clearError: () => void;
@@ -30,27 +30,39 @@ export const useAuthStore = create<AuthState>()(
       isLoading: false,
       error: null,
 
-      login: async (email: string, password: string) => {
+      login: async (username: string, password: string) => {
         set({ isLoading: true, error: null });
         try {
-          const response = await authApi.login({ email, password });
-          const data = response.data;
+          const response = await authApi.login({ username, password });
+          // 后端返回的 data 是 token 字符串（可能是 "Bearer xxx" 格式）
+          let token = response.data as string;
 
-          if (!data) {
+          if (!token) {
             throw new Error('登录响应数据异常');
           }
 
+          // 去掉 "Bearer " 前缀，只保留 token 本身
+          if (token.startsWith('Bearer ')) {
+            token = token.substring(7);
+          }
+
+          // 保存 token 到 localStorage
+          localStorage.setItem('token', token);
+
+          // 获取完整用户信息
+          const userResponse = await authApi.getCurrentUser();
+          const user = userResponse.data;
+
+          if (!user) {
+            throw new Error('获取用户信息失败');
+          }
+
           set({
-            user: data.user,
-            token: data.token,
+            user,
+            token,
             isAuthenticated: true,
             isLoading: false
           });
-
-          // 保存 token 到 localStorage
-          if (data.token) {
-            localStorage.setItem('token', data.token);
-          }
         } catch (err) {
           const message = err instanceof Error ? err.message : '登录失败';
           set({ error: message, isLoading: false });
@@ -58,26 +70,35 @@ export const useAuthStore = create<AuthState>()(
         }
       },
 
-      register: async (email: string, username: string, password: string) => {
+      register: async (username: string, password: string, email: string, phone?: string) => {
         set({ isLoading: true, error: null });
         try {
-          const response = await authApi.register({ email, username, password });
+          const response = await authApi.register({ username, password, email, phone });
           const data = response.data;
 
           if (!data) {
             throw new Error('注册响应数据异常');
           }
 
+          // 保存 token 到 localStorage
+          if (data.token) {
+            localStorage.setItem('token', data.token);
+          }
+
+          // 获取完整用户信息
+          const userResponse = await authApi.getCurrentUser();
+          const user = userResponse.data;
+
+          if (!user) {
+            throw new Error('获取用户信息失败');
+          }
+
           set({
-            user: data.user,
+            user,
             token: data.token,
             isAuthenticated: true,
             isLoading: false
           });
-
-          if (data.token) {
-            localStorage.setItem('token', data.token);
-          }
         } catch (err) {
           const message = err instanceof Error ? err.message : '注册失败';
           set({ error: message, isLoading: false });

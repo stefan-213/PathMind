@@ -5,7 +5,14 @@ import axios from 'axios';
 import type { AxiosInstance, AxiosRequestConfig, AxiosResponse, InternalAxiosRequestConfig } from 'axios';
 import type { ApiResponse } from '../types/api';
 
-const BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api';
+const BASE_URL = import.meta.env.VITE_API_BASE_URL || '';
+
+// 无需认证的接口白名单
+const NO_AUTH_WHITELIST = [
+  '/api/auth/register',
+  '/api/auth/login',
+  '/api/user/quitLogin',
+];
 
 export const axiosInstance: AxiosInstance = axios.create({
   baseURL: BASE_URL,
@@ -36,10 +43,15 @@ axiosInstance.interceptors.request.use(
   (config: InternalAxiosRequestConfig) => {
     startRequest();
 
-    // 从 localStorage 获取 token
-    const token = localStorage.getItem('token');
-    if (token && config.headers) {
-      config.headers.Authorization = `Bearer ${token}`;
+    // 检查是否在白名单中
+    const isWhitelisted = NO_AUTH_WHITELIST.some(path => config.url?.includes(path));
+
+    // 从 localStorage 获取 token（非白名单接口才添加）
+    if (!isWhitelisted) {
+      const token = localStorage.getItem('token');
+      if (token && config.headers) {
+        config.headers.Authorization = `Bearer ${token}`;
+      }
     }
 
     return config;
@@ -50,10 +62,22 @@ axiosInstance.interceptors.request.use(
   }
 );
 
-// 响应拦截器
+// 响应拦截器 - 转换后端响应格式
 axiosInstance.interceptors.response.use(
   (response: AxiosResponse) => {
     endRequest();
+
+    // 转换后端响应格式 { code, info, data } -> { success, data, error }
+    const backendResponse = response.data;
+    if (backendResponse && 'code' in backendResponse) {
+      const isSuccess = backendResponse.code === '200' || backendResponse.code === 200;
+      response.data = {
+        success: isSuccess,
+        data: backendResponse.data,
+        error: isSuccess ? undefined : backendResponse.info
+      };
+    }
+
     return response;
   },
   (error) => {

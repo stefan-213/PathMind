@@ -28,7 +28,10 @@ const mockUser: User = {
   id: 'user-001',
   email: 'demo@pathmind.com',
   username: 'Demo 用户',
+  phone: '',
   avatar: '',
+  role: 'user',
+  status: 'active',
   createdAt: '2024-01-01T00:00:00Z',
   updatedAt: '2024-01-01T00:00:00Z'
 };
@@ -133,7 +136,7 @@ const mockChatHistory: AIChatMessage[] = [];
 export const mockAuth = {
   login: async (data: LoginRequest): Promise<ApiResponse<AuthResponse>> => {
     await delay(500);
-    if (data.email && data.password) {
+    if (data.username && data.password) {
       return {
         success: true,
         data: {

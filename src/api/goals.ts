@@ -8,47 +8,47 @@ import type { UserGoal, CreateGoalRequest, PaginatedResponse } from '../types/ap
  * 获取用户所有学习目标
  */
 export const getGoals = (params?: { status?: string; page?: number; pageSize?: number }) => {
-  return get<PaginatedResponse<UserGoal>>('/goals', params);
+  return get<PaginatedResponse<UserGoal>>('/api/goals', params);
 };
 
 /**
  * 获取学习目标详情
  */
 export const getGoalById = (id: string) => {
-  return get<UserGoal>(`/goals/${id}`);
+  return get<UserGoal>(`/api/goals/${id}`);
 };
 
 /**
  * 创建学习目标
  */
 export const createGoal = (data: CreateGoalRequest) => {
-  return post<UserGoal>('/goals', data);
+  return post<UserGoal>('/api/goals', data);
 };
 
 /**
  * 更新学习目标
  */
 export const updateGoal = (id: string, data: Partial<UserGoal>) => {
-  return put<UserGoal>(`/goals/${id}`, data);
+  return put<UserGoal>(`/api/goals/${id}`, data);
 };
 
 /**
  * 删除学习目标
  */
 export const deleteGoal = (id: string) => {
-  return del<void>(`/goals/${id}`);
+  return del<void>(`/api/goals/${id}`);
 };
 
 /**
  * 归档学习目标
  */
 export const archiveGoal = (id: string) => {
-  return put<UserGoal>(`/goals/${id}/archive`);
+  return put<UserGoal>(`/api/goals/${id}/archive`);
 };
 
 /**
  * 激活学习目标
  */
 export const activateGoal = (id: string) => {
-  return put<UserGoal>(`/goals/${id}/activate`);
+  return put<UserGoal>(`/api/goals/${id}/activate`);
 };

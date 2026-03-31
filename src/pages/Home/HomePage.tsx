@@ -38,6 +38,34 @@ export function HomePage() {
   const toggleFaq = (index: number) => {
     setOpenIndex(openIndex === index ? null : index);
   };
+
+  // 测试 chatWithAI 接口
+  const testChat = async () => {
+    const { createSession, chatWithAI } = await import('../../api/ai');
+    try {
+      // 先创建会话
+      const sessionRes = await createSession('100001');
+      console.log('创建会话:', sessionRes);
+      const sessionId = sessionRes.data?.sessionId;
+
+      if (!sessionId) {
+        alert('创建会话失败');
+        return;
+      }
+
+      // 再发送消息
+      const res = await chatWithAI({
+        agentId: '100001',
+        sessionId,
+        message: '你好'
+      });
+      console.log('AI 回复:', res);
+      alert('AI 回复: ' + JSON.stringify(res));
+    } catch (err) {
+      console.error('chatWithAI 错误:', err);
+      alert('请求失败: ' + (err as Error).message);
+    }
+  };
   return (
     <div className="home-page">
       <Header />
@@ -63,6 +91,10 @@ export function HomePage() {
             <Link to="/graph" className="btn btn-secondary">
               <i className="fas fa-layer-group"></i> 查看图谱
             </Link>
+            {/* 测试按钮 */}
+            <button onClick={testChat} className="btn btn-secondary">
+              <i className="fas fa-comment"></i> 测试 Chat
+            </button>
           </div>
 
           {/* Stats */}

@@ -8,4 +8,12 @@ export default defineConfig({
     react(),
     babel({ presets: [reactCompilerPreset()] })
   ],
+  server: {
+    proxy: {
+      '/api': {
+        target: 'http://82.157.183.97:8091',
+        changeOrigin: true,
+      }
+    }
+  }
 })

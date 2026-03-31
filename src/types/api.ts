@@ -8,20 +8,24 @@ export interface User {
   id: string;
   email: string;
   username: string;
+  phone?: string;
   avatar?: string;
+  role: string;
+  status: string;
   createdAt: string;
   updatedAt: string;
 }
 
 export interface LoginRequest {
-  email: string;
+  username: string;
   password: string;
 }
 
 export interface RegisterRequest {
-  email: string;
   username: string;
   password: string;
+  email: string;
+  phone?: string;
 }
 
 export interface AuthResponse {
@@ -151,9 +155,9 @@ export interface AIChatMessage {
 }
 
 export interface AIChatRequest {
-  goalId: string;
+  agentId: string;
+  sessionId: string;
   message: string;
-  history?: AIChatMessage[];
 }
 
 // ==================== 收藏与历史 ====================
