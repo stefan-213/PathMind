@@ -42,11 +42,18 @@
     background: $accent-orange;
     color: $bg-white;
     box-shadow: 0 8px 16px rgba(245, 158, 11, 0.15);
+    
 }
-
+.arrow-right {
+    display: inline-flex;
+}
 .btn-primary:hover:not(:disabled) {
     background: $orange-hover;
     transform: scale(1.05);
+    .arrow-right{
+        transform: translateX(4px);
+        transition: transform 0.3s;
+    }
 }
 
 /* Secondary - 次要按钮 */

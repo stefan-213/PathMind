@@ -72,7 +72,10 @@ function GoalInput({ value, onChange, onSubmit }: { value: string; onChange: (v:
         </div>
         <div className="next-button-wrapper">
           <button className="btn btn-primary" onClick={onSubmit}>
-            下一步 <i className="fas fa-arrow-right"></i>
+            下一步 
+            <div className="arrow-right">
+              <i className="fas fa-arrow-right"></i>
+            </div>
           </button>
         </div>
       </div>
@@ -376,7 +379,10 @@ export function CopilotPage() {
               <div className="progress-badge">进行中</div>
             </div>
             <button className="btn btn-primary" onClick={() => window.location.href = '/tasks'}>
-              继续 <i className="fas fa-arrow-right"></i>
+              继续 
+              <div className="arrow-right">
+                <i className="fas fa-arrow-right"></i>
+              </div>
             </button>
           </div>
         </div>

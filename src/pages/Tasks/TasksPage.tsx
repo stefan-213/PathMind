@@ -70,7 +70,10 @@ export function TasksPage() {
             description="先去 AI Copilot 制定你的学习计划吧"
             action={
               <Link to="/copilot" className="btn btn-primary">
-                制定计划 <i className="fas fa-arrow-right"></i>
+                制定计划 
+                <div className="arrow-right">
+                  <i className="fas fa-arrow-right"></i>
+                </div>
               </Link>
             }
           />
