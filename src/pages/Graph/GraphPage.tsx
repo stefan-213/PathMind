@@ -3,7 +3,7 @@
  * 支持 AI 生成图表
  */
 import { useState } from 'react';
-import { useSearchParams, Link } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { Header, Footer } from '../../components/layout';
 import { GraphCanvas } from './GraphCanvas';
 import { AISidePanel } from './AISidePanel';
@@ -12,9 +12,6 @@ import { mockGraphXml } from '../../api/mock';
 import './GraphPage.scss';
 
 export function GraphPage() {
-  const [searchParams] = useSearchParams();
-  const goalParam = searchParams.get('goal') || '';
-
   const [isPanelOpen, setIsPanelOpen] = useState(true);
   const [selectedNode, setSelectedNode] = useState<GraphNode | null>(null);
 
