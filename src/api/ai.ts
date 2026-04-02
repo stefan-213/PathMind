@@ -8,6 +8,7 @@ import type {
   AIChatMessage,
   AIChatRequest
 } from '../types/api';
+import type { GraphData } from '../types/graph';
 
 /**
  * 生成技术方案
@@ -39,9 +40,10 @@ export const createSession = (agentId: string) => {
 
 /**
  * AI 问答聊天
+ * 返回对话消息和可选的图表数据
  */
 export const chatWithAI = (data: AIChatRequest) => {
-  return post<{ message: AIChatMessage }>('/api/agent/chatStream', data);
+  return post<{ message: string; graphData?: GraphData }>('/api/agent/chatStream', data);
 };
 
 /**

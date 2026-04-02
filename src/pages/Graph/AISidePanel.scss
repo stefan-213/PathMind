@@ -1,0 +1,197 @@
+.ai-side-panel {
+  width: 360px;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  background: var(--bg-secondary);
+  border-left: 1px solid var(--border-color);
+  flex-shrink: 0;
+
+  .panel-header {
+    padding: var(--space-lg);
+    border-bottom: 1px solid var(--border-light);
+
+    h3 {
+      font-size: 16px;
+      font-weight: 600;
+      margin-bottom: var(--space-xs);
+      display: flex;
+      align-items: center;
+      gap: var(--space-sm);
+
+      i {
+        color: var(--primary);
+      }
+    }
+
+    .panel-hint {
+      font-size: 12px;
+      color: var(--text-secondary);
+    }
+  }
+
+  .messages-container {
+    flex: 1;
+    overflow-y: auto;
+    padding: var(--space-md);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-md);
+
+    .empty-state {
+      text-align: center;
+      padding: var(--space-xl);
+      color: var(--text-secondary);
+
+      i {
+        font-size: 48px;
+        margin-bottom: var(--space-md);
+        opacity: 0.3;
+      }
+
+      p {
+        font-size: 14px;
+        margin-bottom: var(--space-xs);
+      }
+    }
+
+    .message {
+      display: flex;
+      gap: var(--space-sm);
+      max-width: 90%;
+
+      &.user {
+        align-self: flex-end;
+        flex-direction: row-reverse;
+
+        .message-avatar {
+          background: var(--primary);
+          color: var(--text-white);
+        }
+
+        .message-content {
+          background: var(--primary);
+          color: var(--text-white);
+
+          .message-time {
+            color: rgba(255, 255, 255, 0.7);
+          }
+        }
+      }
+
+      &.assistant {
+        align-self: flex-start;
+
+        .message-avatar {
+          background: var(--accent-orange);
+          color: var(--text-white);
+        }
+
+        .message-content {
+          background: var(--bg-primary);
+          color: var(--text-primary);
+        }
+      }
+
+      .message-avatar {
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+        font-size: 14px;
+      }
+
+      .message-content {
+        padding: var(--space-sm) var(--space-md);
+        border-radius: var(--radius-lg);
+        font-size: 14px;
+        line-height: 1.5;
+
+        .message-text {
+          white-space: pre-wrap;
+          word-break: break-word;
+        }
+
+        .graph-indicator {
+          display: inline-flex;
+          align-items: center;
+          gap: var(--space-xs);
+          margin-top: var(--space-xs);
+          padding: 4px 8px;
+          background: rgba(59, 130, 246, 0.1);
+          color: var(--primary);
+          border-radius: var(--radius-full);
+          font-size: 12px;
+
+          i {
+            font-size: 10px;
+          }
+        }
+
+        .message-time {
+          font-size: 11px;
+          color: var(--text-secondary);
+          margin-top: var(--space-xs);
+          text-align: right;
+        }
+      }
+    }
+  }
+
+  .input-area {
+    padding: var(--space-md);
+    border-top: 1px solid var(--border-light);
+    display: flex;
+    gap: var(--space-sm);
+    align-items: flex-end;
+
+    .message-input {
+      flex: 1;
+      padding: var(--space-sm) var(--space-md);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-lg);
+      font-size: 14px;
+      font-family: inherit;
+      resize: none;
+      background: var(--bg-primary);
+      color: var(--text-primary);
+      transition: border-color 0.2s;
+
+      &:focus {
+        outline: none;
+        border-color: var(--primary);
+      }
+
+      &::placeholder {
+        color: var(--text-secondary);
+      }
+    }
+
+    .send-btn {
+      width: 40px;
+      height: 40px;
+      border: none;
+      background: var(--primary);
+      color: var(--text-white);
+      border-radius: var(--radius-lg);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: background 0.2s, transform 0.2s;
+
+      &:hover:not(:disabled) {
+        background: var(--primary-light);
+        transform: scale(1.05);
+      }
+
+      &:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+      }
+    }
+  }
+}

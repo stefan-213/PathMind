@@ -13,7 +13,7 @@ import * as realAI from './ai';
 const MOCK_AUTH = false;      // 登录/注册
 const MOCK_GOALS = true;     // 学习目标
 const MOCK_TASKS = true;     // 学习任务
-const MOCK_AI = false;        // AI 生成
+const MOCK_AI = true;        // AI 生成
 
 // 导出配置供其他地方使用
 export const isMockMode = (module?: 'auth' | 'goals' | 'tasks' | 'ai') => {
