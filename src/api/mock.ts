@@ -14,7 +14,8 @@ import type {
   GeneratedProposal,
   QuestionAnswer,
   AIChatMessage,
-  ApiResponse
+  ApiResponse,
+  CreateTasksRequest
 } from '../types/api';
 import type { GraphData } from '../types/graph';
 
@@ -168,6 +169,23 @@ export const mockAuth = {
   getCurrentUser: async (): Promise<ApiResponse<User>> => {
     await delay(300);
     return { success: true, data: mockUser };
+  },
+
+  updateUser: async (data: Partial<User>): Promise<ApiResponse<User>> => {
+    await delay(300);
+    const updatedUser = { ...mockUser, ...data };
+    return { success: true, data: updatedUser };
+  },
+
+  changePassword: async (oldPassword: string, newPassword: string): Promise<ApiResponse<void>> => {
+    await delay(300);
+    if (!oldPassword) {
+      throw new Error('请输入当前密码');
+    }
+    if (newPassword.length < 6) {
+      throw new Error('新密码至少需要 6 位');
+    }
+    return { success: true };
   }
 };
 
@@ -237,44 +255,72 @@ export const mockTasksApi = {
     return { success: true, data: tasks };
   },
 
-  getTasksByGoal: async (goalId: string): Promise<ApiResponse<UserTask[]>> => {
+  getTaskById: async (id: string): Promise<ApiResponse<UserTask>> => {
+    await delay(200);
+    const task = mockTasks.find(t => t.id === id);
+    if (!task) throw new Error('任务不存在');
+    return { success: true, data: task };
+  },
+
+  createTasks: async (data: CreateTasksRequest): Promise<ApiResponse<UserTask[]>> => {
     await delay(300);
-    return { success: true, data: mockTasks.filter(t => t.goalId === goalId) };
+    const newTasks: UserTask[] = [];
+    let order = 0;
+    data.schedule.forEach((weekItem) => {
+      weekItem.items.forEach((item, dayIndex) => {
+        newTasks.push({
+          id: generateId(),
+          userId: 'user-001',
+          goalId: data.goalId,
+          week: weekItem.week,
+          day: `Day${dayIndex + 1}`,
+          title: item,
+          description: `${weekItem.week}: ${item}`,
+          status: 'pending' as const,
+          order: order++,
+          createdAt: new Date().toISOString()
+        });
+      });
+    });
+    mockTasks.push(...newTasks);
+    return { success: true, data: newTasks };
   },
 
-  completeTask: async (id: string): Promise<ApiResponse<UserTask>> => {
+  updateTask: async (id: string, data: Partial<UserTask>): Promise<ApiResponse<UserTask>> => {
     await delay(200);
     const index = mockTasks.findIndex(t => t.id === id);
     if (index === -1) throw new Error('任务不存在');
     mockTasks[index] = {
       ...mockTasks[index],
-      status: 'completed',
-      completedAt: new Date().toISOString()
+      ...data,
+      status: data.status === 'completed' ? 'completed' : data.status || mockTasks[index].status,
+      completedAt: data.status === 'completed' ? new Date().toISOString() :
+                    data.status === 'pending' ? undefined : mockTasks[index].completedAt
     };
     return { success: true, data: mockTasks[index] };
   },
 
-  uncompleteTask: async (id: string): Promise<ApiResponse<UserTask>> => {
+  deleteTask: async (id: string): Promise<ApiResponse<void>> => {
     await delay(200);
     const index = mockTasks.findIndex(t => t.id === id);
-    if (index === -1) throw new Error('任务不存在');
-    mockTasks[index] = {
-      ...mockTasks[index],
-      status: 'pending',
-      completedAt: undefined
-    };
-    return { success: true, data: mockTasks[index] };
+    if (index !== -1) mockTasks.splice(index, 1);
+    return { success: true };
   },
 
-  getProgress: async (): Promise<ApiResponse<UserProgress>> => {
+  getProgress: async (params?: { goalId?: string }): Promise<ApiResponse<UserProgress>> => {
     await delay(200);
-    const completed = mockTasks.filter(t => t.status === 'completed').length;
+    let tasks = [...mockTasks];
+    if (params?.goalId) {
+      tasks = tasks.filter(t => t.goalId === params.goalId);
+    }
+    const completed = tasks.filter(t => t.status === 'completed').length;
     return {
       success: true,
       data: {
         ...mockProgress,
         completedTasks: completed,
-        percentage: Math.round((completed / mockProgress.totalTasks) * 100)
+        totalTasks: tasks.length,
+        percentage: tasks.length > 0 ? Math.round((completed / tasks.length) * 100) : 0
       }
     };
   }
@@ -555,4 +601,350 @@ export const mockAI = {
     await delay(200);
     return { success: true, data: mockChatHistory };
   }
+};
+
+// ==================== Consult Mock API ====================
+
+import type { ConsultSession, ConsultRequest, ConsultResponse } from '../types/api';
+
+const mockConsultSessions: ConsultSession[] = [];
+
+export const mockConsultApi = {
+  createSession: async (): Promise<ApiResponse<ConsultSession>> => {
+    await delay(200);
+    const newSession: ConsultSession = {
+      id: generateId(),
+      title: '新咨询',
+      createdAt: new Date().toISOString(),
+      messages: [],
+      userProfile: { goal: '', experience: '', timeframe: '', scale: '' },
+      currentStep: 'ASK_GOAL',
+      finalXml: '',
+      planDetails: [],
+    };
+    mockConsultSessions.unshift(newSession);
+    return { success: true, data: newSession };
+  },
+
+  getSessions: async (): Promise<ApiResponse<ConsultSession[]>> => {
+    await delay(200);
+    return { success: true, data: mockConsultSessions };
+  },
+
+  getSessionById: async (sessionId: string): Promise<ApiResponse<ConsultSession>> => {
+    await delay(200);
+    const session = mockConsultSessions.find(s => s.id === sessionId);
+    if (!session) {
+      throw new Error('会话不存在');
+    }
+    return { success: true, data: session };
+  },
+
+  deleteSession: async (sessionId: string): Promise<ApiResponse<void>> => {
+    await delay(200);
+    const index = mockConsultSessions.findIndex(s => s.id === sessionId);
+    if (index !== -1) {
+      mockConsultSessions.splice(index, 1);
+    }
+    return { success: true };
+  },
+
+  chat: async (data: ConsultRequest): Promise<ApiResponse<ConsultResponse>> => {
+    await delay(800);
+
+    const { message, step, profile } = data;
+    const newProfile = { ...profile };
+    let reply = '';
+    let nextStep = step;
+    let finalXml: string | undefined;
+    let planDetails: { week: string; items: string[] }[] | undefined;
+
+    // 根据步骤处理
+    if (step === 'ASK_GOAL') {
+      newProfile.goal = message;
+      const goalType = message.includes('AI') || message.includes('RAG') ? 'AI应用' :
+                       message.includes('官网') || message.includes('企业') ? '企业Web' :
+                       message.includes('App') || message.includes('移动') ? '移动应用' : '数据平台';
+      reply = `<p>🎯 目标「<strong>${message}</strong>」已记录。</p>
+<p>这是一个很好的${goalType}方向！为了给你更精准的技术路线图，请告诉我：</p>
+<p><strong>你或团队的技术经验水平？</strong></p>
+<p><em>这将帮助我调整学习曲线的陡峭程度</em></p>`;
+      nextStep = 'ASK_EXPERIENCE';
+    } else if (step === 'ASK_EXPERIENCE') {
+      let exp = 'intermediate';
+      if (message.includes('初学') || message.includes('0基础')) exp = 'beginner';
+      else if (message.includes('高级') || message.includes('3年')) exp = 'advanced';
+      newProfile.experience = exp;
+      const expText = { beginner: '初学者', intermediate: '中级', advanced: '高级' }[exp];
+      const advice = exp === 'beginner' ? '我会提供更循序渐进的学习路径' :
+                     exp === 'advanced' ? '可以更快进入实战项目' : '平衡学习与实践';
+      reply = `<p>👍 了解了，你是<strong>${expText}</strong>水平。</p>
+<p>${advice}。</p>
+<p><strong>项目时间要求？</strong></p>
+<p>这决定我们方案的深度和广度</p>`;
+      nextStep = 'ASK_TIMEFRAME';
+    } else if (step === 'ASK_TIMEFRAME') {
+      let t = '1个月';
+      if (message.includes('1-2')) t = '1-2周';
+      else if (message.includes('3个月')) t = '3个月+';
+      newProfile.timeframe = t;
+      const intensity = t === '1-2周' ? '紧凑高效' : t === '1个月' ? '标准节奏' : '深度学习';
+      reply = `<p>⏱️ 周期：<strong>${t}</strong>（${intensity}模式）</p>
+<p>很好，现在来定位应用场景：</p>
+<p><strong>这个项目的用途是？</strong></p>`;
+      nextStep = 'ASK_SCALE';
+    } else if (step === 'ASK_SCALE') {
+      let s = '个人项目';
+      if (message.includes('团队')) s = '团队协作';
+      else if (message.includes('生产') || message.includes('高并发')) s = '生产级';
+      newProfile.scale = s;
+      reply = `<p>📦 场景：<strong>${s}</strong></p><p>正在为您生成专属技术方案...</p>`;
+      nextStep = 'RESULT';
+
+      // 生成最终方案
+      const isAI = newProfile.goal.includes('AI') || newProfile.goal.includes('智能') || newProfile.goal.includes('RAG');
+      const isFrontend = newProfile.goal.includes('官网') || newProfile.goal.includes('前端') || newProfile.goal.includes('企业');
+      const isMobile = newProfile.goal.includes('App') || newProfile.goal.includes('移动');
+
+      if (isAI) {
+        finalXml = `<mxfile host="app.diagrams.net"><diagram name="AI学习路线" id="ai-roadmap">
+          <mxGraphModel>
+            <root><mxCell id="0"/><mxCell id="1" parent="0"/>
+              <mxCell id="2" value="Python基础" style="rounded=1;whiteSpace=wrap;fillColor=#4a90e2;fontColor=#ffffff;strokeColor=#4a90e2;" vertex="1"><mxGeometry x="100" y="50" width="120" height="40" as="geometry"/></mxCell>
+              <mxCell id="3" value="LangChain框架" style="rounded=1;whiteSpace=wrap;fillColor=#4a90e2;fontColor=#ffffff;strokeColor=#4a90e2;" vertex="1"><mxGeometry x="100" y="120" width="120" height="40" as="geometry"/></mxCell>
+              <mxCell id="4" value="向量数据库" style="rounded=1;whiteSpace=wrap;fillColor=#4a90e2;fontColor=#ffffff;strokeColor=#4a90e2;" vertex="1"><mxGeometry x="100" y="190" width="120" height="40" as="geometry"/></mxCell>
+              <mxCell id="5" value="RAG流程搭建" style="rounded=1;whiteSpace=wrap;fillColor=#4a90e2;fontColor=#ffffff;strokeColor=#4a90e2;" vertex="1"><mxGeometry x="100" y="260" width="120" height="40" as="geometry"/></mxCell>
+              <mxCell id="6" value="API与前端集成" style="rounded=1;whiteSpace=wrap;fillColor=#4a90e2;fontColor=#ffffff;strokeColor=#4a90e2;" vertex="1"><mxGeometry x="100" y="330" width="120" height="40" as="geometry"/></mxCell>
+              <mxCell id="7" value="部署与测试" style="rounded=1;whiteSpace=wrap;fillColor=#4a90e2;fontColor=#ffffff;strokeColor=#4a90e2;" vertex="1"><mxGeometry x="100" y="400" width="120" height="40" as="geometry"/></mxCell>
+              <mxCell id="8" value="" style="endArrow=classic;html=1;strokeWidth=2;" edge="1"><mxGeometry relative="1" as="geometry"><mxPoint x="160" y="90" as="sourcePoint"/><mxPoint x="160" y="120" as="targetPoint"/></mxGeometry></mxCell>
+              <mxCell id="9" value="" style="endArrow=classic;html=1;strokeWidth=2;" edge="1"><mxGeometry relative="1" as="geometry"><mxPoint x="160" y="160" as="sourcePoint"/><mxPoint x="160" y="190" as="targetPoint"/></mxGeometry></mxCell>
+              <mxCell id="10" value="" style="endArrow=classic;html=1;strokeWidth=2;" edge="1"><mxGeometry relative="1" as="geometry"><mxPoint x="160" y="230" as="sourcePoint"/><mxPoint x="160" y="260" as="targetPoint"/></mxGeometry></mxCell>
+              <mxCell id="11" value="" style="endArrow=classic;html=1;strokeWidth=2;" edge="1"><mxGeometry relative="1" as="geometry"><mxPoint x="160" y="300" as="sourcePoint"/><mxPoint x="160" y="330" as="targetPoint"/></mxGeometry></mxCell>
+              <mxCell id="12" value="" style="endArrow=classic;html=1;strokeWidth=2;" edge="1"><mxGeometry relative="1" as="geometry"><mxPoint x="160" y="370" as="sourcePoint"/><mxPoint x="160" y="400" as="targetPoint"/></mxGeometry></mxCell>
+            </root>
+          </mxGraphModel>
+        </diagram></mxfile>`;
+        planDetails = [
+          { week: '第1周', items: ['Day1-2: Python基础语法', 'Day3-4: FastAPI入门', 'Day5-7: 虚拟环境搭建', 'Day5-7: LangChain核心概念'] },
+          { week: '第2周', items: ['Day1-2: 文档加载器', 'Day3-4: 文本分割', 'Day5-7: 向量数据库(Chroma)集成', 'Day5-7: Embedding模型配置'] },
+          { week: '第3周', items: ['Day1-2: 检索链构建', 'Day3-4: 对话记忆实现', 'Day5-7: 提示词工程', 'Day5-7: 结果优化'] },
+          { week: '第4周', items: ['Day1-2: 前端对话界面开发', 'Day3-4: API对接', 'Day5-7: 性能测试', 'Day5-7: 生产部署'] }
+        ];
+      } else if (isFrontend) {
+        finalXml = `<mxfile host="app.diagrams.net"><diagram name="前端学习路线" id="frontend-roadmap">
+          <mxGraphModel>
+            <root><mxCell id="0"/><mxCell id="1" parent="0"/>
+              <mxCell id="2" value="需求分析" style="rounded=1;whiteSpace=wrap;fillColor=#4a90e2;fontColor=#ffffff;strokeColor=#4a90e2;" vertex="1"><mxGeometry x="100" y="50" width="120" height="40" as="geometry"/></mxCell>
+              <mxCell id="3" value="技术选型" style="rounded=1;whiteSpace=wrap;fillColor=#4a90e2;fontColor=#ffffff;strokeColor=#4a90e2;" vertex="1"><mxGeometry x="100" y="120" width="120" height="40" as="geometry"/></mxCell>
+              <mxCell id="4" value="框架学习" style="rounded=1;whiteSpace=wrap;fillColor=#4a90e2;fontColor=#ffffff;strokeColor=#4a90e2;" vertex="1"><mxGeometry x="100" y="190" width="120" height="40" as="geometry"/></mxCell>
+              <mxCell id="5" value="组件开发" style="rounded=1;whiteSpace=wrap;fillColor=#4a90e2;fontColor=#ffffff;strokeColor=#4a90e2;" vertex="1"><mxGeometry x="100" y="260" width="120" height="40" as="geometry"/></mxCell>
+              <mxCell id="6" value="状态管理" style="rounded=1;whiteSpace=wrap;fillColor=#4a90e2;fontColor=#ffffff;strokeColor=#4a90e2;" vertex="1"><mxGeometry x="100" y="330" width="120" height="40" as="geometry"/></mxCell>
+              <mxCell id="7" value="API对接" style="rounded=1;whiteSpace=wrap;fillColor=#4a90e2;fontColor=#ffffff;strokeColor=#4a90e2;" vertex="1"><mxGeometry x="100" y="400" width="120" height="40" as="geometry"/></mxCell>
+              <mxCell id="8" value="测试部署" style="rounded=1;whiteSpace=wrap;fillColor=#4a90e2;fontColor=#ffffff;strokeColor=#4a90e2;" vertex="1"><mxGeometry x="100" y="470" width="120" height="40" as="geometry"/></mxCell>
+              <mxCell id="9" value="" style="endArrow=classic;html=1;strokeWidth=2;" edge="1"><mxGeometry relative="1" as="geometry"><mxPoint x="160" y="90" as="sourcePoint"/><mxPoint x="160" y="120" as="targetPoint"/></mxGeometry></mxCell>
+              <mxCell id="10" value="" style="endArrow=classic;html=1;strokeWidth=2;" edge="1"><mxGeometry relative="1" as="geometry"><mxPoint x="160" y="160" as="sourcePoint"/><mxPoint x="160" y="190" as="targetPoint"/></mxGeometry></mxCell>
+              <mxCell id="11" value="" style="endArrow=classic;html=1;strokeWidth=2;" edge="1"><mxGeometry relative="1" as="geometry"><mxPoint x="160" y="230" as="sourcePoint"/><mxPoint x="160" y="260" as="targetPoint"/></mxGeometry></mxCell>
+              <mxCell id="12" value="" style="endArrow=classic;html=1;strokeWidth=2;" edge="1"><mxGeometry relative="1" as="geometry"><mxPoint x="160" y="300" as="sourcePoint"/><mxPoint x="160" y="330" as="targetPoint"/></mxGeometry></mxCell>
+              <mxCell id="13" value="" style="endArrow=classic;html=1;strokeWidth=2;" edge="1"><mxGeometry relative="1" as="geometry"><mxPoint x="160" y="370" as="sourcePoint"/><mxPoint x="160" y="400" as="targetPoint"/></mxGeometry></mxCell>
+              <mxCell id="14" value="" style="endArrow=classic;html=1;strokeWidth=2;" edge="1"><mxGeometry relative="1" as="geometry"><mxPoint x="160" y="440" as="sourcePoint"/><mxPoint x="160" y="470" as="targetPoint"/></mxGeometry></mxCell>
+            </root>
+          </mxGraphModel>
+        </diagram></mxfile>`;
+        planDetails = [
+          { week: '第1周', items: ['Day1-2: 项目初始化', 'Day3-4: TypeScript基础', 'Day5-7: React/Vue核心概念', 'Day5-7: 组件生命周期'] },
+          { week: '第2周', items: ['Day1-2: 组件化设计', 'Day3-4: 路由配置', 'Day5-7: 表单处理', 'Day5-7: 样式方案(SCSS/Tailwind)'] },
+          { week: '第3周', items: ['Day1-2: 状态管理方案', 'Day3-4: API封装', 'Day5-7: 错误处理', 'Day5-7: 权限控制'] },
+          { week: '第4周', items: ['Day1-2: 单元测试', 'Day3-4: E2E测试', 'Day5-7: 性能优化', 'Day5-7: CI/CD部署'] }
+        ];
+      } else if (isMobile) {
+        finalXml = `<mxfile host="app.diagrams.net"><diagram name="移动开发路线" id="mobile-roadmap">
+          <mxGraphModel>
+            <root><mxCell id="0"/><mxCell id="1" parent="0"/>
+              <mxCell id="2" value="需求分析" style="rounded=1;whiteSpace=wrap;fillColor=#4a90e2;fontColor=#ffffff;strokeColor=#4a90e2;" vertex="1"><mxGeometry x="100" y="50" width="120" height="40" as="geometry"/></mxCell>
+              <mxCell id="3" value="技术选型" style="rounded=1;whiteSpace=wrap;fillColor=#4a90e2;fontColor=#ffffff;strokeColor=#4a90e2;" vertex="1"><mxGeometry x="100" y="120" width="120" height="40" as="geometry"/></mxCell>
+              <mxCell id="4" value="环境搭建" style="rounded=1;whiteSpace=wrap;fillColor=#4a90e2;fontColor=#ffffff;strokeColor=#4a90e2;" vertex="1"><mxGeometry x="100" y="190" width="120" height="40" as="geometry"/></mxCell>
+              <mxCell id="5" value="功能开发" style="rounded=1;whiteSpace=wrap;fillColor=#4a90e2;fontColor=#ffffff;strokeColor=#4a90e2;" vertex="1"><mxGeometry x="100" y="260" width="120" height="40" as="geometry"/></mxCell>
+              <mxCell id="6" value="状态管理" style="rounded=1;whiteSpace=wrap;fillColor=#4a90e2;fontColor=#ffffff;strokeColor=#4a90e2;" vertex="1"><mxGeometry x="100" y="330" width="120" height="40" as="geometry"/></mxCell>
+              <mxCell id="7" value="API集成" style="rounded=1;whiteSpace=wrap;fillColor=#4a90e2;fontColor=#ffffff;strokeColor=#4a90e2;" vertex="1"><mxGeometry x="100" y="400" width="120" height="40" as="geometry"/></mxCell>
+              <mxCell id="8" value="打包发布" style="rounded=1;whiteSpace=wrap;fillColor=#4a90e2;fontColor=#ffffff;strokeColor=#4a90e2;" vertex="1"><mxGeometry x="100" y="470" width="120" height="40" as="geometry"/></mxCell>
+              <mxCell id="9" value="" style="endArrow=classic;html=1;strokeWidth=2;" edge="1"><mxGeometry relative="1" as="geometry"><mxPoint x="160" y="90" as="sourcePoint"/><mxPoint x="160" y="120" as="targetPoint"/></mxGeometry></mxCell>
+              <mxCell id="10" value="" style="endArrow=classic;html=1;strokeWidth=2;" edge="1"><mxGeometry relative="1" as="geometry"><mxPoint x="160" y="160" as="sourcePoint"/><mxPoint x="160" y="190" as="targetPoint"/></mxGeometry></mxCell>
+              <mxCell id="11" value="" style="endArrow=classic;html=1;strokeWidth=2;" edge="1"><mxGeometry relative="1" as="geometry"><mxPoint x="160" y="230" as="sourcePoint"/><mxPoint x="160" y="260" as="targetPoint"/></mxGeometry></mxCell>
+              <mxCell id="12" value="" style="endArrow=classic;html=1;strokeWidth=2;" edge="1"><mxGeometry relative="1" as="geometry"><mxPoint x="160" y="300" as="sourcePoint"/><mxPoint x="160" y="330" as="targetPoint"/></mxGeometry></mxCell>
+              <mxCell id="13" value="" style="endArrow=classic;html=1;strokeWidth=2;" edge="1"><mxGeometry relative="1" as="geometry"><mxPoint x="160" y="370" as="sourcePoint"/><mxPoint x="160" y="400" as="targetPoint"/></mxGeometry></mxCell>
+              <mxCell id="14" value="" style="endArrow=classic;html=1;strokeWidth=2;" edge="1"><mxGeometry relative="1" as="geometry"><mxPoint x="160" y="440" as="sourcePoint"/><mxPoint x="160" y="470" as="targetPoint"/></mxGeometry></mxCell>
+            </root>
+          </mxGraphModel>
+        </diagram></mxfile>`;
+        planDetails = [
+          { week: '第1周', items: ['Day1-2: React Native/Flutter环境搭建', 'Day3-4: Expo配置', 'Day5-7: 跨平台方案对比'] },
+          { week: '第2周', items: ['Day1-2: 核心UI组件', 'Day3-4: 导航配置', 'Day5-7: 手势处理', 'Day5-7: 动画实现'] },
+          { week: '第3周', items: ['Day1-2: 状态管理', 'Day3-4: 数据持久化', 'Day5-7: 离线支持', 'Day5-7: 主题切换'] },
+          { week: '第4周', items: ['Day1-2: 原生模块集成', 'Day3-4: 性能优化', 'Day5-7: App Store/Google Play发布'] }
+        ];
+      } else {
+        finalXml = `<mxfile host="app.diagrams.net"><diagram name="通用路线" id="general-roadmap">
+          <mxGraphModel>
+            <root><mxCell id="0"/><mxCell id="1" parent="0"/>
+              <mxCell id="2" value="需求分析" style="rounded=1;whiteSpace=wrap;fillColor=#4a90e2;fontColor=#ffffff;strokeColor=#4a90e2;" vertex="1"><mxGeometry x="100" y="50" width="120" height="40" as="geometry"/></mxCell>
+              <mxCell id="3" value="技术栈选择" style="rounded=1;whiteSpace=wrap;fillColor=#4a90e2;fontColor=#ffffff;strokeColor=#4a90e2;" vertex="1"><mxGeometry x="100" y="120" width="120" height="40" as="geometry"/></mxCell>
+              <mxCell id="4" value="数据架构" style="rounded=1;whiteSpace=wrap;fillColor=#4a90e2;fontColor=#ffffff;strokeColor=#4a90e2;" vertex="1"><mxGeometry x="100" y="190" width="120" height="40" as="geometry"/></mxCell>
+              <mxCell id="5" value="后端开发" style="rounded=1;whiteSpace=wrap;fillColor=#4a90e2;fontColor=#ffffff;strokeColor=#4a90e2;" vertex="1"><mxGeometry x="100" y="260" width="120" height="40" as="geometry"/></mxCell>
+              <mxCell id="6" value="前端开发" style="rounded=1;whiteSpace=wrap;fillColor=#4a90e2;fontColor=#ffffff;strokeColor=#4a90e2;" vertex="1"><mxGeometry x="100" y="330" width="120" height="40" as="geometry"/></mxCell>
+              <mxCell id="7" value="测试部署" style="rounded=1;whiteSpace=wrap;fillColor=#4a90e2;fontColor=#ffffff;strokeColor=#4a90e2;" vertex="1"><mxGeometry x="100" y="400" width="120" height="40" as="geometry"/></mxCell>
+              <mxCell id="8" value="" style="endArrow=classic;html=1;strokeWidth=2;" edge="1"><mxGeometry relative="1" as="geometry"><mxPoint x="160" y="90" as="sourcePoint"/><mxPoint x="160" y="120" as="targetPoint"/></mxGeometry></mxCell>
+              <mxCell id="9" value="" style="endArrow=classic;html=1;strokeWidth=2;" edge="1"><mxGeometry relative="1" as="geometry"><mxPoint x="160" y="160" as="sourcePoint"/><mxPoint x="160" y="190" as="targetPoint"/></mxGeometry></mxCell>
+              <mxCell id="10" value="" style="endArrow=classic;html=1;strokeWidth=2;" edge="1"><mxGeometry relative="1" as="geometry"><mxPoint x="160" y="230" as="sourcePoint"/><mxPoint x="160" y="260" as="targetPoint"/></mxGeometry></mxCell>
+              <mxCell id="11" value="" style="endArrow=classic;html=1;strokeWidth=2;" edge="1"><mxGeometry relative="1" as="geometry"><mxPoint x="160" y="300" as="sourcePoint"/><mxPoint x="160" y="330" as="targetPoint"/></mxGeometry></mxCell>
+              <mxCell id="12" value="" style="endArrow=classic;html=1;strokeWidth=2;" edge="1"><mxGeometry relative="1" as="geometry"><mxPoint x="160" y="370" as="sourcePoint"/><mxPoint x="160" y="400" as="targetPoint"/></mxGeometry></mxCell>
+            </root>
+          </mxGraphModel>
+        </diagram></mxfile>`;
+        planDetails = [
+          { week: '第1周', items: ['Day1-2: 需求分析', 'Day3-4: 技术栈选型', 'Day5-7: 数据库设计', 'Day5-7: API规范制定'] },
+          { week: '第2周', items: ['Day1-2: Node.js/Express', 'Day3-4: 数据库CRUD', 'Day5-7: 认证授权', 'Day5-7: 日志监控'] },
+          { week: '第3周', items: ['Day1-2: 前端界面开发', 'Day3-4: 组件复用', 'Day5-7: 状态管理', 'Day5-7: 表单验证'] },
+          { week: '第4周', items: ['Day1-2: 前后端联调', 'Day3-4: 测试用例', 'Day5-7: 部署脚本', 'Day5-7: 生产环境配置'] }
+        ];
+      }
+    }
+
+    return {
+      success: true,
+      data: {
+        message: reply,
+        isHtml: true,
+        nextStep,
+        updatedProfile: newProfile,
+        finalXml,
+        planDetails,
+      }
+    };
+  },
+
+  getAgents: async () => {
+    await delay(300);
+    return {
+      success: true,
+      data: [
+        { agentId: '100001', agentName: '测试智能体01', agentDesc: '一个测试的智能体' }
+      ]
+    };
+  }
+};
+
+// 会话对话 API 别名（使用 mockConsultApi）
+export const mockConversation = mockConsultApi;
+
+// 图表操作 API Mock
+const mockChartStorage: Record<string, { xml: string; title: string; updatedAt: string }> = {};
+const mockChartHistory: { [key: string]: Array<{ id: string; xml: string; message: string; createdAt: string }> } = {};
+
+export const mockGraph = {
+  createChatSession: async (_agentId: string) => {
+    await delay(200);
+    return { success: true, data: { sessionId: generateId() } };
+  },
+
+  getChartInfo: async (sessionId: string) => {
+    await delay(200);
+    const chart = mockChartStorage[sessionId];
+    if (!chart) {
+      // 返回默认图表
+      return {
+        success: true,
+        data: {
+          xml: mockGraphXml,
+          title: '学习路线图',
+          updatedAt: new Date().toISOString(),
+        }
+      };
+    }
+    return { success: true, data: chart };
+  },
+
+  saveChart: async (sessionId: string, xml: string) => {
+    await delay(300);
+    mockChartStorage[sessionId] = {
+      xml,
+      title: '学习路线图',
+      updatedAt: new Date().toISOString(),
+    };
+    return { success: true };
+  },
+
+  modifyChart: async (data: { sessionId: string; message: string; currentXml: string }) => {
+    await delay(800);
+    // 模拟 AI 修改图表
+    const { message, currentXml } = data;
+    let responseMessage = '';
+    let newXml = currentXml;
+
+    if (message.includes('不满意') || message.includes('修改')) {
+      responseMessage = '好的，请您提出具体的修改需求，我会帮您调整图表。';
+    } else if (message.includes('节点') || message.includes('添加')) {
+      responseMessage = '已为您添加新的节点，请查看图表是否满意。';
+      // 简单修改 XML 示例
+      newXml = currentXml.replace('</mxGraphModel>', '<mxCell id="newNode" value="新节点" vertex="1"><mxGeometry x="200" y="300" width="120" height="40" as="geometry"/></mxCell></mxGraphModel>');
+    } else if (message.includes('删除')) {
+      responseMessage = '已删除指定节点，请查看调整后的图表。';
+    } else {
+      responseMessage = '图表已更新，请查看是否满意。';
+    }
+
+    return {
+      success: true,
+      data: {
+        message: responseMessage,
+        xml: newXml,
+        suggestions: ['可以调整节点位置', '可以添加更多细节', '可以修改节点颜色'],
+      }
+    };
+  },
+
+  chatStream: async (data: { sessionId: string; message: string }) => {
+    await delay(800);
+    const { message } = data;
+    let reply = '好的，请稍等...';
+
+    if (message.includes('满意') || message.includes('好的') || message.includes('可以')) {
+      reply = '很高兴您满意！图表已生成完整的学习路线图。';
+    } else if (message.includes('不满意') || message.includes('修改')) {
+      reply = '好的，请您提出具体的修改需求，我会帮您调整图表。';
+    } else {
+      reply = '收到您的消息，请问对当前的图表还有什么需要调整的吗？';
+    }
+
+    return {
+      success: true,
+      data: {
+        message: reply,
+        graphData: undefined,
+      }
+    };
+  },
+
+  getChartHistory: async (sessionId: string) => {
+    await delay(200);
+    return { success: true, data: mockChartHistory[sessionId] || [] };
+  },
+
+  exportChart: async (sessionId: string) => {
+    await delay(300);
+    const chart = mockChartStorage[sessionId] || { xml: mockGraphXml };
+    // 返回一个 Blob（实际是字符串模拟）
+    const blob = new Blob([chart.xml], { type: 'application/xml' });
+    return { success: true, data: blob };
+  },
+
+  shareChart: async (sessionId: string) => {
+    await delay(300);
+    return {
+      success: true,
+      data: {
+        shareUrl: `https://pathmind.app/share/${sessionId}`,
+        expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
+      }
+    };
+  },
 };

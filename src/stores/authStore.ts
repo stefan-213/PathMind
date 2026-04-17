@@ -19,6 +19,8 @@ interface AuthState {
   logout: () => Promise<void>;
   checkAuth: () => Promise<void>;
   clearError: () => void;
+  updateUser: (data: Partial<User>) => Promise<void>;
+  changePassword: (oldPassword: string, newPassword: string) => Promise<void>;
 }
 
 export const useAuthStore = create<AuthState>()(
@@ -156,7 +158,35 @@ export const useAuthStore = create<AuthState>()(
         }
       },
 
-      clearError: () => set({ error: null })
+      clearError: () => set({ error: null }),
+
+      updateUser: async (data: Partial<User>) => {
+        set({ isLoading: true, error: null });
+        try {
+          const response = await authApi.updateUser(data);
+          const updatedUser = response.data;
+          if (!updatedUser) {
+            throw new Error('更新用户信息失败');
+          }
+          set({ user: updatedUser as User, isLoading: false });
+        } catch (err) {
+          const message = err instanceof Error ? err.message : '更新用户信息失败';
+          set({ error: message, isLoading: false });
+          throw err;
+        }
+      },
+
+      changePassword: async (oldPassword: string, newPassword: string) => {
+        set({ isLoading: true, error: null });
+        try {
+          await authApi.changePassword(oldPassword, newPassword);
+          set({ isLoading: false });
+        } catch (err) {
+          const message = err instanceof Error ? err.message : '修改密码失败';
+          set({ error: message, isLoading: false });
+          throw err;
+        }
+      }
     }),
     {
       name: 'auth-storage',

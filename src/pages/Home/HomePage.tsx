@@ -39,33 +39,6 @@ export function HomePage() {
     setOpenIndex(openIndex === index ? null : index);
   };
 
-  // 测试 chatWithAI 接口
-  const testChat = async () => {
-    const { createSession, chatWithAI } = await import('../../api/ai');
-    try {
-      // 先创建会话
-      const sessionRes = await createSession('100001');
-      console.log('创建会话:', sessionRes);
-      const sessionId = sessionRes.data?.sessionId;
-
-      if (!sessionId) {
-        alert('创建会话失败');
-        return;
-      }
-
-      // 再发送消息
-      const res = await chatWithAI({
-        agentId: '100001',
-        sessionId,
-        message: '你好'
-      });
-      console.log('AI 回复:', res);
-      alert('AI 回复: ' + JSON.stringify(res));
-    } catch (err) {
-      console.error('chatWithAI 错误:', err);
-      alert('请求失败: ' + (err as Error).message);
-    }
-  };
   return (
     <div className="home-page">
       <Header />
@@ -85,16 +58,12 @@ export function HomePage() {
   结构化对比 + 推荐理由 + 可执行计划，让目标实现不再困难。
           </p>
           <div className="hero-cta">
-            <Link to="/copilot" className="btn btn-primary">
+            <Link to="/consult" className="btn btn-primary">
               <i className="fas fa-rocket"></i> 立即体验
             </Link>
             <Link to="/graph" className="btn btn-secondary">
               <i className="fas fa-layer-group"></i> 查看图谱
             </Link>
-            {/* 测试按钮 */}
-            <button onClick={testChat} className="btn btn-secondary">
-              <i className="fas fa-comment"></i> 测试 Chat
-            </button>
           </div>
 
           {/* Stats */}
@@ -237,7 +206,7 @@ export function HomePage() {
           <div className="final-cta">
             <h2>准备好规划你的技术路径了吗？</h2>
             <p>加入数千名开发者，立即使用 PathMind。</p>
-            <Link to="/copilot" className="btn-cta-white">
+            <Link to="/consult" className="btn-cta-white">
               立即开始
             </Link>
           </div>

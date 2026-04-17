@@ -36,7 +36,7 @@ export const getCurrentUser = () => {
 /**
  * 更新用户信息
  */
-export const updateUser = (data: Partial<User>) => {
+export const updateUser = (data: { username?: string; email?: string; phone?: string }) => {
   return post<User>('/api/auth/update', data);
 };
 

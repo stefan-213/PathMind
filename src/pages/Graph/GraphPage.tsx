@@ -2,29 +2,178 @@
  * 知识图谱页面
  * 支持 AI 生成图表
  */
-import { useState } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { Link } from 'react-router-dom';
-import { Header, Footer } from '../../components/layout';
+import { Header } from '../../components/layout';
 import { GraphCanvas } from './GraphCanvas';
 import { AISidePanel } from './AISidePanel';
 import type { GraphNode } from '../../types/graph';
-import { mockGraphXml } from '../../api/mock';
+import { charts } from '../../api/graph';
+// import { conversationApi } from '../../api/useApi';
 import './GraphPage.scss';
 
 export function GraphPage() {
-  const [isPanelOpen, setIsPanelOpen] = useState(true);
   const [selectedNode, setSelectedNode] = useState<GraphNode | null>(null);
+  const pageRef = useRef<HTMLDivElement>(null);
 
   // AI 生成图表 XML 数据
-  const [graphXml, setGraphXml] = useState<string | null>(mockGraphXml);
+  const [graphXml, setGraphXml] = useState<string | null>(null);
+  console.log('【GraphPage】render, graphXml:', graphXml ? graphXml.substring(0, 100) + '...' : null);
 
-  // 处理图表更新（AI 返回的 XML）
-  const handleGraphUpdate = (xml: string) => {
-    setGraphXml(xml);
-  };
+  // 加载状态
+  // const [isLoading, setIsLoading] = useState(false);
+
+  // 发送消息并处理响应
+  // const handleSendMessage = useCallback(async (message: string) => {
+  //   if (!message.trim() || isLoading) return;
+
+  //   setIsLoading(true);
+
+  //   try {
+  //     const res = await conversationApi.chatStream({
+  //       agentId: '100001',
+  //       sessionId: '',
+  //       message: message.trim(),
+  //     });
+
+  //     const response = res.data;
+  //     if (!response) {
+  //       throw new Error('AI 响应数据异常');
+  //     }
+
+  //     // 原始消息内容
+  //     const rawContent = response.message || '';
+
+  //     // 去掉 think 标签内容，从剩余内容中提取 XML
+  //     const contentWithoutThink = rawContent.replace(/<think>[\s\S]*?<\/think>/g, '').trim();
+  //     console.log('【GraphPage】contentWithoutThink:', contentWithoutThink.substring(0, 200));
+
+  //     // 从剩余内容中提取 mxfile XML
+  //     const xmlMatch = contentWithoutThink.match(/<mxfile[\s\S]*?<\/mxfile>/);
+  //     const xmlData = xmlMatch ? xmlMatch[0] : '';
+  //     console.log('【GraphPage】提取到 xmlData:', xmlData ? '是' : '否', xmlData ? xmlData.substring(0, 100) + '...' : '');
+
+  //     // 如果提取到 XML，更新图表
+  //     if (xmlData) {
+  //       console.log('【GraphPage】设置 graphXml');
+  //       setGraphXml(xmlData);
+  //     } else {
+  //       console.log('【GraphPage】未提取到 XML 数据');
+  //     }
+  //   } catch (err) {
+  //     console.error('Chat error:', err);
+  //   } finally {
+  //     setIsLoading(false);
+  //   }
+  // }, [isLoading]);
+
+  // 确保页面滚动到顶部
+  useEffect(() => {
+    window.scrollTo(0, 0);
+    if (pageRef.current) {
+      pageRef.current.scrollTop = 0;
+    }
+  }, []);
+
+  // 检查是否有咨询方案数据，如果有则调用 charts API
+  useEffect(() => {
+    const chartDataStr = localStorage.getItem('pathmind_consult_chart');
+    console.log('【GraphPage】charts useEffect, chartDataStr:', chartDataStr ? '有数据' : '无数据');
+    if (chartDataStr) {
+      try {
+        const chartData = JSON.parse(chartDataStr);
+        console.log('【GraphPage】chartData:', chartData);
+        // 使用固定 agentId 100004 调用 charts API
+        charts({ ...chartData, agentId: '100004', sessionId: '' }).then((res) => {
+          console.log('【GraphPage】Charts API response:', res);
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          const response = res as any;
+          console.log('【GraphPage】response?.data:', response?.data);
+
+          // 解析 content 字段获取数据
+          if (response?.data?.content) {
+            const contentData = response.data.content;
+            console.log('【GraphPage】contentData 类型:', typeof contentData);
+
+            try {
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
+              let contentObj: any;
+
+              if (typeof contentData === 'string') {
+                // 去掉 think 标签内容
+                const contentWithoutThink = contentData.replace(/<think>[\s\S]*?<\/think>/g, '').trim();
+
+                // 尝试直接解析
+                try {
+                  contentObj = JSON.parse(contentWithoutThink);
+                  console.log('【GraphPage】直接解析 JSON 成功');
+                } catch {
+                  // 查找 {"xml": 的位置
+                  const jsonStart = contentWithoutThink.indexOf('{"xml":');
+                  if (jsonStart !== -1) {
+                    // 找到匹配的结束括号
+                    let braceCount = 0;
+                    let jsonEnd = -1;
+
+                    for (let i = jsonStart; i < contentWithoutThink.length; i++) {
+                      if (contentWithoutThink[i] === '{') braceCount++;
+                      else if (contentWithoutThink[i] === '}') {
+                        braceCount--;
+                        if (braceCount === 0) {
+                          jsonEnd = i;
+                          break;
+                        }
+                      }
+                    }
+
+                    if (jsonEnd !== -1) {
+                      const jsonStr = contentWithoutThink.substring(jsonStart, jsonEnd + 1);
+                      console.log('【GraphPage】提取的 JSON 长度:', jsonStr.length);
+                      contentObj = JSON.parse(jsonStr);
+                    }
+                  }
+                }
+              } else {
+                contentObj = contentData;
+              }
+
+              console.log('【GraphPage】contentObj keys:', contentObj ? Object.keys(contentObj) : 'null');
+
+              // 提取 XML 数据
+              if (contentObj?.xml) {
+                console.log('【GraphPage】成功获取 XML，长度:', contentObj.xml.length);
+                if (contentObj.xml.includes('<mxGraphModel')) {
+                  setGraphXml(contentObj.xml);
+                }
+              } else {
+                console.log('【GraphPage】content 中没有 xml 字段');
+              }
+
+              // 提取 data 数据，传递给 task 页面
+              if (contentObj?.data && Array.isArray(contentObj.data)) {
+                console.log('【GraphPage】成功获取 data，长度:', contentObj.data.length);
+                localStorage.setItem('pathmind_plan_data', JSON.stringify(contentObj.data));
+              }
+            } catch (e) {
+              console.log('【GraphPage】content 解析失败:', e);
+            }
+          }
+
+          // 清空 localStorage
+          localStorage.removeItem('pathmind_consult_chart');
+        }).catch((err) => {
+          console.error('Charts API error:', err);
+          localStorage.removeItem('pathmind_consult_chart');
+        });
+      } catch (err) {
+        console.error('Parse chart data error:', err);
+        localStorage.removeItem('pathmind_consult_chart');
+      }
+    }
+  }, []);
 
   return (
-    <div className="graph-page">
+    <div className="graph-page" ref={pageRef}>
       <Header />
 
       <div className="graph-main">
@@ -42,7 +191,7 @@ export function GraphPage() {
         {/* Main Container */}
         <div className="graph-main-container">
           {/* Graph Container */}
-          <div className={`graph-wrapper ${isPanelOpen ? 'with-ai-panel' : ''}`}>
+          <div className="graph-wrapper with-ai-panel">
             {/* AI 图谱标题 */}
             {/* {graphXml && (
               <div className="ai-graph-title">
@@ -101,23 +250,14 @@ export function GraphPage() {
               </div>
             )}
 
-            {/* AI 助手切换按钮 - 放在图表右上角 */}
-            <button
-              className="ai-panel-toggle-corner"
-              onClick={() => setIsPanelOpen(!isPanelOpen)}
-              title={isPanelOpen ? '关闭 AI 助手' : '打开 AI 助手'}
-            >
-              <i className={`fas ${isPanelOpen ? 'fa-chevron-right' : 'fa-comment-dots'}`}></i>
-              {!isPanelOpen && <span>AI 助手</span>}
-            </button>
           </div>
 
-          {/* AI 对话面板 */}
-          {isPanelOpen && <AISidePanel onGraphUpdate={handleGraphUpdate} />}
+          {/* AI 对话面板 - 默认展开 */}
+          <AISidePanel
+              hasInitialGraph={Boolean(graphXml)}
+            />
         </div>
       </div>
-
-      <Footer />
     </div>
   );
 }

@@ -2,9 +2,26 @@
   position: relative;
   width: 100%;
   height: 100%;
-  min-height: 600px;
   background: #ffffff;
   overflow: hidden;
+
+  // 隐藏 draw.io 工具栏相关元素
+  :deep(.geSidebar),
+  :deep(.geToolbar),
+  :deep(.geMenubar) {
+    display: none !important;
+  }
+
+  // 隐藏 react-drawio 组件的工具栏
+  > div {
+    > div {
+      // 隐藏上侧工具栏
+      [role="toolbar"],
+      .geToolbar {
+        display: none !important;
+      }
+    }
+  }
 
   .graph-container {
     width: 100%;
@@ -109,28 +126,4 @@
   span {
     font-weight: 500;
   }
-}
-
-// Graph wrapper 样式调整
-.graph-wrapper {
-  position: relative;
-  flex: 1;
-  background: #ffffff;
-  // border-radius: var(--radius-xl);
-  border: 1px solid var(--border-color);
-  overflow: hidden;
-  transition: all 0.3s ease;
-
-  &.with-ai-panel {
-    margin-right: 0;
-  }
-}
-
-// Main container
-.graph-main-container {
-  display: flex;
-  // gap: var(--space-lg);
-  height: calc(100vh - 180px);
-  min-height: 600px;
-  // margin-top: 3%;
 }

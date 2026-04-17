@@ -137,6 +137,68 @@
           margin-top: var(--space-xs);
           text-align: right;
         }
+
+        .satisfaction-buttons {
+          display: flex;
+          gap: var(--space-sm);
+          margin-top: var(--space-md);
+          padding-top: var(--space-sm);
+          border-top: 1px solid var(--border-light);
+
+          button {
+            flex: 1;
+            padding: var(--space-xs) var(--space-md);
+            border: none;
+            border-radius: var(--radius-md);
+            font-size: 13px;
+            cursor: pointer;
+            transition: all 0.2s;
+          }
+
+          .btn-satisfy {
+            background: var(--primary);
+            color: var(--text-white);
+
+            &:hover {
+              background: var(--primary-light);
+            }
+          }
+
+          .btn-dissatisfy {
+            background: var(--bg-primary);
+            color: var(--text-secondary);
+            border: 1px solid var(--border-color);
+
+            &:hover {
+              border-color: var(--primary);
+              color: var(--primary);
+            }
+          }
+        }
+
+        .plan-link {
+          margin-top: var(--space-md);
+          padding-top: var(--space-sm);
+          border-top: 1px solid var(--border-light);
+
+          .btn-to-plan {
+            display: inline-flex;
+            align-items: center;
+            gap: var(--space-xs);
+            padding: var(--space-xs) var(--space-md);
+            background: var(--accent-orange);
+            color: var(--text-white);
+            border-radius: var(--radius-md);
+            font-size: 13px;
+            text-decoration: none;
+            transition: all 0.2s;
+
+            &:hover {
+              opacity: 0.9;
+              transform: translateY(-1px);
+            }
+          }
+        }
       }
     }
   }
@@ -150,12 +212,12 @@
 
     .message-input {
       flex: 1;
-      padding: var(--space-sm) var(--space-md);
+      height: 40px;
+      padding: 0 var(--space-md);
       border: 1px solid var(--border-color);
       border-radius: var(--radius-lg);
       font-size: 14px;
       font-family: inherit;
-      resize: none;
       background: var(--bg-primary);
       color: var(--text-primary);
       transition: border-color 0.2s;
@@ -173,6 +235,7 @@
     .send-btn {
       width: 40px;
       height: 40px;
+      flex-shrink: 0;
       border: none;
       background: var(--primary);
       color: var(--text-white);

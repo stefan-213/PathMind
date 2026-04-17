@@ -12,6 +12,9 @@ export interface ChatMessage {
   timestamp: number;
 }
 
+/** 满意度状态 */
+export type SatisfactionState = 'idle' | 'waiting' | 'satisfied' | 'dissatisfied';
+
 interface ChatState {
   /** 对话消息列表 */
   messages: ChatMessage[];
@@ -19,6 +22,8 @@ interface ChatState {
   sessionId: string | null;
   /** 加载状态 */
   isLoading: boolean;
+  /** 满意度状态 */
+  satisfactionState: SatisfactionState;
 
   /** 添加消息 */
   addMessage: (message: Omit<ChatMessage, 'id' | 'timestamp'>) => void;
@@ -30,12 +35,15 @@ interface ChatState {
   setLoading: (loading: boolean) => void;
   /** 清空所有消息 */
   clearMessages: () => void;
+  /** 设置满意度状态 */
+  setSatisfactionState: (state: SatisfactionState) => void;
 }
 
 export const useChatStore = create<ChatState>((set) => ({
   messages: [],
   sessionId: null,
   isLoading: false,
+  satisfactionState: 'idle',
 
   addMessage: (message) =>
     set((state) => ({
@@ -55,5 +63,8 @@ export const useChatStore = create<ChatState>((set) => ({
 
   setLoading: (isLoading) => set({ isLoading }),
 
-  clearMessages: () => set({ messages: [] }),
+  clearMessages: () => set({ messages: [], satisfactionState: 'idle' }),
+
+  /** 设置满意度状态 */
+  setSatisfactionState: (state: SatisfactionState) => set({ satisfactionState: state }),
 }));

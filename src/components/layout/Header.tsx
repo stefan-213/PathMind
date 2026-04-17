@@ -1,19 +1,27 @@
+/**
+ * Header - 右侧悬浮导航
+ */
 import { Link, useLocation } from 'react-router-dom';
 import { useAuthStore } from '../../stores/authStore';
+import { useNavStore } from '../../stores/navStore';
 import './Header.scss';
 
-type NavItem = 'home' | 'graph' | 'copilot' | 'proposal' | 'tasks';
+type NavItem = 'home' | 'graph' | 'consult' | 'tasks' | 'profile';
 
-const navItems: { key: NavItem; label: string; path: string }[] = [
-  { key: 'home', label: '首页', path: '/' },
-  { key: 'copilot', label: 'AI Copilot', path: '/copilot' },
-  { key: 'graph', label: '知识图谱', path: '/graph' },
-  { key: 'tasks', label: '我的任务', path: '/tasks' },
+const navItems: { key: NavItem; label: string; path: string; icon: string }[] = [
+  { key: 'home', label: '首页', path: '/', icon: 'fa-home' },
+  { key: 'consult', label: '技术咨询', path: '/consult', icon: 'fa-comments' },
+  { key: 'graph', label: '知识图谱', path: '/graph', icon: 'fa-project-diagram' },
+  { key: 'tasks', label: '我的任务', path: '/tasks', icon: 'fa-tasks' },
+  { key: 'profile', label: '个人中心', path: '/profile', icon: 'fa-user' },
 ];
 
 export function Header() {
   const location = useLocation();
-  const { isAuthenticated, user, logout } = useAuthStore();
+  const { isAuthenticated, logout } = useAuthStore();
+  const isNavExpanded = useNavStore((state) => state.isNavExpanded);
+  const setNavExpanded = useNavStore((state) => state.setNavExpanded);
+  const toggleNav = useNavStore((state) => state.toggleNav);
 
   const isActive = (path: string) => location.pathname === path;
 
@@ -23,43 +31,53 @@ export function Header() {
   };
 
   return (
-    <header className="header">
-      <div className="logo">
-        <i className="fas fa-code-branch"></i> PathMind
-      </div>
-      <nav className="nav-links">
-        {navItems.map((item) => (
-          <Link
-            key={item.key}
-            to={item.path}
-            className={isActive(item.path) ? 'active' : ''}
-          >
-            {item.label}
+    <>
+      {/* 右侧悬浮导航栏 */}
+      <nav className={`floating-nav-bar ${isNavExpanded ? 'floating-nav-bar--expanded' : ''}`}>
+        {/* 导航项容器 - 始终渲染，通过 CSS 控制动画 */}
+        <div className="floating-nav-bar__panel">
+          <Link to="/" className="floating-nav-bar__logo" title="PathMind 首页">
+            <i className="fas fa-code-branch"></i>
+            <span className="floating-nav-bar__tooltip">PathMind</span>
           </Link>
-        ))}
-      </nav>
-      <div className="nav-buttons">
-        {isAuthenticated ? (
-          <>
-            <span className="user-info">
-              <i className="fas fa-user-circle"></i>
-              {user?.username || user?.email?.split('@')[0] || '用户'}
-            </span>
-            <button className="btn-text" onClick={handleLogout}>
-              退出
+          <div className="floating-nav-bar__divider"></div>
+
+          {navItems.map((item) => (
+            <Link
+              key={item.key}
+              to={item.path}
+              className={`floating-nav-bar__item ${isActive(item.path) ? 'floating-nav-bar__item--active' : ''}`}
+              onClick={() => setNavExpanded(false)}
+            >
+              <i className={`fas ${item.icon}`}></i>
+              <span className="floating-nav-bar__tooltip">{item.label}</span>
+            </Link>
+          ))}
+
+          <div className="floating-nav-bar__divider"></div>
+
+          {isAuthenticated ? (
+            <button className="floating-nav-bar__item" onClick={handleLogout}>
+              <i className="fas fa-user"></i>
+              <span className="floating-nav-bar__tooltip">退出</span>
             </button>
-          </>
-        ) : (
-          <>
-            <Link to="/login" className="btn-text">
-              登录
+          ) : (
+            <Link to="/login" className="floating-nav-bar__item">
+              <i className="fas fa-sign-in-alt"></i>
+              <span className="floating-nav-bar__tooltip">登录</span>
             </Link>
-            <Link to="/register" className="btn-primary-blue">
-              注册
-            </Link>
-          </>
-        )}
-      </div>
-    </header>
+          )}
+        </div>
+
+        {/* 展开/收起按钮 */}
+        <button
+          className="floating-nav-bar__toggle"
+          onClick={toggleNav}
+          title={isNavExpanded ? '收起菜单' : '展开菜单'}
+        >
+          <i className={`fas ${isNavExpanded ? 'fa-times' : 'fa-bars'}`}></i>
+        </button>
+      </nav>
+    </>
   );
 }

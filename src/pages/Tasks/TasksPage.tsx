@@ -8,6 +8,13 @@ import './TasksPage.scss';
 
 type TasksByWeek = Record<string, Task[]>;
 
+interface PlanItem {
+  title?: string;
+  time?: string;
+  content?: string;
+  details?: string;
+}
+
 export function TasksPage() {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [profile, setProfile] = useState<UserProfile | null>(null);
@@ -18,6 +25,60 @@ export function TasksPage() {
   }, []);
 
   const loadData = () => {
+    // 先检查是否有 plan 数据
+    const planDataStr = localStorage.getItem('pathmind_plan_data');
+    if (planDataStr) {
+      try {
+        const planData: PlanItem[] = JSON.parse(planDataStr);
+        console.log('【TasksPage】planData:', planData);
+
+        // 将 planData 转换为 tasks
+        const convertedTasks: Task[] = [];
+        planData.forEach((item, itemIndex) => {
+          if (item.details) {
+            // 按 "；"分割每天的任务
+            const dayTasks = item.details.split(/[；]/);
+            dayTasks.forEach((dayTask, dayIndex) => {
+              const trimmed = dayTask.trim();
+              if (trimmed) {
+                // 提取 day 和 title（格式："X天-科目：任务" 或 "科目：任务"）
+                const colonIndex = trimmed.search(/[：:]/);
+                let dayPart = `第${dayIndex + 1}天`;
+                let titlePart = trimmed.replace(/^\d+天-/, '');
+
+                if (colonIndex !== -1) {
+                  dayPart = trimmed.substring(0, colonIndex).replace(/^\d+天-/, '');
+                  titlePart = trimmed.substring(colonIndex + 1);
+                }
+
+                convertedTasks.push({
+                  id: `plan_${itemIndex}_${dayIndex}`,
+                  week: item.title || `第${itemIndex + 1}阶段`,
+                  day: dayPart,
+                  title: titlePart,
+                  status: 'pending',
+                  createdAt: new Date().toISOString()
+                });
+              }
+            });
+          }
+        });
+
+        console.log('【TasksPage】convertedTasks:', convertedTasks);
+        setTasks(convertedTasks);
+        setProfile({ goal: 'AI 生成的学习计划' });
+        setProgress({
+          completedTasks: 0,
+          totalTasks: convertedTasks.length,
+          percentage: 0
+        });
+        return;
+      } catch (e) {
+        console.error('【TasksPage】解析 planData 失败:', e);
+      }
+    }
+
+    // 如果没有 plan 数据，读取本地存储的任务
     const userTasks = getUserTasks();
     const userProfile = getUserProfile();
     const userProgress = getUserProgress();
@@ -67,10 +128,10 @@ export function TasksPage() {
           <EmptyState
             icon={<i className="fas fa-clipboard-list"></i>}
             title="还没有任务"
-            description="先去 AI Copilot 制定你的学习计划吧"
+            description="先去技术咨询制定你的学习计划吧"
             action={
-              <Link to="/copilot" className="btn btn-primary">
-                制定计划 
+              <Link to="/consult" className="btn btn-primary">
+                制定计划
                 <div className="arrow-right">
                   <i className="fas fa-arrow-right"></i>
                 </div>

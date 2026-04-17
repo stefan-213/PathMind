@@ -24,97 +24,43 @@ PathMind 是一个帮助开发者进行**技术选型和学习路径规划**的 
 
 **相关文件**：
 - `src/pages/Home/HomePage.tsx`
-- `src/pages/Home/HomePage.css`
 
 ---
 
-### 2. AI Copilot (CopilotPage)
+### 2. 知识图谱 (GraphPage)
 
-**功能描述**：核心功能页面，通过问答生成技术方案和学习计划
-
-**已实现**：
-
-#### 2.1 目标输入
-- 输入框输入学习/开发目标
-- 快捷选项标签（快速选择）：
-  - AI 应用
-  - 企业官网
-  - 电商小程序
-  - 前端学习
-  - 转型后端
-
-#### 2.2 问卷调查
-- 根据目标类型动态加载不同问卷
-- 每个问题 2-4 个选项（带图标）
-- 支持的目标类型：
-  - AI 应用
-  - 企业官网
-  - 前端学习
-  - 默认问卷
-
-#### 2.3 结果展示
-- 推荐方案标题和描述
-- 主路径（核心技术栈顺序）
-- 分支选择（推荐 vs 备选）
-- 对比表格（难度、学习周期、市场需求、适合场景）
-- 四周学习计划（按周/按日分解）
-- 一键跳转按钮：
-  - 我的任务
-  - 知识图谱
-  - 模板项目
-
-**相关文件**：
-- `src/pages/Copilot/CopilotPage.tsx`
-- `src/pages/Copilot/CopilotPage.css`
-- `src/data/copilotData.ts`
-
----
-
-### 3. 知识图谱 (GraphPage)
-
-**功能描述**：可视化技术节点关系，支持 AI 推荐学习路径
+**功能描述**：可视化技术节点关系，支持 AI 生成图表
 
 **已实现**：
 
-#### 3.1 图谱展示
-- D3.js 力导向图可视化
-- 支持拖拽、缩放
-- 节点显示技术名称和图标
+#### 2.1 图表展示
+- 集成 draw.io 图表渲染
+- 支持拖拽、缩放操作
+- 通过 `mockGraphXml` 提供默认图谱
 
-#### 3.2 分类筛选
-- 全部技术
-- 前端（React, Vue, Next.js, Vite, Tailwind）
-- 后端（Node.js, Python, FastAPI, Express）
-- AI（LangChain, RAG, Agent, Embedding）
-- DevOps（Docker, Git）
-- 基础（HTML, CSS, JavaScript, TypeScript）
+#### 2.2 AI 图谱生成
+- AI Side Panel 侧边对话面板
+- 支持通过对话生成自定义图表
+- 可输入需求，AI 返回 XML 图表数据
 
-#### 3.3 节点详情
+#### 2.3 节点详情
 - 点击节点显示详情面板
-- 显示信息：
-  - 难度等级
-  - 热度指数
-  - 适用场景
-  - 技术描述
-  - 相关标签
+- 显示节点名称、分类、描述、标签
+- 提供"开始学习"快捷入口
 
-#### 3.4 AI 推荐路径
-- 输入目标（如 "AI 应用"）
-- 自动计算从起点到目标的核心路径
-- 高亮显示路径节点
-
-#### 3.5 控制功能
+#### 2.4 控制功能
 - 物理效果开关
 - 缩放控制
 
 **相关文件**：
 - `src/pages/Graph/GraphPage.tsx`
-- `src/pages/Graph/GraphPage.css`
-- `src/data/graphData.ts`
+- `src/pages/Graph/GraphCanvas.tsx`
+- `src/pages/Graph/AISidePanel.tsx`
+- `src/api/mock.ts`
 
 ---
 
-### 4. 任务中心 (TasksPage)
+### 3. 任务中心 (TasksPage)
 
 **功能描述**：展示和管理学习任务进度
 
@@ -126,32 +72,12 @@ PathMind 是一个帮助开发者进行**技术选型和学习路径规划**的 
 - 重新开始功能
 - 查看知识图谱入口
 
-**数据模型**：
-```typescript
-interface Task {
-  id: string;
-  week: string;
-  day: string;
-  title: string;
-  status: 'pending' | 'completed';
-  createdAt: string;
-  completedAt?: string;
-}
-
-interface UserProgress {
-  completedTasks: number;
-  totalTasks: number;
-  percentage: number;
-}
-```
-
 **相关文件**：
 - `src/pages/Tasks/TasksPage.tsx`
-- `src/pages/Tasks/TasksPage.css`
 
 ---
 
-### 5. 方案详情 (ProposalPage)
+### 4. 方案详情 (ProposalPage)
 
 **功能描述**：展示技术方案详细信息
 
@@ -165,366 +91,136 @@ interface UserProgress {
 
 **相关文件**：
 - `src/pages/Proposal/ProposalPage.tsx`
-- `src/pages/Proposal/ProposalPage.css`
 
 ---
 
-## 待实现功能（后端开发计划）
+### 5. AI 技术咨询 (ConsultPage)
 
-> 🚧 以下功能为计划开发的后端功能，标注 🚧 的为高优先级
+**功能描述**：多轮对话式 AI 顾问，生成专属技术路线图和执行计划
 
-### 6. 用户认证系统
+**已实现**：
 
-#### 6.1 用户注册/登录 🚧
-- **API 端点**：
-  - `POST /api/auth/register` - 用户注册
-  - `POST /api/auth/login` - 用户登录
-  - `POST /api/auth/logout` - 退出登录
-  - `GET /api/auth/me` - 获取当前用户信息
+#### 5.1 智能对话流程
+- 四步问卷收集：目标 → 经验水平 → 时间要求 → 应用场景
+- 快捷选项标签快速选择
+- 实时打字机效果
 
-- **数据模型**：
-```typescript
-interface User {
-  id: string;
-  email: string;
-  username: string;
-  password: string; // 加密存储
-  avatar?: string;
-  createdAt: string;
-  updatedAt: string;
-}
-```
+#### 5.2 多会话管理
+- 侧边栏展示历史对话列表
+- 支持新建、切换、删除会话
+- 会话数据本地持久化（localStorage）
 
-#### 6.2 第三方登录（可选）
-- GitHub 登录
-- Google 登录
+#### 5.3 方案生成
+- 根据用户画像动态生成技术栈建议
+- 生成 Mermaid 格式学习路线图
+- 输出四周详细执行计划（按周/按任务分解）
+
+#### 5.4 快捷交互
+- Enter 发送，Shift+Enter 换行
+- 支持查看路线图、详细计划模态框
+- 一键跳转知识图谱
+
+**技术栈识别**：
+- AI 应用：Python + LangChain + Chroma/Faiss + FastAPI
+- 企业 Web：React/Vue + TypeScript + Vite + Zustand
+- 移动应用：React Native / Flutter + Expo
+- 数据平台：Node.js + Express/Koa + PostgreSQL + React
+
+**相关文件**：
+- `src/pages/Consult/ConsultPage.tsx`
+- `src/pages/Consult/ConsultPage.scss`
 
 ---
 
-### 7. 用户数据持久化 🚧
+### 6. 用户认证 (Auth)
 
-#### 7.1 保存学习目标
-- **API 端点**：
-  - `POST /api/goals` - 创建学习目标
-  - `GET /api/goals` - 获取用户所有目标
-  - `GET /api/goals/:id` - 获取目标详情
-  - `PUT /api/goals/:id` - 更新目标
-  - `DELETE /api/goals/:id` - 删除目标
+**功能描述**：用户注册和登录
 
-- **数据模型**：
-```typescript
-interface UserGoal {
-  id: string;
-  userId: string;
-  goal: string; // 用户输入的目标文本
-  recommendTitle: string; // AI 推荐的技术方案标题
-  answers: QuestionAnswer[]; // 问卷答案
-  status: 'active' | 'completed' | 'archived';
-  createdAt: string;
-  updatedAt: string;
-}
+**已实现**：
 
-interface QuestionAnswer {
-  questionId: string;
-  question: string;
-  selectedOption: string;
-}
-```
+#### 6.1 注册页面 (RegisterPage)
+- 用户名、邮箱、密码、手机号（选填）
+- 密码强度实时检测
+- 确认密码校验
+- 用户协议同意勾选
+- 表单完整验证
 
-#### 7.2 保存学习任务
-- **API 端点**：
-  - `POST /api/tasks` - 从 AI 生成任务并保存
-  - `GET /api/tasks` - 获取用户任务列表
-  - `GET /api/tasks/:id` - 获取任务详情
-  - `PUT /api/tasks/:id` - 更新任务状态
-  - `PUT /api/tasks/:id/complete` - 标记任务完成
-  - `DELETE /api/tasks/:id` - 删除任务
+#### 6.2 登录页面 (LoginPage)
+- 用户名/密码登录
+- 记住我功能
+- 忘记密码链接
+- 密码显示/隐藏切换
+- 表单验证
 
-- **数据模型**：
-```typescript
-interface UserTask {
-  id: string;
-  userId: string;
-  goalId: string; // 关联的学习目标
-  week: string; // 第几周
-  day: string; // 第几天
-  title: string;
-  description?: string;
-  status: 'pending' | 'completed';
-  order: number;
-  createdAt: string;
-  completedAt?: string;
-}
-```
+#### 6.3 状态管理
+- 使用 Zustand authStore 管理认证状态
+- 持久化存储
 
-#### 7.3 保存学习进度
-- **API 端点**：
-  - `GET /api/progress` - 获取用户进度
-  - `GET /api/progress/:goalId` - 获取特定目标的进度
+**相关文件**：
+- `src/pages/Auth/LoginPage.tsx`
+- `src/pages/Auth/RegisterPage.tsx`
+- `src/stores/authStore.ts`
 
-- **数据模型**：
-```typescript
-interface UserProgress {
-  id: string;
-  userId: string;
-  goalId: string;
-  completedTasks: number;
-  totalTasks: number;
-  percentage: number;
-  lastActiveDate: string;
-  streak: number; // 连续学习天数
-}
+---
+
+## 路由结构
+
+| 路径 | 页面 | 说明 |
+|------|------|------|
+| `/` | HomePage | 首页 |
+| `/graph` | GraphPage | 知识图谱 |
+| `/tasks` | TasksPage | 任务中心 |
+| `/proposal` | ProposalPage | 方案详情 |
+| `/consult` | ConsultPage | AI 技术咨询 |
+| `/login` | LoginPage | 登录 |
+| `/register` | RegisterPage | 注册 |
+
+---
+
+## 技术栈
+
+- **前端框架**：React 19.2 + React Router DOM 7
+- **构建工具**：Vite 8 + React Compiler
+- **类型系统**：TypeScript（严格模式）
+- **状态管理**：Zustand 5（持久化）
+- **HTTP 请求**：Axios
+- **可视化**：D3 7（力导向图）、draw.io（图表渲染）
+- **样式**：SCSS + 设计变量
+
+---
+
+## 开发命令
+
+```bash
+npm run dev      # 启动开发服务器
+npm run build    # TypeScript 检查 + 生产构建
+npm run lint     # ESLint 检查
+npm run preview  # 预览生产环境
 ```
 
 ---
 
-### 8. AI 对话功能 🚧
+## 待实现功能
 
-#### 8.1 AI 生成技术方案
-- **API 端点**：
-  - `POST /api/ai/generate-proposal` - 根据目标和问卷生成技术方案
-  - `POST /api/ai/regenerate` - 重新生成方案
+> 以下功能为后续开发计划
 
-- **请求参数**：
-```typescript
-interface GenerateProposalRequest {
-  goal: string;
-  answers: QuestionAnswer[];
-  userId?: string;
-}
-```
+### 1. 用户数据持久化
+- 后端 API 对接
+- 数据库设计
 
-- **返回数据**：
-```typescript
-interface GenerateProposalResponse {
-  title: string;
-  description: string;
-  mainPath: string[]; // 主路径技术栈
-  branches: { text: string; recommended: boolean }[];
-  comparison: { dimension: string; recommended: string; alternative: string }[];
-  schedule: { week: string; items: string[] }[];
-}
-```
+### 2. AI 生成功能增强
+- 真正的 AI 模型对接
+- 方案智能优化
 
-#### 8.2 AI 生成学习任务
-- **API 端点**：
-  - `POST /api/ai/generate-tasks` - 根据方案生成具体任务
+### 3. 收藏与历史
+- 技术收藏功能
+- 浏览历史记录
 
-#### 8.3 AI 问答助手
-- **API 端点**：
-  - `POST /api/ai/chat` - 与 AI 助手对话
-  - `GET /api/ai/chat/history` - 获取对话历史
+### 4. 社区功能
+- 学习打卡
+- 方案分享
 
 ---
 
-### 9. 知识图谱管理 🚧
-
-#### 9.1 技术节点 CRUD
-- **API 端点**：
-  - `GET /api/technologies` - 获取所有技术节点
-  - `GET /api/technologies/:id` - 获取技术详情
-  - `POST /api/technologies` - 添加新技术（管理员）
-  - `PUT /api/technologies/:id` - 更新技术信息（管理员）
-  - `DELETE /api/technologies/:id` - 删除技术（管理员）
-
-- **数据模型**：
-```typescript
-interface Technology {
-  id: string;
-  name: string;
-  label: string;
-  englishName: string;
-  category: 'frontend' | 'backend' | 'ai' | 'devops' | 'basic';
-  icon: string;
-  difficulty: '简单' | '中等' | '高';
-  heat: string;
-  scene: string;
-  description: string;
-  tags: string[];
-  level: 0 | 1 | 2;
-}
-```
-
-#### 9.2 技术关系管理
-- **API 端点**：
-  - `GET /api/technologies/relations` - 获取所有技术关系
-  - `POST /api/technologies/relations` - 添加技术关系（管理员）
-  - `DELETE /api/technologies/relations/:id` - 删除技术关系（管理员）
-
-- **数据模型**：
-```typescript
-interface TechnologyRelation {
-  id: string;
-  sourceId: string;
-  targetId: string;
-  relationType: '依赖' | '进阶' | '替代' | '组合' | '工具';
-}
-```
-
-#### 9.3 AI 智能路径推荐
-- **API 端点**：
-  - `POST /api/ai/recommend-path` - 根据目标推荐学习路径
-  - `GET /api/ai/path/:from/:to` - 计算两技术间的路径
-
----
-
-### 10. 收藏与历史
-
-#### 10.1 收藏技术
-- **API 端点**：
-  - `POST /api/favorites` - 收藏技术
-  - `GET /api/favorites` - 获取收藏列表
-  - `DELETE /api/favorites/:id` - 取消收藏
-
-#### 10.2 浏览历史
-- **API 端点**：
-  - `GET /api/history` - 获取浏览历史
-  - `POST /api/history` - 添加浏览记录
-  - `DELETE /api/history` - 清除历史
-
----
-
-### 11. 社区功能（可选）
-
-#### 11.1 学习打卡
-- **API 端点**：
-  - `POST /api/checkin` - 每日打卡
-  - `GET /api/checkin/stats` - 获取打卡统计
-
-#### 11.2 分享方案
-- **API 端点**：
-  - `POST /api/share` - 分享技术方案
-  - `GET /api/share/:id` - 查看分享的方案
-  - `GET /api/share/popular` - 获取热门分享
-
----
-
-## 数据库设计建议
-
-### 用户表 (users)
-```sql
-CREATE TABLE users (
-  id UUID PRIMARY KEY,
-  email VARCHAR(255) UNIQUE NOT NULL,
-  username VARCHAR(100) NOT NULL,
-  password_hash VARCHAR(255) NOT NULL,
-  avatar VARCHAR(500),
-  created_at TIMESTAMP DEFAULT NOW(),
-  updated_at TIMESTAMP DEFAULT NOW()
-);
-```
-
-### 学习目标表 (goals)
-```sql
-CREATE TABLE goals (
-  id UUID PRIMARY KEY,
-  user_id UUID REFERENCES users(id),
-  goal_text TEXT NOT NULL,
-  recommend_title VARCHAR(255),
-  answers JSONB,
-  status VARCHAR(20) DEFAULT 'active',
-  created_at TIMESTAMP DEFAULT NOW(),
-  updated_at TIMESTAMP DEFAULT NOW()
-);
-```
-
-### 学习任务表 (tasks)
-```sql
-CREATE TABLE tasks (
-  id UUID PRIMARY KEY,
-  user_id UUID REFERENCES users(id),
-  goal_id UUID REFERENCES goals(id),
-  week VARCHAR(20) NOT NULL,
-  day VARCHAR(20) NOT NULL,
-  title VARCHAR(255) NOT NULL,
-  description TEXT,
-  status VARCHAR(20) DEFAULT 'pending',
-  task_order INT,
-  created_at TIMESTAMP DEFAULT NOW(),
-  completed_at TIMESTAMP
-);
-```
-
-### 技术节点表 (technologies)
-```sql
-CREATE TABLE technologies (
-  id VARCHAR(100) PRIMARY KEY,
-  name VARCHAR(100) NOT NULL,
-  label VARCHAR(100) NOT NULL,
-  english_name VARCHAR(100),
-  category VARCHAR(20) NOT NULL,
-  icon VARCHAR(100),
-  difficulty VARCHAR(20),
-  heat VARCHAR(50),
-  scene VARCHAR(100),
-  description TEXT,
-  tags JSONB,
-  level INT DEFAULT 0
-);
-```
-
-### 技术关系表 (technology_relations)
-```sql
-CREATE TABLE technology_relations (
-  id UUID PRIMARY KEY,
-  source_id VARCHAR(100) REFERENCES technologies(id),
-  target_id VARCHAR(100) REFERENCES technologies(id),
-  relation_type VARCHAR(20)
-);
-```
-
----
-
-## 技术栈建议
-
-### 后端
-- **框架**：Node.js (Express/NestJS) 或 Python (FastAPI)
-- **数据库**：PostgreSQL + Redis
-- **AI**：OpenAI API / Claude API / 本地部署
-- **认证**：JWT / NextAuth
-
-### 部署
-- **容器化**：Docker
-- **云服务**：Vercel / AWS / 阿里云
-- **CDN**：七牛云 / 阿里云 OSS
-
----
-
-## 开发优先级
-
-1. **P0（必须）**：用户认证、学习目标保存、任务管理
-2. **P1（重要）**：AI 生成方案、知识图谱数据管理
-3. **P2（增强）**：收藏、历史、打卡
-4. **P3（可选）**：社区分享、第三方登录
-
----
-
-## 接口调用流程
-
-### 典型用户流程
-
-```
-1. 用户注册/登录
-   POST /api/auth/register → POST /api/auth/login
-
-2. 输入学习目标
-   POST /api/goals { goal: "我想做 AI 应用" }
-
-3. AI 生成方案
-   POST /api/ai/generate-proposal
-   → 返回技术对比、学习路径、四周计划
-
-4. 保存任务到任务中心
-   POST /api/tasks (批量创建)
-
-5. 任务中心管理进度
-   GET /api/tasks → PUT /api/tasks/:id/complete
-
-6. 查看知识图谱
-   GET /api/technologies → GET /api/ai/path/python/rag
-```
-
----
-
-*文档版本：1.0*
-*最后更新：2026-03-18*
+*文档版本：1.1*
+*最后更新：2026-04-10*

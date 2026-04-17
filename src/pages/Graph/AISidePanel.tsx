@@ -3,19 +3,19 @@
  */
 import { useState, useRef, useEffect } from 'react';
 import { useChatStore } from '../../stores/chatStore';
-import { useGraphStore } from '../../stores/graphStore';
-import { aiApi } from '../../api/useApi';
-import { graphToDrawioXml } from '../../utils/graphToXml';
 import './AISidePanel.scss';
 
 interface AISidePanelProps {
-  /** 图表更新回调 */
-  onGraphUpdate?: (xml: string) => void;
+  /** 是否有初始图表（进入页面时已有） */
+  hasInitialGraph?: boolean;
+  /** 发送消息回调（由父组件处理 API 调用） */
+  onSendMessage?: (message: string) => void;
+  /** 加载状态 */
+  isLoading?: boolean;
 }
 
-export function AISidePanel({ onGraphUpdate }: AISidePanelProps) {
-  const { messages, addMessage, setLoading, sessionId } = useChatStore();
-  const { setLoading: setGraphLoading } = useGraphStore();
+export function AISidePanel({ hasInitialGraph, onSendMessage, isLoading }: AISidePanelProps) {
+  const { messages, addMessage, sessionId, satisfactionState, setSatisfactionState } = useChatStore();
   const [input, setInput] = useState('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
@@ -24,62 +24,43 @@ export function AISidePanel({ onGraphUpdate }: AISidePanelProps) {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
-  const handleSend = async () => {
-    if (!input.trim()) return;
-
-    // 如果没有 sessionId，先创建
-    let currentSessionId = sessionId;
-    if (!currentSessionId) {
-      // 使用随机 sessionId（Mock 模式）
-      currentSessionId = crypto.randomUUID();
-      useChatStore.getState().setSessionId(currentSessionId);
+  // 初始化：进入页面时如果已有图表，自动发送满意度询问
+  useEffect(() => {
+    if (hasInitialGraph && messages.length === 0) {
+      addMessage({
+        role: 'assistant',
+        content: '左侧图表您是否满意？',
+      });
+      setSatisfactionState('waiting');
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // 处理不满意：发送引导消息并重新询问
+  const handleDissatisfy = () => {
+    setSatisfactionState('dissatisfied');
+    addMessage({
+      role: 'assistant',
+      content: '请您提出修改需求',
+    });
+    // 询问完后重新进入 waiting 状态
+    setTimeout(() => {
+      setSatisfactionState('waiting');
+    }, 100);
+  };
+
+  const handleSend = () => {
+    if (!input.trim()) return;
 
     const userMessage = input.trim();
     setInput('');
     addMessage({ role: 'user', content: userMessage });
-    setLoading(true);
-    setGraphLoading(true);
 
-    try {
-      const res = await aiApi.chatWithAI({
-        agentId: '100001',
-        sessionId: currentSessionId,
-        message: userMessage,
-      });
-
-      const response = res.data;
-      if (!response) {
-        throw new Error('AI 响应数据异常');
-      }
-
-      const aiContent = response.message || '';
-      const graphData = response.graphData;
-
-      // 添加 AI 消息
-      addMessage({
-        role: 'assistant',
-        content: aiContent,
-        hasGraph: Boolean(graphData),
-      });
-
-      // 如果 AI 返回了图表数据，更新图表
-      if (graphData) {
-        const xml = graphToDrawioXml(graphData);
-        onGraphUpdate?.(xml);
-      }
-    } catch (err) {
-      addMessage({
-        role: 'assistant',
-        content: '抱歉，发生了错误：' + (err as Error).message,
-      });
-    } finally {
-      setLoading(false);
-      setGraphLoading(false);
-    }
+    // 通知父组件发送消息
+    onSendMessage?.(userMessage);
   };
 
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
       handleSend();
@@ -120,6 +101,35 @@ export function AISidePanel({ onGraphUpdate }: AISidePanelProps) {
                   <i className="fas fa-chart-pie"></i> 已生成图表
                 </div>
               )}
+              {/* 满意度按钮 - 仅在最后一条 AI 消息且状态为 waiting 时显示 */}
+              {msg.role === 'assistant' &&
+                msg === messages[messages.length - 1] &&
+                satisfactionState === 'waiting' && (
+                  <div className="satisfaction-buttons">
+                    <button
+                      className="btn-satisfy"
+                      onClick={() => setSatisfactionState('satisfied')}
+                    >
+                      满意
+                    </button>
+                    <button
+                      className="btn-dissatisfy"
+                      onClick={handleDissatisfy}
+                    >
+                      不满意
+                    </button>
+                  </div>
+                )}
+              {/* 计划表跳转按钮 - 仅在满意后显示 */}
+              {msg.role === 'assistant' &&
+                msg === messages[messages.length - 1] &&
+                satisfactionState === 'satisfied' && (
+                  <div className="plan-link">
+                    <a href={`/tasks?sessionId=${sessionId}`} className="btn-to-plan">
+                      <i className="fas fa-tasks"></i> 查看计划表
+                    </a>
+                  </div>
+                )}
               <div className="message-time">
                 {new Date(msg.timestamp).toLocaleTimeString()}
               </div>
@@ -130,18 +140,18 @@ export function AISidePanel({ onGraphUpdate }: AISidePanelProps) {
       </div>
 
       <div className="input-area">
-        <textarea
+        <input
+          type="text"
           className="message-input"
           placeholder="描述你想要的技术图表..."
           value={input}
           onChange={(e) => setInput(e.target.value)}
           onKeyDown={handleKeyDown}
-          rows={3}
         />
         <button
           className="send-btn"
           onClick={handleSend}
-          disabled={!input.trim()}
+          disabled={!input.trim() || isLoading}
         >
           <i className="fas fa-paper-plane"></i>
         </button>

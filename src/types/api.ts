@@ -200,3 +200,66 @@ export interface ApiError {
   message: string;
   details?: Record<string, string>;
 }
+
+// ==================== 智能体相关 ====================
+
+/** 智能体 */
+export interface Agent {
+  agentId: string;
+  agentName: string;
+  agentDesc: string;
+}
+
+// ==================== 技术咨询相关 ====================
+
+/** 咨询会话用户画像 */
+export interface ConsultUserProfile {
+  goal: string;
+  experience: string;
+  timeframe: string;
+  scale: string;
+}
+
+/** 咨询消息 */
+export interface ConsultMessage {
+  role: 'user' | 'assistant';
+  content: string;
+  isHtml?: boolean;
+  timestamp: number;
+}
+
+/** 计划详情 */
+export interface PlanDetail {
+  week: string;       // 例如："第1周"、"第2周"
+  items: string[];    // 例如：["Day1-2: Python基础", "Day3-4: LangChain入门"]
+}
+
+/** 咨询会话 */
+export interface ConsultSession {
+  id: string;
+  title: string;
+  createdAt: string;
+  messages: ConsultMessage[];
+  userProfile: ConsultUserProfile;
+  currentStep: 'ASK_GOAL' | 'ASK_EXPERIENCE' | 'ASK_TIMEFRAME' | 'ASK_SCALE' | 'RESULT';
+  finalXml: string;        // draw.io XML 格式图表
+  planDetails: PlanDetail[]; // 计划表详情
+}
+
+/** 咨询请求 */
+export interface ConsultRequest {
+  sessionId: string;
+  message: string;
+  step: string;
+  profile: ConsultUserProfile;
+}
+
+/** 咨询响应 */
+export interface ConsultResponse {
+  message: string;
+  isHtml: boolean;
+  nextStep: string;
+  updatedProfile: ConsultUserProfile;
+  finalXml?: string;        // draw.io XML 格式图表（RESULT 步骤时返回）
+  planDetails?: PlanDetail[]; // 计划表详情（RESULT 步骤时返回）
+}

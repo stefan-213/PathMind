@@ -13,9 +13,8 @@ interface TasksState {
 
   // Actions
   fetchTasks: (goalId?: string) => Promise<void>;
-  fetchProgress: () => Promise<void>;
-  completeTask: (id: string) => Promise<void>;
-  uncompleteTask: (id: string) => Promise<void>;
+  fetchProgress: (goalId?: string) => Promise<void>;
+  updateTaskStatus: (id: string, completed: boolean) => Promise<void>;
   clearError: () => void;
 }
 
@@ -39,10 +38,10 @@ export const useTasksStore = create<TasksState>((set, get) => ({
     }
   },
 
-  fetchProgress: async () => {
+  fetchProgress: async (goalId?: string) => {
     set({ isLoading: true, error: null });
     try {
-      const response = await tasksApi.getProgress();
+      const response = await tasksApi.getProgress(goalId ? { goalId } : undefined);
       set({ progress: response.data as UserProgress, isLoading: false });
     } catch (err) {
       const message = err instanceof Error ? err.message : '获取进度失败';
@@ -50,37 +49,19 @@ export const useTasksStore = create<TasksState>((set, get) => ({
     }
   },
 
-  completeTask: async (id: string) => {
+  updateTaskStatus: async (id: string, completed: boolean) => {
     set({ isLoading: true, error: null });
     try {
-      const response = await tasksApi.completeTask(id);
+      const response = await tasksApi.updateTask(id, { status: completed ? 'completed' : 'pending' });
       const updatedTask = response.data as UserTask;
       set(state => ({
         tasks: state.tasks.map(t => t.id === id ? updatedTask : t),
         isLoading: false
       }));
-      // 完成后重新获取进度
+      // 状态变更后重新获取进度
       get().fetchProgress();
     } catch (err) {
-      const message = err instanceof Error ? err.message : '完成任务失败';
-      set({ error: message, isLoading: false });
-      throw err;
-    }
-  },
-
-  uncompleteTask: async (id: string) => {
-    set({ isLoading: true, error: null });
-    try {
-      const response = await tasksApi.uncompleteTask(id);
-      const updatedTask = response.data as UserTask;
-      set(state => ({
-        tasks: state.tasks.map(t => t.id === id ? updatedTask : t),
-        isLoading: false
-      }));
-      // 重新获取进度
-      get().fetchProgress();
-    } catch (err) {
-      const message = err instanceof Error ? err.message : '取消任务失败';
+      const message = err instanceof Error ? err.message : '更新任务状态失败';
       set({ error: message, isLoading: false });
       throw err;
     }

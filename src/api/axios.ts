@@ -16,7 +16,7 @@ const NO_AUTH_WHITELIST = [
 
 export const axiosInstance: AxiosInstance = axios.create({
   baseURL: BASE_URL,
-  timeout: 30000,
+  timeout: 3000000,
   headers: {
     'Content-Type': 'application/json',
   },

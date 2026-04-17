@@ -5,24 +5,17 @@ import { get, post, put, del } from './axios';
 import type { UserTask, UserProgress, CreateTasksRequest, PaginatedResponse } from '../types/api';
 
 /**
- * 获取用户所有任务
+ * 获取用户任务（可按 goalId 筛选）
  */
-export const getTasks = (params?: { goalId?: string; status?: string; page?: number; pageSize?: number }) => {
-  return get<PaginatedResponse<UserTask>>('/api/tasks', params);
+export const getTasks = (params?: { goalId?: string; status?: string }) => {
+  return get<PaginatedResponse<UserTask> | UserTask[]>('/api/tasks', params);
 };
 
 /**
- * 获取任务详情
+ * 获取单个任务
  */
 export const getTaskById = (id: string) => {
   return get<UserTask>(`/api/tasks/${id}`);
-};
-
-/**
- * 获取特定目标的任务
- */
-export const getTasksByGoal = (goalId: string) => {
-  return get<UserTask[]>(`/api/tasks/goal/${goalId}`);
 };
 
 /**
@@ -33,24 +26,10 @@ export const createTasks = (data: CreateTasksRequest) => {
 };
 
 /**
- * 更新任务
+ * 更新任务（包含完成/未完成状态）
  */
 export const updateTask = (id: string, data: Partial<UserTask>) => {
   return put<UserTask>(`/api/tasks/${id}`, data);
-};
-
-/**
- * 标记任务完成
- */
-export const completeTask = (id: string) => {
-  return put<UserTask>(`/api/tasks/${id}/complete`);
-};
-
-/**
- * 标记任务未完成
- */
-export const uncompleteTask = (id: string) => {
-  return put<UserTask>(`/api/tasks/${id}/uncomplete`);
 };
 
 /**
@@ -61,15 +40,8 @@ export const deleteTask = (id: string) => {
 };
 
 /**
- * 获取用户学习进度
+ * 获取用户学习进度（可按 goalId 筛选）
  */
-export const getProgress = () => {
-  return get<UserProgress>('/api/progress');
-};
-
-/**
- * 获取特定目标的进度
- */
-export const getProgressByGoal = (goalId: string) => {
-  return get<UserProgress>(`/api/progress/${goalId}`);
+export const getProgress = (params?: { goalId?: string }) => {
+  return get<UserProgress>('/api/progress', params);
 };
