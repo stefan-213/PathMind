@@ -2,7 +2,7 @@ import { useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Header, Footer } from '../../components/layout';
 import { Card, Badge, EmptyState } from '../../components/common';
-import { getScheduleList, getScheduleContent, updateSubTask } from '../../api/tasks';
+import { getScheduleList, getScheduleContent, updateSubTask, deleteSchedule } from '../../api/tasks';
 import { useScheduleStore } from '../../stores/scheduleStore';
 import type { SubSchedule } from '../../types/api';
 import './TasksPage.scss';
@@ -10,7 +10,7 @@ import './TasksPage.scss';
 type TasksByWeek = Record<string, SubSchedule[]>;
 
 export function TasksPage() {
-  const { schedules, currentSchedule, setSchedules, setCurrentSchedule, setLoading } = useScheduleStore();
+  const { schedules, currentSchedule, setSchedules, setCurrentSchedule, setLoading, clearSchedules } = useScheduleStore();
 
   useEffect(() => {
     loadSchedules();
@@ -44,7 +44,7 @@ export function TasksPage() {
 
   const toggleTask = async (taskId: number) => {
     const task = tasks.find(t => t.id === taskId);
-    if (!task) return;
+    if (!task || task.id === undefined) return;
 
     const newStatus = task.status === 1 ? 0 : 1;
     try {
@@ -72,9 +72,14 @@ export function TasksPage() {
   };
 
   const handleClearAll = () => {
-    if (confirm('确定要清除所有数据重新开始吗？')) {
-      localStorage.clear();
-      window.location.reload();
+    if (confirm('确定要删除这个日程表吗？')) {
+      const scheduleId = currentSchedule?.scheduleId;
+      if (scheduleId) {
+        deleteSchedule(scheduleId).then(() => {
+          clearSchedules();
+          loadSchedules();
+        });
+      }
     }
   };
 

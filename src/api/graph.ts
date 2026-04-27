@@ -2,6 +2,7 @@
  * 图表 API 服务
  * 用于知识图表页面的图表操作
  */
+import { data } from 'react-router-dom';
 import { post } from './axios';
 
 /**
@@ -20,3 +21,15 @@ export const charts = (data: {
     content: string;
   }>('/api/agent/charts', data);
 };
+/**
+ * （保存 XML）
+ */
+export const saveXmlFile = (data:{
+  id:string;
+  title:string;
+  xml:string
+}) => {
+  return post<{
+    centent:string;
+  }>('/api/agent/saveXmlFile', data);
+}
