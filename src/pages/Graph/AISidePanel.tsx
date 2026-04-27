@@ -5,7 +5,6 @@ import { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useChatStore } from '../../stores/chatStore';
 import { createTask } from '../../api/tasks';
-import { useScheduleStore } from '../../stores/scheduleStore';
 import './AISidePanel.scss';
 
 interface AISidePanelProps {
@@ -19,7 +18,6 @@ interface AISidePanelProps {
 
 export function AISidePanel({ hasInitialGraph, onSendMessage, isLoading }: AISidePanelProps) {
   const navigate = useNavigate();
-  const { addSchedule } = useScheduleStore();
   const { messages, addMessage, sessionId, satisfactionState, setSatisfactionState } = useChatStore();
   const [input, setInput] = useState('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
