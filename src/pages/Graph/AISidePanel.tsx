@@ -95,6 +95,8 @@ export function AISidePanel({ hasInitialGraph, onSendMessage, isLoading }: AISid
 
         localStorage.removeItem('pathmind_plan_data');
         localStorage.removeItem('pathmind_consult_chart');
+
+        navigate('/tasks');
       } catch (err) {
         console.error('创建日程表失败:', err);
         alert('创建日程表失败，请重试');
@@ -104,8 +106,6 @@ export function AISidePanel({ hasInitialGraph, onSendMessage, isLoading }: AISid
     } else {
       setIsCreating(false);
     }
-
-    navigate('/tasks');
   };
 
   return (
