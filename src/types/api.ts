@@ -91,6 +91,70 @@ export interface CreateTasksRequest {
   }[];
 }
 
+// ==================== 日程表相关（新版）====================
+
+/** 日程子任务 */
+export interface SubSchedule {
+  id?: number;
+  parentId?: number;
+  day: string;
+  task: string;
+  taskGoal: string;
+  description?: string | null;
+  status: number;  // 0: pending, 1: completed
+  completedAt?: string | null;
+}
+
+/** 日程表项（创建时用） */
+export interface ScheduleItem {
+  title: string;
+  time: string;
+  content: string;
+  scheduleId?: string;
+  tasks: Omit<SubSchedule, 'id' | 'parentId'>[];
+}
+
+/** 日程表（完整结构） */
+export interface Schedule {
+  id: number;
+  scheduleId: string;
+  userId: string;
+  title: string;
+  time: string;
+  content: string;
+  status: number;
+  subScheduleList: SubSchedule[];
+}
+
+/** 创建日程表请求 */
+export interface CreateScheduleRequest {
+  data: ScheduleItem[];
+}
+
+/** 更新日程表请求 */
+export interface UpdateScheduleRequest {
+  id: number;
+  scheduleId: string;
+  userId: string;
+  title: string;
+  time: string;
+  content: string;
+  status: number;
+  subScheduleList: SubSchedule[];
+}
+
+/** 更新子任务请求 */
+export interface UpdateSubTaskRequest {
+  id: number;
+  parentId: number;
+  day: string;
+  task: string;
+  taskGoal: string;
+  description?: string | number | null;
+  status: number;
+  completedAt?: string | null;
+}
+
 // ==================== 技术节点相关 ====================
 
 export interface Technology {
@@ -210,7 +274,7 @@ export interface Agent {
   agentDesc: string;
 }
 
-// ==================== 技术咨询相关 ====================
+// ==================== Copilot相关 ====================
 
 /** 咨询会话用户画像 */
 export interface ConsultUserProfile {

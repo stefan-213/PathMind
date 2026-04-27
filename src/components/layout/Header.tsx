@@ -10,8 +10,8 @@ type NavItem = 'home' | 'graph' | 'consult' | 'tasks' | 'profile';
 
 const navItems: { key: NavItem; label: string; path: string; icon: string }[] = [
   { key: 'home', label: '首页', path: '/', icon: 'fa-home' },
-  { key: 'consult', label: '技术咨询', path: '/consult', icon: 'fa-comments' },
-  { key: 'graph', label: '知识图谱', path: '/graph', icon: 'fa-project-diagram' },
+  { key: 'consult', label: 'Copilot', path: '/consult', icon: 'fa-comments' },
+  { key: 'graph', label: '知识图表', path: '/graph', icon: 'fa-project-diagram' },
   { key: 'tasks', label: '我的任务', path: '/tasks', icon: 'fa-tasks' },
   { key: 'profile', label: '个人中心', path: '/profile', icon: 'fa-user' },
 ];

@@ -1,7 +1,3 @@
-/**
- * API 导出配置
- * 直接导出真实 API
- */
 import * as realAuth from './auth';
 import * as realTasks from './tasks';
 import * as realConversation from './conversation';

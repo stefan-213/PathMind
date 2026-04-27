@@ -1,5 +1,5 @@
 /* ============================================
-   ConsultPage - AI 技术咨询对话页面
+   ConsultPage - AI Copilot对话页面
    使用真实 API 接口
    流程: /api/agent/list -> /api/agent/createSession -> /api/agent/consultation
 ============================================ */
@@ -51,6 +51,14 @@ function escapeHtml(str: string): string {
   if (!str) return '';
   return str.replace(/[&<>]/g, (m) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[m] || m));
 }
+
+// 初始快捷选项
+const INITIAL_QUICK_OPTIONS = [
+  'AI智能问答应用',
+  '企业级Web系统',
+  '移动端App',
+  '数据分析平台',
+];
 
 function getDefaultSession(): Session {
   return {
@@ -140,13 +148,13 @@ function getWelcomeMessageHtml(): string {
 }
 
 // 构建用户背景字符串
-function buildBaseString(profile: Session['userProfile']): string {
-  const parts = [];
-  if (profile.experience) parts.push(`已通过英语四级，分数500分以上`);
-  if (profile.timeframe) parts.push(`有${profile.timeframe}备考时间`);
-  parts.push('备考目的为获取证书用于求职或升学');
-  return parts.filter(Boolean).join('，');
-}
+// function buildBaseString(profile: Session['userProfile']): string {
+//   const parts = [];
+//   if (profile.experience) parts.push(`已通过英语四级，分数500分以上`);
+//   if (profile.timeframe) parts.push(`有${profile.timeframe}备考时间`);
+//   parts.push('备考目的为获取证书用于求职或升学');
+//   return parts.filter(Boolean).join('，');
+// }
 
 // ---------- 子组件：打字动画 ----------
 function TypingDots() {
@@ -428,8 +436,8 @@ export function ConsultPage() {
   const [inputText, setInputText] = useState('');
   const chatScrollRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
-  const hasInitializedRef = useRef(false);
   const navigate = useNavigate();
+  const hasLoadedHistoryRef = useRef<string | null>(null);
 
   // 当前会话
   const currentSession = sessions.find((s) => s.id === currentSessionId) || sessions[0];
@@ -488,7 +496,7 @@ export function ConsultPage() {
   const addAIReply = useCallback((reply: Awaited<ReturnType<typeof fetchAIReply>>, userProfile?: Session['userProfile']) => {
     // 处理最终方案
     if (reply.goal && reply.base) {
-      const baseStr = userProfile ? buildBaseString(userProfile) : reply.base;
+      const baseStr = reply.base || (userProfile ? buildBaseString(userProfile) : '');
       addMessage('assistant', getResultMessageHtml(), true);
       updateCurrentSession({
         currentStep: 'RESULT',
@@ -581,7 +589,7 @@ export function ConsultPage() {
     inputRef.current?.focus();
   }, [currentSession, isWaitingForAI, addMessage, updateCurrentSession, sendAndProcess, updateStepAndProfile]);
 
-  // 查看知识图谱
+  // 查看知识图表
   const handleViewGraph = useCallback(() => {
     if (!currentSession?.consultationGoal || !currentSession?.consultationBase) return;
     const sessionData = {
@@ -616,7 +624,7 @@ export function ConsultPage() {
       );
 
       if (reply.goal && reply.base) {
-        const baseStr = buildBaseString(currentSession.userProfile);
+        const baseStr = reply.base || '';
         addMessage('assistant', getResultMessageHtml(), true);
         updateCurrentSession({
           consultationGoal: reply.goal,
@@ -647,7 +655,10 @@ export function ConsultPage() {
     // 跳过结果步骤的选项选择
     if (isResultStep) return;
 
-    await handleSendMessage(option);
+    // 初始快捷选项拼接"我想学"前缀，AI返回的选项不拼接
+    const isInitialOption = INITIAL_QUICK_OPTIONS.includes(option);
+    const messageToSend = isInitialOption ? `我想学${option}` : option;
+    await handleSendMessage(messageToSend);
   }, [isWaitingForAI, isResultStep, currentSession, handleSendMessage, handleViewGraph, handleRegenerate]);
 
   // 发送输入框消息
@@ -677,6 +688,20 @@ export function ConsultPage() {
             messages: historyMessages,
             consultationGoal: consultData.goal || s.consultationGoal,
             consultationBase: consultData.base || s.consultationBase,
+          } : s)
+        );
+      } else {
+        // 历史记录为空，添加欢迎消息和初始快捷选项
+        setSessions((prev) =>
+          prev.map((s) => s.sessionId === sessionId && s.messages.length === 0 ? {
+            ...s,
+            messages: [{
+              role: 'assistant' as const,
+              content: getWelcomeMessageHtml(),
+              isHtml: true,
+              timestamp: Date.now(),
+            }],
+            quickOptions: INITIAL_QUICK_OPTIONS,
           } : s)
         );
       }
@@ -739,8 +764,12 @@ export function ConsultPage() {
     }
   }, [isWaitingForAI, loadSessionHistory]);
 
-  // 初始化：加载会话列表
+  // 初始化：加载会话列表（仅执行一次）
+  const hasInitRef = useRef(false);
   useEffect(() => {
+    if (hasInitRef.current) return;
+    hasInitRef.current = true;
+
     const loadServerSessions = async () => {
       try {
         const res = await getChatSessions(AGENT_ID);
@@ -749,6 +778,18 @@ export function ConsultPage() {
           const newSess = [getDefaultSession()];
           setSessions(newSess);
           setCurrentSessionId(newSess[0].id);
+          // 无会话时，在服务端创建真实会话
+          try {
+            const sessionRes = await conversationApi.createChatSession(AGENT_ID);
+            const newSessionId = (sessionRes as any).data?.data?.sessionId;
+            if (newSessionId) {
+              setSessions(prev =>
+                prev.map(s => s.id === newSess[0].id ? { ...s, agentId: AGENT_ID, sessionId: newSessionId } : s)
+              );
+            }
+          } catch (err) {
+            console.error('Create session failed:', err);
+          }
           return;
         }
         const serverSessions = Object.keys(sessionMap).map((sid) => ({
@@ -759,7 +800,8 @@ export function ConsultPage() {
           sessionId: sid,
         }));
         setSessions(serverSessions);
-        setCurrentSessionId(serverSessions[serverSessions.length - 1].id);
+        const latestSession = serverSessions[serverSessions.length - 1];
+        setCurrentSessionId(latestSession.id);
       } catch (err) {
         console.error('Load server sessions failed:', err);
         const newSess = [getDefaultSession()];
@@ -770,22 +812,17 @@ export function ConsultPage() {
     loadServerSessions();
   }, []);
 
-  // 首次进入显示欢迎消息
+  // 加载会话历史（仅执行一次，且仅当有 sessionId 且无消息时）
   useEffect(() => {
-    if (!currentSession || hasInitializedRef.current) return;
-    if (currentSession.messages.length === 0) {
-      addMessage('assistant', getWelcomeMessageHtml(), true);
-    }
-    hasInitializedRef.current = true;
-  }, [currentSession, addMessage]);
-
-  // 加载会话历史
-  useEffect(() => {
-    if (!currentSession || !currentSession.sessionId) return;
+    if (!currentSession?.sessionId) return;
     if (currentSession.messages.length > 0) return;
+    if (hasLoadedHistoryRef.current === currentSession.sessionId) return;
+
+    hasLoadedHistoryRef.current = currentSession.sessionId;
     const timer = setTimeout(() => loadSessionHistory(currentSession.sessionId!), 100);
     return () => clearTimeout(timer);
-  }, [currentSession, loadSessionHistory]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentSession?.sessionId]);
 
   // 输入框高度自适应
   const handleInputHeight = () => {

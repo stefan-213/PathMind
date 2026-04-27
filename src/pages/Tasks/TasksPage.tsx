@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Header, Footer } from '../../components/layout';
 import { Card, Badge, EmptyState } from '../../components/common';
-import { getUserProfile, getUserTasks, getUserProgress, saveUserTasks, clearUserData } from '../../utils/storage';
+import { getUserProfile, getUserGoal, getUserTasks, getUserProgress, saveUserTasks, clearUserData } from '../../utils/storage';
 import type { Task, UserProfile, UserProgress } from '../../types/copilot';
 import './TasksPage.scss';
 
@@ -66,7 +66,7 @@ export function TasksPage() {
 
         console.log('【TasksPage】convertedTasks:', convertedTasks);
         setTasks(convertedTasks);
-        setProfile({ goal: 'AI 生成的学习计划' });
+        setProfile(getUserProfile() || { goal: getUserGoal() || JSON.parse(localStorage.getItem('pathmind_consult_chart') || '{}')?.consultationMsg?.goal || '学习RAG', recommendTitle: '', answers: [], createdAt: new Date().toISOString() });
         setProgress({
           completedTasks: 0,
           totalTasks: convertedTasks.length,
@@ -128,7 +128,7 @@ export function TasksPage() {
           <EmptyState
             icon={<i className="fas fa-clipboard-list"></i>}
             title="还没有任务"
-            description="先去技术咨询制定你的学习计划吧"
+            description="先去AI Copilot制定你的学习计划吧"
             action={
               <Link to="/consult" className="btn btn-primary">
                 制定计划
@@ -203,7 +203,7 @@ export function TasksPage() {
             重新开始
           </button>
           <Link to={`/graph?goal=${encodeURIComponent(profile.goal)}`} className="btn btn-primary">
-            查看知识图谱
+            查看知识图表
           </Link>
         </div>
       </main>

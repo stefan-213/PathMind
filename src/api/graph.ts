@@ -1,6 +1,6 @@
 /**
  * 图表 API 服务
- * 用于知识图谱页面的图表操作
+ * 用于知识图表页面的图表操作
  */
 import { post } from './axios';
 
@@ -17,6 +17,6 @@ export const charts = (data: {
   };
 }) => {
   return post<{
-    message: string;
+    content: string;
   }>('/api/agent/charts', data);
 };

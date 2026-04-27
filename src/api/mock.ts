@@ -329,146 +329,244 @@ export const mockTasksApi = {
 // ==================== AI Mock API ====================
 
 // Mock draw.io XML 数据
-export const mockGraphXml = `<mxfile host="app.diagrams.net" pages="2">
-  <diagram name="第 1 页" id="YyFVRHM6jd_8WXyG0aEp">
-    <mxGraphModel dx="1340" dy="1978" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="827" pageHeight="1169" math="0" shadow="0">
+export const mockGraphXml = `<mxfile host="app.diagrams.net" modified="2026-04-20T00:00:00.000Z" agent="draw.io" version="22.1.0">
+  <diagram name="RAG技术学习流程" id="rag-tech-flow">
+    <mxGraphModel dx="1400" dy="900" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1400" pageHeight="1100" math="0" shadow="0">
       <root>
-        <mxCell id="0" />
-        <mxCell id="1" parent="0" />
-        <mxCell id="d3REOcxsyU_q6Qrryvs0-4" parent="1" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;container=1;dropTarget=0;collapsible=0;recursiveResize=0;outlineConnect=0;portConstraint=eastwest;newEdgeStyle={&quot;edgeStyle&quot;:&quot;elbowEdgeStyle&quot;,&quot;elbow&quot;:&quot;vertical&quot;,&quot;curved&quot;:0,&quot;rounded&quot;:0};size=30;labelBackgroundColor=none;fillColor=#FFE45E;strokeColor=#FF6392;fontColor=#5AA9E6;rounded=1;" value="HTML5与语义化" vertex="1">
-          <mxGeometry height="300" width="150" x="350" y="-40" as="geometry" />
+        <mxCell id="0"/>
+        <mxCell id="1" parent="0"/>
+        
+        <!-- 标题 -->
+        <mxCell id="main-title" value="RAG 技术学习详细流程图" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=26;fontStyle=1;fontColor=#1a1a2e;" vertex="1" parent="1">
+          <mxGeometry x="400" y="20" width="500" height="50" as="geometry"/>
         </mxCell>
-        <mxCell id="d3REOcxsyU_q6Qrryvs0-5" parent="d3REOcxsyU_q6Qrryvs0-4" style="shape=image;imageAspect=0;aspect=fixed;image=https://cdn1.iconfinder.com/data/icons/hawcons/32/699734-icon-6-smiling-face-128.png;imageBackground=default;labelBackgroundColor=none;fillColor=#FFE45E;strokeColor=#FF6392;fontColor=#5AA9E6;rounded=1;" value="" vertex="1">
-          <mxGeometry height="30" width="30" x="60" y="145" as="geometry" />
+        
+        <mxCell id="sub-title" value="Pipeline 视角 —— 从数据摄入到答案生成" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=14;fontStyle=2;fontColor=#666666;" vertex="1" parent="1">
+          <mxGeometry x="400" y="70" width="500" height="30" as="geometry"/>
         </mxCell>
-        <mxCell id="d3REOcxsyU_q6Qrryvs0-6" parent="d3REOcxsyU_q6Qrryvs0-4" style="ellipse;aspect=fixed;labelBackgroundColor=none;fillColor=#FFE45E;strokeColor=#FF6392;fontColor=#5AA9E6;rounded=1;" vertex="1">
-          <mxGeometry height="12" width="12" x="5" y="-6" as="geometry" />
+        
+        <!-- ========== 离线索引阶段 ========== -->
+        <mxCell id="offline-label" value="离线索引阶段 (Offline Indexing)" style="swimlane;whiteSpace=wrap;html=1;startSize=25;fillColor=#e3f2fd;strokeColor=#1565c0;fontStyle=1;fontSize=14;" vertex="1" parent="1">
+          <mxGeometry x="60" y="140" width="1280" height="220" as="geometry"/>
         </mxCell>
-        <mxCell id="d3REOcxsyU_q6Qrryvs0-7" parent="1" style="whiteSpace=wrap;strokeWidth=2;labelBackgroundColor=none;fillColor=#FFE45E;strokeColor=#FF6392;fontColor=#5AA9E6;rounded=1;" value="基础阶段" vertex="1">
-          <mxGeometry height="30" width="150" x="350" y="-80" as="geometry" />
+        
+        <!-- 步骤1 -->
+        <mxCell id="step1" value="Step 1" style="ellipse;whiteSpace=wrap;html=1;fillColor=#1565c0;strokeColor=#1565c0;fontSize=11;fontStyle=1;fontColor=#ffffff;" vertex="1" parent="offline-label">
+          <mxGeometry x="30" y="50" width="50" height="30" as="geometry"/>
         </mxCell>
-        <mxCell id="d3REOcxsyU_q6Qrryvs0-8" parent="1" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;container=1;dropTarget=0;collapsible=0;recursiveResize=0;outlineConnect=0;portConstraint=eastwest;newEdgeStyle={&quot;edgeStyle&quot;:&quot;elbowEdgeStyle&quot;,&quot;elbow&quot;:&quot;vertical&quot;,&quot;curved&quot;:0,&quot;rounded&quot;:0};size=30;labelBackgroundColor=none;fillColor=#FFE45E;strokeColor=#FF6392;fontColor=#5AA9E6;rounded=1;" value="CSS3与布局(Flex/Grid)" vertex="1">
-          <mxGeometry height="300" width="150" x="550" y="-40" as="geometry" />
+        <mxCell id="step1-box" value="文档加载&lt;br&gt;PDF/Word/TXT/网页" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#bbdefb;strokeColor=#1565c0;fontSize=11;" vertex="1" parent="offline-label">
+          <mxGeometry x="100" y="45" width="140" height="50" as="geometry"/>
         </mxCell>
-        <mxCell id="d3REOcxsyU_q6Qrryvs0-9" parent="d3REOcxsyU_q6Qrryvs0-8" style="shape=image;imageAspect=0;aspect=fixed;image=https://cdn1.iconfinder.com/data/icons/hawcons/32/699734-icon-6-smiling-face-128.png;imageBackground=default;labelBackgroundColor=none;fillColor=#FFE45E;strokeColor=#FF6392;fontColor=#5AA9E6;rounded=1;" value="" vertex="1">
-          <mxGeometry height="30" width="30" x="60" y="170" as="geometry" />
+        <mxCell id="step1-tag" value="学习周：第3周 Day1-2" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=9;fontColor=#1565c0;" vertex="1" parent="offline-label">
+          <mxGeometry x="100" y="100" width="140" height="15" as="geometry"/>
         </mxCell>
-        <mxCell id="d3REOcxsyU_q6Qrryvs0-10" parent="d3REOcxsyU_q6Qrryvs0-8" style="ellipse;aspect=fixed;labelBackgroundColor=none;fillColor=#FFE45E;strokeColor=#FF6392;fontColor=#5AA9E6;rounded=1;" vertex="1">
-          <mxGeometry height="12" width="12" x="5" y="-6" as="geometry" />
+        
+        <!-- 箭头 -->
+        <mxCell id="arrow1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=classic;" edge="1" parent="offline-label" source="step1-box" target="step2-box">
+          <mxGeometry relative="1" as="geometry"/>
         </mxCell>
-        <mxCell id="d3REOcxsyU_q6Qrryvs0-11" parent="1" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;container=1;dropTarget=0;collapsible=0;recursiveResize=0;outlineConnect=0;portConstraint=eastwest;newEdgeStyle={&quot;edgeStyle&quot;:&quot;elbowEdgeStyle&quot;,&quot;elbow&quot;:&quot;vertical&quot;,&quot;curved&quot;:0,&quot;rounded&quot;:0};size=30;labelBackgroundColor=none;fillColor=#FFE45E;strokeColor=#FF6392;fontColor=#5AA9E6;rounded=1;" value="JavaScript基础(ES6+)" vertex="1">
-          <mxGeometry height="300" width="150" x="750" y="-40" as="geometry" />
+        
+        <!-- 步骤2 -->
+        <mxCell id="step2" value="Step 2" style="ellipse;whiteSpace=wrap;html=1;fillColor=#1565c0;strokeColor=#1565c0;fontSize=11;fontStyle=1;fontColor=#ffffff;" vertex="1" parent="offline-label">
+          <mxGeometry x="290" y="50" width="50" height="30" as="geometry"/>
         </mxCell>
-        <mxCell id="d3REOcxsyU_q6Qrryvs0-12" parent="d3REOcxsyU_q6Qrryvs0-11" style="shape=image;imageAspect=0;aspect=fixed;image=https://cdn1.iconfinder.com/data/icons/hawcons/32/699734-icon-6-smiling-face-128.png;imageBackground=default;labelBackgroundColor=none;fillColor=#FFE45E;strokeColor=#FF6392;fontColor=#5AA9E6;rounded=1;" value="" vertex="1">
-          <mxGeometry height="30" width="30" x="60" y="145" as="geometry" />
+        <mxCell id="step2-box" value="文本清洗与分块&lt;br&gt;Chunking策略" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#bbdefb;strokeColor=#1565c0;fontSize=11;" vertex="1" parent="offline-label">
+          <mxGeometry x="360" y="45" width="140" height="50" as="geometry"/>
         </mxCell>
-        <mxCell id="d3REOcxsyU_q6Qrryvs0-13" parent="d3REOcxsyU_q6Qrryvs0-11" style="ellipse;aspect=fixed;labelBackgroundColor=none;fillColor=#FFE45E;strokeColor=#FF6392;fontColor=#5AA9E6;rounded=1;" vertex="1">
-          <mxGeometry height="12" width="12" x="5" y="-6" as="geometry" />
+        <mxCell id="step2-tag" value="学习周：第3周 Day3" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=9;fontColor=#1565c0;" vertex="1" parent="offline-label">
+          <mxGeometry x="360" y="100" width="140" height="15" as="geometry"/>
         </mxCell>
-        <mxCell id="d3REOcxsyU_q6Qrryvs0-14" parent="1" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;container=1;dropTarget=0;collapsible=0;recursiveResize=0;outlineConnect=0;portConstraint=eastwest;newEdgeStyle={&quot;edgeStyle&quot;:&quot;elbowEdgeStyle&quot;,&quot;elbow&quot;:&quot;vertical&quot;,&quot;curved&quot;:0,&quot;rounded&quot;:0};size=30;labelBackgroundColor=none;fillColor=#FFE45E;strokeColor=#FF6392;fontColor=#5AA9E6;rounded=1;" value="前端框架(React/Vue)" vertex="1">
-          <mxGeometry height="300" width="150" x="950" y="-40" as="geometry" />
+        
+        <!-- 步骤2子项 -->
+        <mxCell id="step2-sub1" value="固定大小分块" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#e3f2fd;strokeColor=#90caf9;fontSize=9;" vertex="1" parent="offline-label">
+          <mxGeometry x="360" y="130" width="65" height="20" as="geometry"/>
         </mxCell>
-        <mxCell id="d3REOcxsyU_q6Qrryvs0-15" parent="d3REOcxsyU_q6Qrryvs0-14" style="shape=image;imageAspect=0;aspect=fixed;image=https://cdn1.iconfinder.com/data/icons/hawcons/32/699734-icon-6-smiling-face-128.png;imageBackground=default;labelBackgroundColor=none;fillColor=#FFE45E;strokeColor=#FF6392;fontColor=#5AA9E6;rounded=1;" value="" vertex="1">
-          <mxGeometry height="30" width="30" x="60" y="170" as="geometry" />
+        <mxCell id="step2-sub2" value="语义分块" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#e3f2fd;strokeColor=#90caf9;fontSize=9;" vertex="1" parent="offline-label">
+          <mxGeometry x="435" y="130" width="65" height="20" as="geometry"/>
         </mxCell>
-        <mxCell id="d3REOcxsyU_q6Qrryvs0-16" parent="d3REOcxsyU_q6Qrryvs0-14" style="ellipse;aspect=fixed;labelBackgroundColor=none;fillColor=#FFE45E;strokeColor=#FF6392;fontColor=#5AA9E6;rounded=1;" vertex="1">
-          <mxGeometry height="12" width="12" x="5" y="-6" as="geometry" />
+        <mxCell id="step2-sub3" value="递归分块" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#e3f2fd;strokeColor=#90caf9;fontSize=9;" vertex="1" parent="offline-label">
+          <mxGeometry x="360" y="160" width="65" height="20" as="geometry"/>
         </mxCell>
-        <mxCell id="d3REOcxsyU_q6Qrryvs0-17" parent="1" style="whiteSpace=wrap;strokeWidth=2;labelBackgroundColor=none;fillColor=#FFE45E;strokeColor=#FF6392;fontColor=#5AA9E6;rounded=1;" value="进阶阶段" vertex="1">
-          <mxGeometry height="30" width="150" x="950" y="-80" as="geometry" />
+        <mxCell id="step2-sub4" value="重叠窗口" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#e3f2fd;strokeColor=#90caf9;fontSize=9;" vertex="1" parent="offline-label">
+          <mxGeometry x="435" y="160" width="65" height="20" as="geometry"/>
         </mxCell>
-        <mxCell id="d3REOcxsyU_q6Qrryvs0-18" parent="1" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;container=1;dropTarget=0;collapsible=0;recursiveResize=0;outlineConnect=0;portConstraint=eastwest;newEdgeStyle={&quot;edgeStyle&quot;:&quot;elbowEdgeStyle&quot;,&quot;elbow&quot;:&quot;vertical&quot;,&quot;curved&quot;:0,&quot;rounded&quot;:0};size=30;labelBackgroundColor=none;fillColor=#FFE45E;strokeColor=#FF6392;fontColor=#5AA9E6;rounded=1;" value="状态管理(Redux/Pinia)" vertex="1">
-          <mxGeometry height="300" width="150" x="1150" y="-40" as="geometry" />
+        
+        <mxCell id="arrow2" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=classic;" edge="1" parent="offline-label" source="step2-box" target="step3-box">
+          <mxGeometry relative="1" as="geometry"/>
         </mxCell>
-        <mxCell id="d3REOcxsyU_q6Qrryvs0-19" parent="d3REOcxsyU_q6Qrryvs0-18" style="shape=image;imageAspect=0;aspect=fixed;image=https://cdn1.iconfinder.com/data/icons/hawcons/32/699721-icon-5-neutral-face-128.png;imageBackground=default;labelBackgroundColor=none;fillColor=#FFE45E;strokeColor=#FF6392;fontColor=#5AA9E6;rounded=1;" value="" vertex="1">
-          <mxGeometry height="30" width="30" x="60" y="195" as="geometry" />
+        
+        <!-- 步骤3 -->
+        <mxCell id="step3" value="Step 3" style="ellipse;whiteSpace=wrap;html=1;fillColor=#1565c0;strokeColor=#1565c0;fontSize=11;fontStyle=1;fontColor=#ffffff;" vertex="1" parent="offline-label">
+          <mxGeometry x="560" y="50" width="50" height="30" as="geometry"/>
         </mxCell>
-        <mxCell id="d3REOcxsyU_q6Qrryvs0-20" parent="d3REOcxsyU_q6Qrryvs0-18" style="ellipse;aspect=fixed;labelBackgroundColor=none;fillColor=#FFE45E;strokeColor=#FF6392;fontColor=#5AA9E6;rounded=1;" vertex="1">
-          <mxGeometry height="12" width="12" x="5" y="-6" as="geometry" />
+        <mxCell id="step3-box" value="向量化 Embedding&lt;br&gt;文本→向量" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#bbdefb;strokeColor=#1565c0;fontSize=11;" vertex="1" parent="offline-label">
+          <mxGeometry x="630" y="45" width="140" height="50" as="geometry"/>
         </mxCell>
-        <mxCell id="d3REOcxsyU_q6Qrryvs0-21" parent="1" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;container=1;dropTarget=0;collapsible=0;recursiveResize=0;outlineConnect=0;portConstraint=eastwest;newEdgeStyle={&quot;edgeStyle&quot;:&quot;elbowEdgeStyle&quot;,&quot;elbow&quot;:&quot;vertical&quot;,&quot;curved&quot;:0,&quot;rounded&quot;:0};size=30;labelBackgroundColor=none;fillColor=#FFE45E;strokeColor=#FF6392;fontColor=#5AA9E6;rounded=1;" value="构建工具(Vite/Webpack)" vertex="1">
-          <mxGeometry height="300" width="150" x="1350" y="-40" as="geometry" />
+        <mxCell id="step3-tag" value="学习周：第3周 Day1-2" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=9;fontColor=#1565c0;" vertex="1" parent="offline-label">
+          <mxGeometry x="630" y="100" width="140" height="15" as="geometry"/>
         </mxCell>
-        <mxCell id="d3REOcxsyU_q6Qrryvs0-22" parent="d3REOcxsyU_q6Qrryvs0-21" style="shape=image;imageAspect=0;aspect=fixed;image=https://cdn1.iconfinder.com/data/icons/hawcons/32/699721-icon-5-neutral-face-128.png;imageBackground=default;labelBackgroundColor=none;fillColor=#FFE45E;strokeColor=#FF6392;fontColor=#5AA9E6;rounded=1;" value="" vertex="1">
-          <mxGeometry height="30" width="30" x="60" y="195" as="geometry" />
+        <mxCell id="step3-sub1" value="BGE / text2vec / OpenAI" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#e3f2fd;strokeColor=#90caf9;fontSize=9;" vertex="1" parent="offline-label">
+          <mxGeometry x="630" y="130" width="140" height="20" as="geometry"/>
         </mxCell>
-        <mxCell id="d3REOcxsyU_q6Qrryvs0-23" parent="d3REOcxsyU_q6Qrryvs0-21" style="ellipse;aspect=fixed;labelBackgroundColor=none;fillColor=#FFE45E;strokeColor=#FF6392;fontColor=#5AA9E6;rounded=1;" vertex="1">
-          <mxGeometry height="12" width="12" x="5" y="-6" as="geometry" />
+        
+        <mxCell id="arrow3" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=classic;" edge="1" parent="offline-label" source="step3-box" target="step4-box">
+          <mxGeometry relative="1" as="geometry"/>
         </mxCell>
-        <mxCell id="d3REOcxsyU_q6Qrryvs0-24" parent="1" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;container=1;dropTarget=0;collapsible=0;recursiveResize=0;outlineConnect=0;portConstraint=eastwest;newEdgeStyle={&quot;edgeStyle&quot;:&quot;elbowEdgeStyle&quot;,&quot;elbow&quot;:&quot;vertical&quot;,&quot;curved&quot;:0,&quot;rounded&quot;:0};size=30;labelBackgroundColor=none;fillColor=#FFE45E;strokeColor=#FF6392;fontColor=#5AA9E6;rounded=1;" value="TypeScript" vertex="1">
-          <mxGeometry height="300" width="150" x="1550" y="-40" as="geometry" />
+        
+        <!-- 步骤4 -->
+        <mxCell id="step4" value="Step 4" style="ellipse;whiteSpace=wrap;html=1;fillColor=#1565c0;strokeColor=#1565c0;fontSize=11;fontStyle=1;fontColor=#ffffff;" vertex="1" parent="offline-label">
+          <mxGeometry x="830" y="50" width="50" height="30" as="geometry"/>
         </mxCell>
-        <mxCell id="d3REOcxsyU_q6Qrryvs0-25" parent="d3REOcxsyU_q6Qrryvs0-24" style="shape=image;imageAspect=0;aspect=fixed;image=https://cdn1.iconfinder.com/data/icons/hawcons/32/699734-icon-6-smiling-face-128.png;imageBackground=default;labelBackgroundColor=none;fillColor=#FFE45E;strokeColor=#FF6392;fontColor=#5AA9E6;rounded=1;" value="" vertex="1">
-          <mxGeometry height="30" width="30" x="60" y="170" as="geometry" />
+        <mxCell id="step4-box" value="向量存储&lt;br&gt;Chroma / FAISS" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#bbdefb;strokeColor=#1565c0;fontSize=11;" vertex="1" parent="offline-label">
+          <mxGeometry x="900" y="45" width="140" height="50" as="geometry"/>
         </mxCell>
-        <mxCell id="d3REOcxsyU_q6Qrryvs0-26" parent="d3REOcxsyU_q6Qrryvs0-24" style="ellipse;aspect=fixed;labelBackgroundColor=none;fillColor=#FFE45E;strokeColor=#FF6392;fontColor=#5AA9E6;rounded=1;" vertex="1">
-          <mxGeometry height="12" width="12" x="5" y="-6" as="geometry" />
+        <mxCell id="step4-tag" value="学习周：第3周 Day4-5" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=9;fontColor=#1565c0;" vertex="1" parent="offline-label">
+          <mxGeometry x="900" y="100" width="140" height="15" as="geometry"/>
         </mxCell>
-        <mxCell id="d3REOcxsyU_q6Qrryvs0-27" parent="1" style="whiteSpace=wrap;strokeWidth=2;labelBackgroundColor=none;fillColor=#FFE45E;strokeColor=#FF6392;fontColor=#5AA9E6;rounded=1;" value="高级阶段" vertex="1">
-          <mxGeometry height="30" width="150" x="1550" y="-80" as="geometry" />
+        
+        <mxCell id="arrow4" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=classic;" edge="1" parent="offline-label" source="step4-box" target="step5-box">
+          <mxGeometry relative="1" as="geometry"/>
         </mxCell>
-        <mxCell id="d3REOcxsyU_q6Qrryvs0-28" parent="1" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;container=1;dropTarget=0;collapsible=0;recursiveResize=0;outlineConnect=0;portConstraint=eastwest;newEdgeStyle={&quot;edgeStyle&quot;:&quot;elbowEdgeStyle&quot;,&quot;elbow&quot;:&quot;vertical&quot;,&quot;curved&quot;:0,&quot;rounded&quot;:0};size=30;labelBackgroundColor=none;fillColor=#FFE45E;strokeColor=#FF6392;fontColor=#5AA9E6;rounded=1;" value="性能优化与工程化" vertex="1">
-          <mxGeometry height="300" width="150" x="1750" y="-40" as="geometry" />
+        
+        <!-- 步骤5 -->
+        <mxCell id="step5" value="Step 5" style="ellipse;whiteSpace=wrap;html=1;fillColor=#1565c0;strokeColor=#1565c0;fontSize=11;fontStyle=1;fontColor=#ffffff;" vertex="1" parent="offline-label">
+          <mxGeometry x="1090" y="50" width="50" height="30" as="geometry"/>
         </mxCell>
-        <mxCell id="d3REOcxsyU_q6Qrryvs0-29" parent="d3REOcxsyU_q6Qrryvs0-28" style="shape=image;imageAspect=0;aspect=fixed;image=https://cdn1.iconfinder.com/data/icons/hawcons/32/699721-icon-5-neutral-face-128.png;imageBackground=default;labelBackgroundColor=none;fillColor=#FFE45E;strokeColor=#FF6392;fontColor=#5AA9E6;rounded=1;" value="" vertex="1">
-          <mxGeometry height="30" width="30" x="60" y="195" as="geometry" />
+        <mxCell id="step5-box" value="索引构建完成&lt;br&gt;等待查询" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#64b5f6;strokeColor=#1565c0;fontSize=11;fontStyle=1;" vertex="1" parent="offline-label">
+          <mxGeometry x="1160" y="45" width="100" height="50" as="geometry"/>
         </mxCell>
-        <mxCell id="d3REOcxsyU_q6Qrryvs0-30" parent="d3REOcxsyU_q6Qrryvs0-28" style="ellipse;aspect=fixed;labelBackgroundColor=none;fillColor=#FFE45E;strokeColor=#FF6392;fontColor=#5AA9E6;rounded=1;" vertex="1">
-          <mxGeometry height="12" width="12" x="5" y="-6" as="geometry" />
-        </mxCell>
-        <mxCell id="d3REOcxsyU_q6Qrryvs0-31" parent="1" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;container=1;dropTarget=0;collapsible=0;recursiveResize=0;outlineConnect=0;portConstraint=eastwest;newEdgeStyle={&quot;edgeStyle&quot;:&quot;elbowEdgeStyle&quot;,&quot;elbow&quot;:&quot;vertical&quot;,&quot;curved&quot;:0,&quot;rounded&quot;:0};size=30;labelBackgroundColor=none;fillColor=#FFE45E;strokeColor=#FF6392;fontColor=#5AA9E6;rounded=1;" value="服务端渲染(Next.js/Nuxt)" vertex="1">
-          <mxGeometry height="300" width="150" x="1950" y="-40" as="geometry" />
-        </mxCell>
-        <mxCell id="d3REOcxsyU_q6Qrryvs0-32" parent="d3REOcxsyU_q6Qrryvs0-31" style="shape=image;imageAspect=0;aspect=fixed;image=https://cdn1.iconfinder.com/data/icons/hawcons/32/699741-icon-7-sad-face-128.png;imageBackground=default;labelBackgroundColor=none;fillColor=#FFE45E;strokeColor=#FF6392;fontColor=#5AA9E6;rounded=1;" value="" vertex="1">
-          <mxGeometry height="30" width="30" x="60" y="220" as="geometry" />
-        </mxCell>
-        <mxCell id="d3REOcxsyU_q6Qrryvs0-33" parent="d3REOcxsyU_q6Qrryvs0-31" style="ellipse;aspect=fixed;labelBackgroundColor=none;fillColor=#FFE45E;strokeColor=#FF6392;fontColor=#5AA9E6;rounded=1;" vertex="1">
-          <mxGeometry height="12" width="12" x="5" y="-6" as="geometry" />
-        </mxCell>
-        <mxCell id="d3REOcxsyU_q6Qrryvs0-34" parent="1" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;container=1;dropTarget=0;collapsible=0;recursiveResize=0;outlineConnect=0;portConstraint=eastwest;newEdgeStyle={&quot;edgeStyle&quot;:&quot;elbowEdgeStyle&quot;,&quot;elbow&quot;:&quot;vertical&quot;,&quot;curved&quot;:0,&quot;rounded&quot;:0};size=30;labelBackgroundColor=none;fillColor=#FFE45E;strokeColor=#FF6392;fontColor=#5AA9E6;rounded=1;" value="测试与部署" vertex="1">
-          <mxGeometry height="300" width="150" x="2150" y="-40" as="geometry" />
-        </mxCell>
-        <mxCell id="d3REOcxsyU_q6Qrryvs0-35" parent="d3REOcxsyU_q6Qrryvs0-34" style="shape=image;imageAspect=0;aspect=fixed;image=https://cdn1.iconfinder.com/data/icons/hawcons/32/699721-icon-5-neutral-face-128.png;imageBackground=default;labelBackgroundColor=none;fillColor=#FFE45E;strokeColor=#FF6392;fontColor=#5AA9E6;rounded=1;" value="" vertex="1">
-          <mxGeometry height="30" width="30" x="60" y="195" as="geometry" />
-        </mxCell>
-        <mxCell id="d3REOcxsyU_q6Qrryvs0-36" parent="d3REOcxsyU_q6Qrryvs0-34" style="ellipse;aspect=fixed;labelBackgroundColor=none;fillColor=#FFE45E;strokeColor=#FF6392;fontColor=#5AA9E6;rounded=1;" vertex="1">
-          <mxGeometry height="12" width="12" x="5" y="-6" as="geometry" />
-        </mxCell>
-        <mxCell id="d3REOcxsyU_q6Qrryvs0-37" parent="1" style="whiteSpace=wrap;strokeWidth=2;labelBackgroundColor=none;fillColor=#FFE45E;strokeColor=#FF6392;fontColor=#5AA9E6;rounded=1;" value="职业化" vertex="1">
-          <mxGeometry height="30" width="150" x="2150" y="-80" as="geometry" />
-        </mxCell>
-        <mxCell id="d3REOcxsyU_q6Qrryvs0-38" parent="1" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;container=1;dropTarget=0;collapsible=0;recursiveResize=0;outlineConnect=0;portConstraint=eastwest;newEdgeStyle={&quot;edgeStyle&quot;:&quot;elbowEdgeStyle&quot;,&quot;elbow&quot;:&quot;vertical&quot;,&quot;curved&quot;:0,&quot;rounded&quot;:0};size=30;labelBackgroundColor=none;fillColor=#FFE45E;strokeColor=#FF6392;fontColor=#5AA9E6;rounded=1;" value="全栈开发能力" vertex="1">
-          <mxGeometry height="300" width="150" x="2350" y="-40" as="geometry" />
-        </mxCell>
-        <mxCell id="d3REOcxsyU_q6Qrryvs0-39" parent="d3REOcxsyU_q6Qrryvs0-38" style="shape=image;imageAspect=0;aspect=fixed;image=https://cdn1.iconfinder.com/data/icons/hawcons/32/699741-icon-7-sad-face-128.png;imageBackground=default;labelBackgroundColor=none;fillColor=#FFE45E;strokeColor=#FF6392;fontColor=#5AA9E6;rounded=1;" value="" vertex="1">
-          <mxGeometry height="30" width="30" x="60" y="220" as="geometry" />
-        </mxCell>
-        <mxCell id="d3REOcxsyU_q6Qrryvs0-40" parent="d3REOcxsyU_q6Qrryvs0-38" style="ellipse;aspect=fixed;labelBackgroundColor=none;fillColor=#FFE45E;strokeColor=#FF6392;fontColor=#5AA9E6;rounded=1;" vertex="1">
-          <mxGeometry height="12" width="12" x="5" y="-6" as="geometry" />
-        </mxCell>
-        <mxCell id="d3REOcxsyU_q6Qrryvs0-41" edge="1" parent="1" style="endArrow=block;strokeWidth=3;endFill=1;rounded=1;labelBackgroundColor=none;fontColor=default;strokeColor=#FF6392;">
-          <mxGeometry relative="1" as="geometry">
-            <mxPoint x="350" y="40" as="sourcePoint" />
-            <mxPoint x="2550" y="40" as="targetPoint" />
+        
+        <!-- 大箭头连接两个阶段 -->
+        <mxCell id="phase-arrow" value="" style="shape=flexArrow;endArrow=classic;html=1;rounded=0;fillColor=#4a148c;strokeColor=none;width=12;endSize=15;startSize=10;" edge="1" parent="1">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <mxPoint x="700" y="370" as="sourcePoint"/>
+            <mxPoint x="700" y="420" as="targetPoint"/>
           </mxGeometry>
         </mxCell>
-        <mxCell id="d3REOcxsyU_q6Qrryvs0-42" parent="1" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;fontSize=20;fontStyle=1;labelBackgroundColor=none;fontColor=#5AA9E6;rounded=1;" value="前端开发学习路线图" vertex="1">
-          <mxGeometry height="40" width="108" x="350" y="-150" as="geometry" />
+        <mxCell id="phase-arrow-label" value="用户查询触发" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=12;fontStyle=1;fontColor=#4a148c;" vertex="1" parent="1">
+          <mxGeometry x="600" y="395" width="100" height="20" as="geometry"/>
         </mxCell>
-        <mxCell id="d3REOcxsyU_q6Qrryvs0-43" parent="1" style="ellipse;aspect=fixed;labelPosition=right;verticalLabelPosition=middle;align=left;verticalAlign=middle;spacingLeft=10;labelBackgroundColor=none;fillColor=#FFE45E;strokeColor=#FF6392;fontColor=#5AA9E6;rounded=1;" value="学习者" vertex="1">
-          <mxGeometry height="12" width="12" x="210" y="-80" as="geometry" />
+        
+        <!-- ========== 在线检索与生成阶段 ========== -->
+        <mxCell id="online-label" value="在线检索与生成阶段 (Online Retrieval &amp; Generation)" style="swimlane;whiteSpace=wrap;html=1;startSize=25;fillColor=#fff3e0;strokeColor=#e65100;fontStyle=1;fontSize=14;" vertex="1" parent="1">
+          <mxGeometry x="60" y="430" width="1280" height="280" as="geometry"/>
         </mxCell>
-        <mxCell id="d3REOcxsyU_q6Qrryvs0-44" parent="1" style="shape=image;imageAspect=0;aspect=fixed;image=https://cdn1.iconfinder.com/data/icons/hawcons/32/699734-icon-6-smiling-face-128.png;imageBackground=default;labelBackgroundColor=none;fillColor=#FFE45E;strokeColor=#FF6392;fontColor=#5AA9E6;rounded=1;" value="" vertex="1">
-          <mxGeometry height="30" width="30" x="1610" y="130" as="geometry" />
+        
+        <!-- 查询输入 -->
+        <mxCell id="query-step" value="Query" style="ellipse;whiteSpace=wrap;html=1;fillColor=#e65100;strokeColor=#e65100;fontSize=11;fontStyle=1;fontColor=#ffffff;" vertex="1" parent="online-label">
+          <mxGeometry x="30" y="60" width="60" height="30" as="geometry"/>
         </mxCell>
-      </root>
-    </mxGraphModel>
-  </diagram>
-  <diagram id="c2dpbPVJP4e-SSE1BsDc" name="第 2 页">
-    <mxGraphModel dx="938" dy="566" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="827" pageHeight="1169" math="0" shadow="0">
-      <root>
-        <mxCell id="0" />
-        <mxCell id="1" parent="0" />
+        <mxCell id="query-box" value="用户输入问题" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe0b2;strokeColor=#e65100;fontSize=11;" vertex="1" parent="online-label">
+          <mxGeometry x="110" y="55" width="120" height="40" as="geometry"/>
+        </mxCell>
+        
+        <mxCell id="q-arrow1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=classic;" edge="1" parent="online-label" source="query-box" target="rewrite-box">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        
+        <!-- 查询改写 -->
+        <mxCell id="rewrite-box" value="Query 改写/扩展" style="rhombus;whiteSpace=wrap;html=1;fillColor=#ffcc80;strokeColor=#e65100;fontSize=11;" vertex="1" parent="online-label">
+          <mxGeometry x="280" y="45" width="130" height="60" as="geometry"/>
+        </mxCell>
+        <mxCell id="rewrite-tag" value="学习周：第5周 Day2" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=9;fontColor=#e65100;" vertex="1" parent="online-label">
+          <mxGeometry x="280" y="110" width="130" height="15" as="geometry"/>
+        </mxCell>
+        
+        <mxCell id="q-arrow2" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=classic;" edge="1" parent="online-label" source="rewrite-box" target="retrieval-box">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        
+        <!-- 混合检索 -->
+        <mxCell id="retrieval-box" value="混合检索" style="swimlane;whiteSpace=wrap;html=1;startSize=20;fillColor=#ffe0b2;strokeColor=#e65100;fontSize=11;" vertex="1" parent="online-label">
+          <mxGeometry x="460" y="35" width="160" height="100" as="geometry"/>
+        </mxCell>
+        <mxCell id="dense-ret" value="稠密检索 (向量相似度)" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#fff3e0;strokeColor=#e65100;fontSize=9;" vertex="1" parent="retrieval-box">
+          <mxGeometry x="10" y="30" width="140" height="25" as="geometry"/>
+        </mxCell>
+        <mxCell id="sparse-ret" value="稀疏检索 (BM25)" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#fff3e0;strokeColor=#e65100;fontSize=9;" vertex="1" parent="retrieval-box">
+          <mxGeometry x="10" y="60" width="140" height="25" as="geometry"/>
+        </mxCell>
+        <mxCell id="retrieval-tag" value="学习周：第5周 Day3" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=9;fontColor=#e65100;" vertex="1" parent="online-label">
+          <mxGeometry x="460" y="140" width="160" height="15" as="geometry"/>
+        </mxCell>
+        
+        <mxCell id="q-arrow3" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=classic;" edge="1" parent="online-label" source="retrieval-box" target="rerank-box">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        
+        <!-- 重排序 -->
+        <mxCell id="rerank-box" value="Reranker 重排序" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffcc80;strokeColor=#e65100;fontSize=11;" vertex="1" parent="online-label">
+          <mxGeometry x="680" y="50" width="130" height="50" as="geometry"/>
+        </mxCell>
+        <mxCell id="rerank-tag" value="学习周：第5周 Day1" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=9;fontColor=#e65100;" vertex="1" parent="online-label">
+          <mxGeometry x="680" y="105" width="130" height="15" as="geometry"/>
+        </mxCell>
+        
+        <mxCell id="q-arrow4" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=classic;" edge="1" parent="online-label" source="rerank-box" target="context-box">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        
+        <!-- 上下文构建 -->
+        <mxCell id="context-box" value="上下文构建&lt;br&gt;Prompt模板填充" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe0b2;strokeColor=#e65100;fontSize=11;" vertex="1" parent="online-label">
+          <mxGeometry x="870" y="45" width="140" height="55" as="geometry"/>
+        </mxCell>
+        <mxCell id="context-tag" value="学习周：第4周 Day3-4" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=9;fontColor=#e65100;" vertex="1" parent="online-label">
+          <mxGeometry x="870" y="105" width="140" height="15" as="geometry"/>
+        </mxCell>
+        
+        <mxCell id="q-arrow5" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=classic;" edge="1" parent="online-label" source="context-box" target="llm-box">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        
+        <!-- LLM生成 -->
+        <mxCell id="llm-box" value="LLM 生成答案" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ff8a65;strokeColor=#e65100;fontSize=11;fontStyle=1;" vertex="1" parent="online-label">
+          <mxGeometry x="1070" y="45" width="120" height="55" as="geometry"/>
+        </mxCell>
+        <mxCell id="llm-tag" value="学习周：第4周 Day1-2,5" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=9;fontColor=#e65100;" vertex="1" parent="online-label">
+          <mxGeometry x="1070" y="105" width="120" height="15" as="geometry"/>
+        </mxCell>
+        
+        <!-- 反馈闭环 -->
+        <mxCell id="feedback-arrow" value="" style="shape=flexArrow;endArrow=classic;html=1;rounded=0;fillColor=#d84315;strokeColor=none;width=8;endSize=10;" edge="1" parent="online-label">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <mxPoint x="1130" y="180" as="sourcePoint"/>
+            <mxPoint x="400" y="180" as="targetPoint"/>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="feedback-label" value="评估反馈 (RAGAS) —— 优化检索参数" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=10;fontStyle=1;fontColor=#d84315;" vertex="1" parent="online-label">
+          <mxGeometry x="650" y="185" width="250" height="20" as="geometry"/>
+        </mxCell>
+        
+        <!-- ========== 底部工具链 ========== -->
+        <mxCell id="toolchain-label" value="技术栈与工具链" style="swimlane;whiteSpace=wrap;html=1;startSize=25;fillColor=#f5f5f5;strokeColor=#9e9e9e;fontStyle=1;fontSize=13;" vertex="1" parent="1">
+          <mxGeometry x="60" y="750" width="1280" height="120" as="geometry"/>
+        </mxCell>
+        
+        <mxCell id="tool1" value="LangChain" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e8eaf6;strokeColor=#283593;fontSize=11;" vertex="1" parent="toolchain-label">
+          <mxGeometry x="40" y="45" width="110" height="40" as="geometry"/>
+        </mxCell>
+        <mxCell id="tool2" value="LlamaIndex" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e8eaf6;strokeColor=#283593;fontSize=11;" vertex="1" parent="toolchain-label">
+          <mxGeometry x="170" y="45" width="110" height="40" as="geometry"/>
+        </mxCell>
+        <mxCell id="tool3" value="Chroma" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e8eaf6;strokeColor=#283593;fontSize=11;" vertex="1" parent="toolchain-label">
+          <mxGeometry x="300" y="45" width="110" height="40" as="geometry"/>
+        </mxCell>
+        <mxCell id="tool4" value="FAISS" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e8eaf6;strokeColor=#283593;fontSize=11;" vertex="1" parent="toolchain-label">
+          <mxGeometry x="430" y="45" width="110" height="40" as="geometry"/>
+        </mxCell>
+        <mxCell id="tool5" value="HuggingFace" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e8eaf6;strokeColor=#283593;fontSize=11;" vertex="1" parent="toolchain-label">
+          <mxGeometry x="560" y="45" width="110" height="40" as="geometry"/>
+        </mxCell>
+        <mxCell id="tool6" value="OpenAI API" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e8eaf6;strokeColor=#283593;fontSize=11;" vertex="1" parent="toolchain-label">
+          <mxGeometry x="690" y="45" width="110" height="40" as="geometry"/>
+        </mxCell>
+        <mxCell id="tool7" value="Streamlit/Gradio" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e8eaf6;strokeColor=#283593;fontSize=11;" vertex="1" parent="toolchain-label">
+          <mxGeometry x="820" y="45" width="120" height="40" as="geometry"/>
+        </mxCell>
+        <mxCell id="tool8" value="RAGAS" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e8eaf6;strokeColor=#283593;fontSize=11;" vertex="1" parent="toolchain-label">
+          <mxGeometry x="960" y="45" width="110" height="40" as="geometry"/>
+        </mxCell>
+        
       </root>
     </mxGraphModel>
   </diagram>

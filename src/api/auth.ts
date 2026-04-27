@@ -4,10 +4,6 @@
 import { get, post } from './axios';
 import type { User, LoginRequest, RegisterRequest, AuthResponse } from '../types/api';
 
-/**
- * 用户登录
- * 后端返回 data 为 token 字符串（可能是 "Bearer xxx" 格式）
- */
 export const login = (data: LoginRequest) => {
   return post<string>('/api/auth/login', data);
 };
@@ -43,6 +39,6 @@ export const updateUser = (data: { username?: string; email?: string; phone?: st
 /**
  * 修改密码
  */
-export const changePassword = (oldPassword: string, newPassword: string) => {
-  return post<void>('/api/auth/change-password', { oldPassword, newPassword });
-};
+// export const changePassword = (oldPassword: string, newPassword: string) => {
+//   return post<void>('/api/auth/change-password', { oldPassword, newPassword });
+// };

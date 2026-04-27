@@ -1,5 +1,5 @@
 /**
- * 知识图谱页面
+ * 知识图表页面
  * 支持 AI 生成图表
  */
 import { useState, useEffect, useRef, useCallback } from 'react';
@@ -8,8 +8,9 @@ import { Header } from '../../components/layout';
 import { GraphCanvas } from './GraphCanvas';
 import { AISidePanel } from './AISidePanel';
 import type { GraphNode } from '../../types/graph';
-import { charts } from '../../api/graph';
+// import { charts } from '../../api/graph';
 // import { conversationApi } from '../../api/useApi';
+import { mockGraphXml } from '../../api/mock';
 import './GraphPage.scss';
 
 export function GraphPage() {
@@ -17,13 +18,14 @@ export function GraphPage() {
   const pageRef = useRef<HTMLDivElement>(null);
 
   // AI 生成图表 XML 数据
-  const [graphXml, setGraphXml] = useState<string | null>(null);
-  console.log('【GraphPage】render, graphXml:', graphXml ? graphXml.substring(0, 100) + '...' : null);
+  const graphXml = mockGraphXml;
+  // const [graphXml, setGraphXml] = useState<string | null>(null);
+  // console.log('【GraphPage】render, graphXml:', graphXml ? graphXml.substring(0, 100) + '...' : null);
 
-  // 加载状态
+  // // 加载状态
   // const [isLoading, setIsLoading] = useState(false);
 
-  // 发送消息并处理响应
+  // // 发送消息并处理响应
   // const handleSendMessage = useCallback(async (message: string) => {
   //   if (!message.trim() || isLoading) return;
 
@@ -77,99 +79,101 @@ export function GraphPage() {
 
   // 检查是否有咨询方案数据，如果有则调用 charts API
   useEffect(() => {
-    const chartDataStr = localStorage.getItem('pathmind_consult_chart');
-    console.log('【GraphPage】charts useEffect, chartDataStr:', chartDataStr ? '有数据' : '无数据');
-    if (chartDataStr) {
-      try {
-        const chartData = JSON.parse(chartDataStr);
-        console.log('【GraphPage】chartData:', chartData);
-        // 使用固定 agentId 100004 调用 charts API
-        charts({ ...chartData, agentId: '100004', sessionId: '' }).then((res) => {
-          console.log('【GraphPage】Charts API response:', res);
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          const response = res as any;
-          console.log('【GraphPage】response?.data:', response?.data);
+    // TODO: 暂时使用静态数据，如需启用接口则取消注释下方代码
+    // const chartDataStr = localStorage.getItem('pathmind_consult_chart');
+    // console.log('【GraphPage】charts useEffect, chartDataStr:', chartDataStr ? '有数据' : '无数据');
+    // if (chartDataStr) {
+    //   try {
+    //     const chartData = JSON.parse(chartDataStr);
+    //     console.log('【GraphPage】chartData:', chartData);
+    //     // 使用固定 agentId 100004 调用 charts API
+    //     charts({ ...chartData, agentId: '100004', sessionId: '' }).then((res) => {
+    //       console.log('【GraphPage】Charts API response:', res);
+    //       // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    //       const response = res as any;
+    //       console.log('【GraphPage】response?.data:', response?.data);
+    
+    //       // 解析 content 字段获取数据
+    //       if (response?.data?.content) {
+    //         const contentData = response.data.content;
+    //         console.log('【GraphPage】contentData 类型:', typeof contentData);
+    
+    //         try {
+    //           // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    //           let contentObj: any;
+    
+    //           if (typeof contentData === 'string') {
+    //             // 去掉 think 标签内容
+    //             const contentWithoutThink = contentData.replace(/<think>[\s\S]*?<\/think>/g, '').trim();
+    
+    //             // 尝试直接解析
+    //             try {
+    //               contentObj = JSON.parse(contentWithoutThink);
+    //               console.log('【GraphPage】直接解析 JSON 成功');
+    //             } catch {
+    //               // 查找 {"xml": 的位置
+    //               const jsonStart = contentWithoutThink.indexOf('{"xml":');
+    //               if (jsonStart !== -1) {
+    //                 // 找到匹配的结束括号
+    //                 let braceCount = 0;
+    //                 let jsonEnd = -1;
+    
+    //                 for (let i = jsonStart; i < contentWithoutThink.length; i++) {
+    //                   if (contentWithoutThink[i] === '{') braceCount++;
+    //                   else if (contentWithoutThink[i] === '}') {
+    //                     braceCount--;
+    //                     if (braceCount === 0) {
+    //                       jsonEnd = i;
+    //                       break;
+    //                     }
+    //                   }
+    //                 }
+    
+    //                 if (jsonEnd !== -1) {
+    //                   const jsonStr = contentWithoutThink.substring(jsonStart, jsonEnd + 1);
+    //                   console.log('【GraphPage】提取的 JSON 长度:', jsonStr.length);
+    //                   contentObj = JSON.parse(jsonStr);
+    //                 }
+    //               }
+    //             }
+    //           } else {
+    //             contentObj = contentData;
+    //           }
+    
+    //           console.log('【GraphPage】contentObj keys:', contentObj ? Object.keys(contentObj) : 'null');
+    
+    //           // 提取 XML 数据
+    //           if (contentObj?.xml) {
+    //             console.log('【GraphPage】成功获取 XML，长度:', contentObj.xml.length);
+    //             if (contentObj.xml.includes('<mxGraphModel')) {
+    //               setGraphXml(contentObj.xml);
+    //             }
+    //           } else {
+    //             console.log('【GraphPage】content 中没有 xml 字段');
+    //           }
+    
+    //           // 提取 data 数据，传递给 task 页面
+    //           if (contentObj?.data && Array.isArray(contentObj.data)) {
+    //             console.log('【GraphPage】成功获取 data，长度:', contentObj.data.length);
+    //             localStorage.setItem('pathmind_plan_data', JSON.stringify(contentObj.data));
+    //           }
+    //         } catch (e) {
+    //           console.log('【GraphPage】content 解析失败:', e);
+    //         }
+    //       }
+    
+    //       // 清空 localStorage
+    //       localStorage.removeItem('pathmind_consult_chart');
+    //     }).catch((err) => {
+    //       console.error('Charts API error:', err);
+    //       localStorage.removeItem('pathmind_consult_chart');
+    //     });
+    //   } catch (err) {
+    //     console.error('Parse chart data error:', err);
+    //     localStorage.removeItem('pathmind_consult_chart');
+    //   }
+    // }
 
-          // 解析 content 字段获取数据
-          if (response?.data?.content) {
-            const contentData = response.data.content;
-            console.log('【GraphPage】contentData 类型:', typeof contentData);
-
-            try {
-              // eslint-disable-next-line @typescript-eslint/no-explicit-any
-              let contentObj: any;
-
-              if (typeof contentData === 'string') {
-                // 去掉 think 标签内容
-                const contentWithoutThink = contentData.replace(/<think>[\s\S]*?<\/think>/g, '').trim();
-
-                // 尝试直接解析
-                try {
-                  contentObj = JSON.parse(contentWithoutThink);
-                  console.log('【GraphPage】直接解析 JSON 成功');
-                } catch {
-                  // 查找 {"xml": 的位置
-                  const jsonStart = contentWithoutThink.indexOf('{"xml":');
-                  if (jsonStart !== -1) {
-                    // 找到匹配的结束括号
-                    let braceCount = 0;
-                    let jsonEnd = -1;
-
-                    for (let i = jsonStart; i < contentWithoutThink.length; i++) {
-                      if (contentWithoutThink[i] === '{') braceCount++;
-                      else if (contentWithoutThink[i] === '}') {
-                        braceCount--;
-                        if (braceCount === 0) {
-                          jsonEnd = i;
-                          break;
-                        }
-                      }
-                    }
-
-                    if (jsonEnd !== -1) {
-                      const jsonStr = contentWithoutThink.substring(jsonStart, jsonEnd + 1);
-                      console.log('【GraphPage】提取的 JSON 长度:', jsonStr.length);
-                      contentObj = JSON.parse(jsonStr);
-                    }
-                  }
-                }
-              } else {
-                contentObj = contentData;
-              }
-
-              console.log('【GraphPage】contentObj keys:', contentObj ? Object.keys(contentObj) : 'null');
-
-              // 提取 XML 数据
-              if (contentObj?.xml) {
-                console.log('【GraphPage】成功获取 XML，长度:', contentObj.xml.length);
-                if (contentObj.xml.includes('<mxGraphModel')) {
-                  setGraphXml(contentObj.xml);
-                }
-              } else {
-                console.log('【GraphPage】content 中没有 xml 字段');
-              }
-
-              // 提取 data 数据，传递给 task 页面
-              if (contentObj?.data && Array.isArray(contentObj.data)) {
-                console.log('【GraphPage】成功获取 data，长度:', contentObj.data.length);
-                localStorage.setItem('pathmind_plan_data', JSON.stringify(contentObj.data));
-              }
-            } catch (e) {
-              console.log('【GraphPage】content 解析失败:', e);
-            }
-          }
-
-          // 清空 localStorage
-          localStorage.removeItem('pathmind_consult_chart');
-        }).catch((err) => {
-          console.error('Charts API error:', err);
-          localStorage.removeItem('pathmind_consult_chart');
-        });
-      } catch (err) {
-        console.error('Parse chart data error:', err);
-        localStorage.removeItem('pathmind_consult_chart');
-      }
-    }
   }, []);
 
   return (
@@ -181,7 +185,7 @@ export function GraphPage() {
         {/* <div className="graph-header">
           <h1 className="graph-title">
             <i className="fas fa-project-diagram"></i>
-            {graphXml ? 'AI 生成图谱' : '知识图谱'}
+            {graphXml ? 'AI 生成图谱' : '知识图表'}
           </h1>
           <p className="graph-desc">
             {goalParam || '探索技术知识之间的关联'}
@@ -199,14 +203,14 @@ export function GraphPage() {
               </div>
             )} */}
 
-            {/* 返回知识图谱按钮 */}
+            {/* 返回知识图表按钮 */}
             {/* {graphXml && (
               <button
                 className="back-to-knowledge-btn"
                 onClick={() => setGraphXml(null)}
-                title="返回知识图谱"
+                title="返回知识图表"
               >
-                <i className="fas fa-arrow-left"></i> 返回知识图谱
+                <i className="fas fa-arrow-left"></i> 返回知识图表
               </button>
             )} */}
 

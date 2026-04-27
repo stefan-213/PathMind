@@ -43,7 +43,7 @@ export function ProposalPage() {
                 <span><i className="fas fa-rocket"></i></span> 一键克隆项目
               </a>
               <Link to="/graph" className="btn btn-secondary">
-                <span><i className="fas fa-project-diagram"></i></span> 查看知识图谱
+                <span><i className="fas fa-project-diagram"></i></span> 查看知识图表
               </Link>
             </div>
           </div>

@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { Header, Footer } from '../../components/layout';
 import { Card } from '../../components/common/Card';
 import './HomePage.scss';
-import sampleImage from '../../assets/img/sample.png';
+import sampleImage from '../../assets/img/sample1.png';
 
 const faqData = [
   {
@@ -144,7 +144,7 @@ export function HomePage() {
             </Card>
             <Card className="feature-item" padding="lg">
               <div className="feature-icon"><i className="fas fa-project-diagram"></i></div>
-              <h4>知识图谱</h4>
+              <h4>知识图表</h4>
               <p>可视化技术节点关系，理解技术之间的关联。</p>
             </Card>
             <Card className="feature-item" padding="lg">
@@ -204,7 +204,7 @@ export function HomePage() {
         {/* Final CTA */}
         <section>
           <div className="final-cta">
-            <h2>准备好规划你的技术路径了吗？</h2>
+            <h2>准备好规划你的学习路径了吗？</h2>
             <p>加入数千名开发者，立即使用 PathMind。</p>
             <Link to="/consult" className="btn-cta-white">
               立即开始
@@ -213,7 +213,7 @@ export function HomePage() {
         </section>
       </main>
 
-      <Footer tagline="基于图结构推理的 AI 技术路径推荐系统" />
+      <Footer tagline="基于图结构推理的 AI 学习路径推荐系统" />
     </div>
   );
 }

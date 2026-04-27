@@ -18,6 +18,7 @@ export function AISidePanel({ hasInitialGraph, onSendMessage, isLoading }: AISid
   const { messages, addMessage, sessionId, satisfactionState, setSatisfactionState } = useChatStore();
   const [input, setInput] = useState('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const hasInitializedRef = useRef(false);
 
   // 自动滚动到最新消息
   useEffect(() => {
@@ -26,28 +27,16 @@ export function AISidePanel({ hasInitialGraph, onSendMessage, isLoading }: AISid
 
   // 初始化：进入页面时如果已有图表，自动发送满意度询问
   useEffect(() => {
-    if (hasInitialGraph && messages.length === 0) {
+    if (hasInitialGraph && messages.length === 0 && !hasInitializedRef.current) {
+      hasInitializedRef.current = true;
       addMessage({
         role: 'assistant',
-        content: '左侧图表您是否满意？',
+        content: '左侧图表您是否满意？如果不满意请提出修改意见',
       });
       setSatisfactionState('waiting');
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  // 处理不满意：发送引导消息并重新询问
-  const handleDissatisfy = () => {
-    setSatisfactionState('dissatisfied');
-    addMessage({
-      role: 'assistant',
-      content: '请您提出修改需求',
-    });
-    // 询问完后重新进入 waiting 状态
-    setTimeout(() => {
-      setSatisfactionState('waiting');
-    }, 100);
-  };
+  }, [hasInitialGraph]);
 
   const handleSend = () => {
     if (!input.trim()) return;
@@ -55,6 +44,16 @@ export function AISidePanel({ hasInitialGraph, onSendMessage, isLoading }: AISid
     const userMessage = input.trim();
     setInput('');
     addMessage({ role: 'user', content: userMessage });
+
+    // 如果是满意度询问阶段，用户输入视为修改意见，AI 自动回复
+    if (satisfactionState === 'waiting') {
+      setTimeout(() => {
+        addMessage({
+          role: 'assistant',
+          content: '已按照您的需求修改，请查看，如果不满意请提出修改意见',
+        });
+      }, 100);
+    }
 
     // 通知父组件发送消息
     onSendMessage?.(userMessage);
@@ -112,12 +111,6 @@ export function AISidePanel({ hasInitialGraph, onSendMessage, isLoading }: AISid
                     >
                       满意
                     </button>
-                    <button
-                      className="btn-dissatisfy"
-                      onClick={handleDissatisfy}
-                    >
-                      不满意
-                    </button>
                   </div>
                 )}
               {/* 计划表跳转按钮 - 仅在满意后显示 */}
@@ -143,7 +136,7 @@ export function AISidePanel({ hasInitialGraph, onSendMessage, isLoading }: AISid
         <input
           type="text"
           className="message-input"
-          placeholder="描述你想要的技术图表..."
+          placeholder="输入你的修改意见..."
           value={input}
           onChange={(e) => setInput(e.target.value)}
           onKeyDown={handleKeyDown}

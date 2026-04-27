@@ -1,47 +1,52 @@
 /**
  * 学习任务 API 服务
  */
-import { get, post, put, del } from './axios';
-import type { UserTask, UserProgress, CreateTasksRequest, PaginatedResponse } from '../types/api';
+import { get, post } from './axios';
+import type {
+  Schedule,
+  CreateScheduleRequest,
+  UpdateScheduleRequest,
+  UpdateSubTaskRequest,
+} from '../types/api';
 
 /**
- * 获取用户任务（可按 goalId 筛选）
+ * 创建日程表
  */
-export const getTasks = (params?: { goalId?: string; status?: string }) => {
-  return get<PaginatedResponse<UserTask> | UserTask[]>('/api/tasks', params);
+export const createTask = (data: CreateScheduleRequest) => {
+  return post<void>('/api/schedule/createBatch', data);
 };
 
 /**
- * 获取单个任务
+ * 获取日程表列表
  */
-export const getTaskById = (id: string) => {
-  return get<UserTask>(`/api/tasks/${id}`);
+export const getScheduleList = () => {
+  return get<Schedule[]>('/api/schedule/list');
 };
 
 /**
- * 批量创建任务（从 AI 方案生成）
+ * 获取日程表内容
  */
-export const createTasks = (data: CreateTasksRequest) => {
-  return post<UserTask[]>('/api/tasks', data);
+export const getScheduleContent = (scheduleId: string) => {
+  return post<Schedule[]>('/api/schedule/get', { scheduleId });
 };
 
 /**
- * 更新任务（包含完成/未完成状态）
+ * 更新日程表
  */
-export const updateTask = (id: string, data: Partial<UserTask>) => {
-  return put<UserTask>(`/api/tasks/${id}`, data);
+export const updateSchedule = (data: UpdateScheduleRequest) => {
+  return post<void>('/api/schedule/update', data);
 };
 
 /**
- * 删除任务
+ * 更新子任务
  */
-export const deleteTask = (id: string) => {
-  return del<void>(`/api/tasks/${id}`);
+export const updateSubTask = (data: UpdateSubTaskRequest) => {
+  return post<void>('/api/schedule/updateSub', data);
 };
 
 /**
- * 获取用户学习进度（可按 goalId 筛选）
+ * 删除日程表
  */
-export const getProgress = (params?: { goalId?: string }) => {
-  return get<UserProgress>('/api/progress', params);
+export const deleteSchedule = (scheduleId: string) => {
+  return post<void>('/api/schedule/delete', { scheduleId });
 };
