@@ -2,7 +2,10 @@
  * AI 对话面板组件
  */
 import { useState, useRef, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useChatStore } from '../../stores/chatStore';
+import { createTask } from '../../api/tasks';
+import { useScheduleStore } from '../../stores/scheduleStore';
 import './AISidePanel.scss';
 
 interface AISidePanelProps {
@@ -15,6 +18,8 @@ interface AISidePanelProps {
 }
 
 export function AISidePanel({ hasInitialGraph, onSendMessage, isLoading }: AISidePanelProps) {
+  const navigate = useNavigate();
+  const { addSchedule } = useScheduleStore();
   const { messages, addMessage, sessionId, satisfactionState, setSatisfactionState } = useChatStore();
   const [input, setInput] = useState('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -66,6 +71,41 @@ export function AISidePanel({ hasInitialGraph, onSendMessage, isLoading }: AISid
     }
   };
 
+  const handleSatisfied = async () => {
+    setSatisfactionState('satisfied');
+
+    // 从 localStorage 获取计划数据并创建日程表
+    const planDataStr = localStorage.getItem('pathmind_plan_data');
+    if (planDataStr) {
+      try {
+        const planData = JSON.parse(planDataStr);
+        // 转换为 CreateScheduleRequest 格式
+        const scheduleItems = planData.map((item: any) => ({
+          title: item.title || '',
+          time: item.time || '',
+          content: item.content || '',
+          tasks: item.details ? item.details.split(/[；]/).map((task: string, idx: number) => ({
+            day: `第${idx + 1}天`,
+            task: task.trim(),
+            taskGoal: '',
+            status: 0,
+          })) : [],
+        }));
+
+        await createTask({ data: scheduleItems });
+
+        // 清空 localStorage
+        localStorage.removeItem('pathmind_plan_data');
+        localStorage.removeItem('pathmind_consult_chart');
+      } catch (err) {
+        console.error('创建日程表失败:', err);
+      }
+    }
+
+    // 跳转到 Tasks 页面
+    navigate('/tasks');
+  };
+
   return (
     <div className="ai-side-panel">
       <div className="panel-header">
@@ -107,7 +147,7 @@ export function AISidePanel({ hasInitialGraph, onSendMessage, isLoading }: AISid
                   <div className="satisfaction-buttons">
                     <button
                       className="btn-satisfy"
-                      onClick={() => setSatisfactionState('satisfied')}
+                      onClick={handleSatisfied}
                     >
                       满意
                     </button>
