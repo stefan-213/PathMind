@@ -716,13 +716,16 @@ export function ConsultPage() {
     setCurrentSessionId(id);
     // 等待状态更新后加载历史
     setTimeout(() => {
-      const session = sessions.find((s) => s.id === id);
-      if (session?.sessionId) {
-        loadSessionHistory(session.sessionId);
-      }
+      setSessions(prev => {
+        const session = prev.find((s) => s.id === id);
+        if (session?.sessionId) {
+          loadSessionHistory(session.sessionId);
+        }
+        return prev;
+      });
     }, 0);
     scrollToBottom();
-  }, [isWaitingForAI, sessions, loadSessionHistory, scrollToBottom]);
+  }, [isWaitingForAI, loadSessionHistory, scrollToBottom]);
 
   // 删除会话
   const handleDeleteSession = useCallback(async (id: string) => {
@@ -753,11 +756,17 @@ export function ConsultPage() {
       const sessionRes = await conversationApi.createChatSession(AGENT_ID);
       const newSessionId = (sessionRes as any).data?.data?.sessionId;
       if (newSessionId) {
-        setSessions(prev =>
-          prev.map(s => s.id === newSess.id ? { ...s, agentId: AGENT_ID, sessionId: newSessionId } : s)
-        );
-        // 新建会话后加载历史（新建会话应该没有历史，但保持逻辑一致）
-        setTimeout(() => loadSessionHistory(newSessionId), 100);
+        setSessions((prev) => {
+          const updated = prev.map(s => s.id === newSess.id ? { ...s, agentId: AGENT_ID, sessionId: newSessionId } : s);
+          // 在 setSessions 的回调里调用，确保状态已更新后再加载历史
+          setTimeout(() => {
+            const session = updated.find(s => s.id === newSess.id);
+            if (session?.sessionId) {
+              loadSessionHistory(session.sessionId);
+            }
+          }, 0);
+          return updated;
+        });
       }
     } catch (error) {
       console.error('Create session error:', error);
@@ -819,10 +828,9 @@ export function ConsultPage() {
     if (hasLoadedHistoryRef.current === currentSession.sessionId) return;
 
     hasLoadedHistoryRef.current = currentSession.sessionId;
-    const timer = setTimeout(() => loadSessionHistory(currentSession.sessionId!), 100);
-    return () => clearTimeout(timer);
+    loadSessionHistory(currentSession.sessionId);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [currentSession?.sessionId]);
+  }, [currentSession?.sessionId, currentSessionId]);
 
   // 输入框高度自适应
   const handleInputHeight = () => {

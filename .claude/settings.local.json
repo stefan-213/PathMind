@@ -5,6 +5,10 @@
       "Bash(npm run:*)",
       "Bash(awk 'NR>=448 && NR<=455' d:/React/PathMind/src/pages/Consult/ConsultPage.tsx)",
       "Bash(awk 'NR>=455 && NR<=480' d:/React/PathMind/src/pages/Consult/ConsultPage.tsx)"
+    ],
+    "deny": [
+      "Bash(git commit *)",
+      "Bash(git push *)"
     ]
   }
 }
