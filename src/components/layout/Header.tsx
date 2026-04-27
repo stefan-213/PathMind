@@ -58,7 +58,7 @@ export function Header() {
 
           {isAuthenticated ? (
             <button className="floating-nav-bar__item" onClick={handleLogout}>
-              <i className="fas fa-user"></i>
+              <i className="fas fa-sign-out-alt"></i>
               <span className="floating-nav-bar__tooltip">退出</span>
             </button>
           ) : (

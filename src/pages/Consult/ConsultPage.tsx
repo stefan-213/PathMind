@@ -748,30 +748,38 @@ export function ConsultPage() {
   // 新建会话
   const handleNewSession = useCallback(async () => {
     if (isWaitingForAI) return;
-    const newSess = getDefaultSession();
-    setSessions((prev) => [newSess, ...prev]);
-    setCurrentSessionId(newSess.id);
 
     try {
       const sessionRes = await conversationApi.createChatSession(AGENT_ID);
-      const newSessionId = (sessionRes as any).data?.data?.sessionId;
-      if (newSessionId) {
-        setSessions((prev) => {
-          const updated = prev.map(s => s.id === newSess.id ? { ...s, agentId: AGENT_ID, sessionId: newSessionId } : s);
-          // 在 setSessions 的回调里调用，确保状态已更新后再加载历史
-          setTimeout(() => {
-            const session = updated.find(s => s.id === newSess.id);
-            if (session?.sessionId) {
-              loadSessionHistory(session.sessionId);
-            }
-          }, 0);
-          return updated;
-        });
+      // axios 拦截器转换后 sessionRes.data 是原始响应的 data 字段
+      const newSessionId = (sessionRes.data as unknown as { sessionId: string })?.sessionId;
+      if (!newSessionId) return;
+
+      // 重新获取会话列表确保同步
+      const res = await getChatSessions(AGENT_ID);
+      const sessionMap = res.data as unknown as Record<string, string> | undefined;
+
+      if (sessionMap && Object.keys(sessionMap).length > 0) {
+        const serverSessions = Object.keys(sessionMap).map((sid) => ({
+          ...getDefaultSession(),
+          id: sid,
+          title: sessionMap[sid] || '默认对话',
+          agentId: AGENT_ID,
+          sessionId: sid,
+        }));
+        setSessions(serverSessions);
+        // 找到刚创建的会话并设为当前
+        const newSession = serverSessions.find(s => s.sessionId === newSessionId);
+        if (newSession) {
+          setCurrentSessionId(newSession.id);
+        } else {
+          setCurrentSessionId(serverSessions[serverSessions.length - 1]?.id || null);
+        }
       }
     } catch (error) {
       console.error('Create session error:', error);
     }
-  }, [isWaitingForAI, loadSessionHistory]);
+  }, [isWaitingForAI]);
 
   // 初始化：加载会话列表（仅执行一次）
   const hasInitRef = useRef(false);
@@ -782,7 +790,7 @@ export function ConsultPage() {
     const loadServerSessions = async () => {
       try {
         const res = await getChatSessions(AGENT_ID);
-        const sessionMap = res.data as Record<string, string> | undefined;
+        const sessionMap = res.data as unknown as Record<string, string> | undefined;
         if (!sessionMap || Object.keys(sessionMap).length === 0) {
           const newSess = [getDefaultSession()];
           setSessions(newSess);
@@ -790,7 +798,7 @@ export function ConsultPage() {
           // 无会话时，在服务端创建真实会话
           try {
             const sessionRes = await conversationApi.createChatSession(AGENT_ID);
-            const newSessionId = (sessionRes as any).data?.data?.sessionId;
+            const newSessionId = (sessionRes.data as unknown as { sessionId: string })?.sessionId;
             if (newSessionId) {
               setSessions(prev =>
                 prev.map(s => s.id === newSess[0].id ? { ...s, agentId: AGENT_ID, sessionId: newSessionId } : s)
