@@ -20,6 +20,7 @@ export function AISidePanel({ hasInitialGraph, onSendMessage, isLoading }: AISid
   const navigate = useNavigate();
   const { messages, addMessage, sessionId, satisfactionState, setSatisfactionState } = useChatStore();
   const [input, setInput] = useState('');
+  const [isCreating, setIsCreating] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const hasInitializedRef = useRef(false);
 
@@ -70,14 +71,12 @@ export function AISidePanel({ hasInitialGraph, onSendMessage, isLoading }: AISid
   };
 
   const handleSatisfied = async () => {
-    setSatisfactionState('satisfied');
+    setIsCreating(true);
 
-    // 从 localStorage 获取计划数据并创建日程表
     const planDataStr = localStorage.getItem('pathmind_plan_data');
     if (planDataStr) {
       try {
         const planData = JSON.parse(planDataStr);
-        // 转换为 CreateScheduleRequest 格式
         const scheduleItems = planData.map((item: any) => ({
           title: item.title || '',
           time: item.time || '',
@@ -92,15 +91,20 @@ export function AISidePanel({ hasInitialGraph, onSendMessage, isLoading }: AISid
 
         await createTask({ data: scheduleItems });
 
-        // 清空 localStorage
+        setSatisfactionState('satisfied');
+
         localStorage.removeItem('pathmind_plan_data');
         localStorage.removeItem('pathmind_consult_chart');
       } catch (err) {
         console.error('创建日程表失败:', err);
+        alert('创建日程表失败，请重试');
+      } finally {
+        setIsCreating(false);
       }
+    } else {
+      setIsCreating(false);
     }
 
-    // 跳转到 Tasks 页面
     navigate('/tasks');
   };
 
@@ -146,6 +150,7 @@ export function AISidePanel({ hasInitialGraph, onSendMessage, isLoading }: AISid
                     <button
                       className="btn-satisfy"
                       onClick={handleSatisfied}
+                      disabled={isCreating}
                     >
                       满意
                     </button>
