@@ -8,10 +8,14 @@ import { Header, Footer } from '../../components/layout';
 import { Card, Badge } from '../../components/common';
 import { getUserProfile, getUserTasks, getUserProgress } from '../../utils/storage';
 import type { Task, UserProfile, UserProgress } from '../../types/copilot';
+import { getScheduleList, deleteSchedule } from '../../api/tasks';
+import { useScheduleStore } from '../../stores/scheduleStore';
+import type { Schedule } from '../../types/api';
 import './ProfilePage.scss';
 
 export function ProfilePage() {
   const { user, updateUser, changePassword } = useAuthStore();
+  const { schedules, setSchedules, removeSchedule } = useScheduleStore();
 
   // 用户任务数据
   const [profile, setProfile] = useState<UserProfile | null>(null);
@@ -43,7 +47,19 @@ export function ProfilePage() {
     setProfile(userProfile);
     setTasks(userTasks);
     setProgress(userProgress);
+
+    // 加载日程表列表
+    loadSchedules();
   }, []);
+
+  const loadSchedules = async () => {
+    try {
+      const list = await getScheduleList();
+      setSchedules(list);
+    } catch (err) {
+      console.error('加载日程表列表失败:', err);
+    }
+  };
 
   // 加载编辑表单
   useEffect(() => {
@@ -104,6 +120,19 @@ export function ProfilePage() {
       alert('密码修改成功！');
     } catch (err) {
       setPasswordError((err as Error).message || '修改密码失败');
+    }
+  };
+
+  const handleDeleteSchedule = async (scheduleId: string) => {
+    if (!confirm('确定要删除这个日程表吗？')) return;
+
+    try {
+      await deleteSchedule(scheduleId);
+      removeSchedule(scheduleId);
+      alert('删除成功');
+    } catch (err) {
+      console.error('删除日程表失败:', err);
+      alert('删除失败');
     }
   };
 
@@ -321,6 +350,37 @@ export function ProfilePage() {
               </div>
             )}
           </Card>
+
+          {/* 日程表列表 */}
+          {schedules.length > 0 && (
+            <Card className="schedules-list-card">
+              <div className="card-title">
+                <i className="fas fa-calendar-alt"></i> 我的日程表
+              </div>
+              <div className="schedules-list">
+                {schedules.map((schedule) => (
+                  <div key={schedule.scheduleId} className="schedule-item">
+                    <div className="schedule-info">
+                      <i className="fas fa-calendar"></i>
+                      <span className="schedule-title">{schedule.title}</span>
+                      <span className="schedule-time">{schedule.time}</span>
+                    </div>
+                    <div className="schedule-actions">
+                      <Link to="/tasks" className="btn btn-secondary btn-sm">
+                        查看
+                      </Link>
+                      <button
+                        className="btn btn-danger btn-sm"
+                        onClick={() => handleDeleteSchedule(schedule.scheduleId)}
+                      >
+                        <i className="fas fa-trash"></i> 删除
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </Card>
+          )}
         </div>
       </main>
 
