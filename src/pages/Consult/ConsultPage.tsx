@@ -63,7 +63,7 @@ const INITIAL_QUICK_OPTIONS = [
 function getDefaultSession(): Session {
   return {
     id: generateId(),
-    title: '新咨询',
+    title: '默认对话',
     createdAt: new Date().toISOString(),
     messages: [],
     userProfile: { goal: '', experience: '', timeframe: '', scale: '' },
@@ -463,7 +463,7 @@ export function ConsultPage() {
         if (s.id === currentSessionId) {
           let updated = { ...s, ...updates };
           // 自动更新标题
-          if (updates.messages && s.title === '新咨询') {
+          if (updates.messages && s.title === '默认对话') {
             const firstUserMsg = updates.messages.find((m: Message) => m.role === 'user');
             if (firstUserMsg) {
               updated.title = firstUserMsg.content.substring(0, 28) || '技术咨询';
