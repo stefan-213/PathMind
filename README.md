@@ -20,13 +20,9 @@ PathMind 是一个帮助开发者进行**技术选型和学习路径规划**的 
 
 ---
 
-## 已实现功能
-
 ### 1. 首页 (HomePage)
 
 **功能描述**：展示产品核心价值，引导用户开始使用
-
-**已实现**：
 
 - 产品定位 banner（"帮你实现目标的 AI 工具"）
 - 简单三步骤展示
@@ -42,8 +38,6 @@ PathMind 是一个帮助开发者进行**技术选型和学习路径规划**的 
 ### 2. AI Copilot (ConsultPage)
 
 **功能描述**：多轮对话式 AI 顾问，生成专属技术路线图和执行计划
-
-**已实现**：
 
 #### 2.1 真实 API 对接
 
@@ -82,8 +76,6 @@ PathMind 是一个帮助开发者进行**技术选型和学习路径规划**的 
 
 **功能描述**：可视化技术节点关系，支持 AI 生成图表
 
-**已实现**：
-
 #### 3.1 图表展示
 
 - 集成 draw.io / mxGraph 图表渲染
@@ -114,8 +106,6 @@ PathMind 是一个帮助开发者进行**技术选型和学习路径规划**的 
 ### 4. 任务中心 (TasksPage)
 
 **功能描述**：展示和管理学习任务进度
-
-**已实现**：
 
 - 进度百分比显示
 - 当前学习目标展示
@@ -169,8 +159,6 @@ PathMind 是一个帮助开发者进行**技术选型和学习路径规划**的 
 
 **功能描述**：用户个人信息和学习数据管理
 
-**已实现**：
-
 - 用户信息展示与编辑（头像、用户名、邮箱、手机号）
 - 安全设置（修改密码弹窗）
 - 学习统计数据（完成任务数、总任务数、完成进度）
@@ -180,43 +168,6 @@ PathMind 是一个帮助开发者进行**技术选型和学习路径规划**的 
 **相关文件**：
 
 - [ProfilePage.tsx](src/pages/Profile/ProfilePage.tsx)
-
----
-
-## API 接口
-
-### 认证相关
-
-| 方法 | 路径                | 说明             |
-| ---- | ------------------- | ---------------- |
-| POST | /api/auth/login     | 用户登录         |
-| POST | /api/auth/register  | 用户注册         |
-| POST | /api/auth/update    | 更新用户信息     |
-| POST | /api/user/quitLogin | 退出登录         |
-| GET  | /api/user/info      | 获取当前用户信息 |
-
-### AI 智能体相关
-
-| 方法 | 路径                      | 说明           |
-| ---- | ------------------------- | -------------- |
-| GET  | /api/agent/list           | 获取智能体列表 |
-| POST | /api/agent/createSession  | 创建对话会话   |
-| POST | /api/agent/deleteSession  | 删除对话会话   |
-| POST | /api/agent/getSessionList | 获取会话列表   |
-| POST | /api/agent/consultation   | 用户咨询       |
-| POST | /api/agent/transcript     | 获取会话记录   |
-| POST | /api/agent/charts         | 生成图表 XML   |
-
-### 任务相关
-
-| 方法   | 路径           | 说明         |
-| ------ | -------------- | ------------ |
-| GET    | /api/tasks     | 获取用户任务 |
-| GET    | /api/tasks/:id | 获取单个任务 |
-| POST   | /api/tasks     | 批量创建任务 |
-| PUT    | /api/tasks/:id | 更新任务     |
-| DELETE | /api/tasks/:id | 删除任务     |
-| GET    | /api/progress  | 获取学习进度 |
 
 ---
 
@@ -271,7 +222,6 @@ src/
 │   ├── conversation.ts  # 对话 API
 │   ├── graph.ts         # 图表 API
 │   ├── tasks.ts         # 任务 API
-│   ├── mock.ts          # 模拟数据
 │   └── useApi.ts        # API 统一导出
 ├── components/          # 公共组件
 │   ├── common/          # 通用组件（Button, Card, Input...）
@@ -298,33 +248,10 @@ src/
 ├── types/               # TypeScript 类型定义
 │   ├── api.ts           # API 类型
 │   ├── copilot.ts       # Copilot 类型
-│   └── graph.ts         # 图谱类型
+│   └── graph.ts         # 图表类型
 └── utils/               # 工具函数
     └── storage.ts       # localStorage 封装
 ```
-
----
-
-## 待实现功能
-
-> 以下功能为后续开发计划
-
-### 1. AI 生成功能增强
-
-- 方案智能优化
-- 更丰富的技术对比分析
-- 图表数据与后端对接
-
-### 2. 社区功能
-
-- 学习打卡
-- 方案分享
-- 技术收藏
-
-### 3. 后端扩展
-
-- 真实数据库对接
-- 用户学习数据同步
 
 ---
 
