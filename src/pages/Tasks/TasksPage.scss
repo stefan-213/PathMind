@@ -108,6 +108,71 @@
   font-weight: 600;
 }
 
+.goal-summary {
+  margin-top: var(--space-xs);
+  color: var(--text-secondary);
+  font-size: 14px;
+}
+
+.schedule-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+}
+
+.schedule-section {
+  border-top: 1px solid var(--border-color);
+  padding-top: var(--space-md);
+}
+
+.schedule-heading {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: var(--space-lg);
+  margin-bottom: var(--space-md);
+}
+
+.schedule-heading-main {
+  min-width: 0;
+}
+
+.schedule-index {
+  color: var(--text-light);
+  font-size: 12px;
+  margin-bottom: var(--space-xs);
+}
+
+.schedule-heading h2 {
+  margin: 0;
+  font-size: 22px;
+  line-height: 1.35;
+}
+
+.schedule-heading p {
+  margin: var(--space-xs) 0 0;
+  color: var(--text-secondary);
+  line-height: 1.6;
+}
+
+.schedule-meta {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--space-sm);
+  flex-wrap: wrap;
+  flex-shrink: 0;
+}
+
+.schedule-time {
+  color: var(--text-secondary);
+  font-size: 14px;
+}
+
+.schedule-section > div:last-child .task-list {
+  margin-bottom: 0;
+}
+
 /* Task List */
 .task-list {
   display: flex;
@@ -228,4 +293,22 @@
   align-items: center;
   justify-content: center;
   background: rgba(255, 255, 255, 0.92);
+}
+
+@media (max-width: 720px) {
+  .progress-header,
+  .schedule-heading,
+  .action-buttons {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .schedule-meta {
+    justify-content: flex-start;
+  }
+
+  .action-buttons .btn {
+    justify-content: center;
+    width: 100%;
+  }
 }

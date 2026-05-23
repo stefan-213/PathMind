@@ -127,9 +127,20 @@ const saveLocalSchedules = (schedules: Schedule[]) => {
   localStorage.setItem(PLAN_DATA_STORAGE_KEY, JSON.stringify(schedules));
 };
 
+const groupTasksByWeek = (tasks: SubSchedule[]): TasksByWeek => {
+  return tasks.reduce((acc, task) => {
+    const week = task.taskGoal || '学习任务';
+    if (!acc[week]) {
+      acc[week] = [];
+    }
+    acc[week].push(task);
+    return acc;
+  }, {} as TasksByWeek);
+};
+
 export function TasksPage() {
   const navigate = useNavigate();
-  const { schedules, currentSchedule, setSchedules, setCurrentSchedule, setLoading, clearSchedules } = useScheduleStore();
+  const { schedules, setSchedules, setCurrentSchedule, setLoading, clearSchedules } = useScheduleStore();
   const [isTaskLoading, setIsTaskLoading] = useState(false);
 
   const loadSchedules = useCallback(() => {
@@ -162,16 +173,21 @@ export function TasksPage() {
     loadSchedules();
   }, [loadSchedules]);
 
-  const tasks = currentSchedule?.subScheduleList || [];
+  const scheduleSections = schedules.filter(schedule => schedule.subScheduleList.length > 0);
+  const allTasks = scheduleSections.reduce<SubSchedule[]>(
+    (acc, schedule) => acc.concat(schedule.subScheduleList),
+    [],
+  );
 
-  const toggleTask = (taskId: number) => {
-    const task = tasks.find(t => t.id === taskId);
-    if (!task || task.id === undefined || !currentSchedule) return;
+  const toggleTask = (scheduleId: string, taskId: number) => {
+    const targetSchedule = schedules.find(schedule => schedule.scheduleId === scheduleId);
+    const task = targetSchedule?.subScheduleList.find(item => item.id === taskId);
+    if (!targetSchedule || !task || task.id === undefined) return;
 
     const newStatus = task.status === 1 ? 0 : 1;
     const nextSchedule = {
-      ...currentSchedule,
-      subScheduleList: tasks.map(item =>
+      ...targetSchedule,
+      subScheduleList: targetSchedule.subScheduleList.map(item =>
         item.id === taskId
           ? {
               ...item,
@@ -183,7 +199,7 @@ export function TasksPage() {
     };
     const nextSchedules = schedules.length > 0
       ? schedules.map(schedule =>
-          schedule.scheduleId === currentSchedule.scheduleId ? nextSchedule : schedule,
+          schedule.scheduleId === targetSchedule.scheduleId ? nextSchedule : schedule,
         )
       : [nextSchedule];
 
@@ -192,11 +208,9 @@ export function TasksPage() {
     saveLocalSchedules(nextSchedules);
   };
 
-  const handleTaskContentClick = (task: SubSchedule) => {
-    if (!currentSchedule) return;
-
+  const handleTaskContentClick = (schedule: Schedule, task: SubSchedule) => {
     const params = new URLSearchParams({
-      schedule: currentSchedule.scheduleId,
+      schedule: schedule.scheduleId,
       task: task.task,
     });
 
@@ -217,20 +231,13 @@ export function TasksPage() {
     }
   };
 
-  const tasksByWeek: TasksByWeek = tasks.reduce((acc, task) => {
-    const week = task.taskGoal || '学习任务';
-    if (!acc[week]) {
-      acc[week] = [];
-    }
-    acc[week].push(task);
-    return acc;
-  }, {} as TasksByWeek);
-
-  const completedCount = tasks.filter(t => t.status === 1).length;
-  const totalCount = tasks.length;
+  const completedCount = allTasks.filter(t => t.status === 1).length;
+  const totalCount = allTasks.length;
   const percentage = totalCount > 0 ? Math.round((completedCount / totalCount) * 100) : 0;
+  const totalGoalTitle = 'AI 对话中的学习任务（总）';
+  const graphGoal = scheduleSections.map(schedule => schedule.title).join('、') || totalGoalTitle;
 
-  if (!currentSchedule || tasks.length === 0) {
+  if (scheduleSections.length === 0 || allTasks.length === 0) {
     return (
       <div className="tasks-page">
         <Header />
@@ -263,25 +270,6 @@ export function TasksPage() {
         </div>
       )}
       <main className="main">
-        {/* Schedule Selector */}
-        {schedules.length > 1 && (
-          <div className="schedule-selector">
-            <select
-              value={currentSchedule?.scheduleId || ''}
-              onChange={(e) => {
-                const selected = schedules.find(s => s.scheduleId === e.target.value);
-                if (selected) {
-                  setCurrentSchedule(selected);
-                }
-              }}
-            >
-              {schedules.map(s => (
-                <option key={s.scheduleId} value={s.scheduleId}>{s.title}</option>
-              ))}
-            </select>
-          </div>
-        )}
-
         {/* Progress Card */}
         <Card className="progress-card">
           <div className="progress-header">
@@ -299,48 +287,63 @@ export function TasksPage() {
 
         {/* Goal Card */}
         <Card className="goal-card">
-          <div className="goal-label">当前目标</div>
-          <div className="goal-text">{currentSchedule.title}</div>
+          <div className="goal-text">{totalGoalTitle}</div>
         </Card>
 
         {/* Task List */}
-        {Object.entries(tasksByWeek).map(([week, weekTasks]) => (
-          <div key={week}>
-            <div className="section-title">{week}</div>
-            <div className="task-list">
-              {weekTasks.map((task, index) => (
-                <Card
-                  key={task.id ?? `${week}-${index}`}
-                  variant="bordered"
-                  padding="md"
-                  className={`task-card ${task.status === 1 ? 'completed' : ''}`}
-                  style={{ animationDelay: `${index * 0.05}s` }}
-                >
-                  <div
-                    className="task-check"
-                    onClick={(event) => {
-                      event.stopPropagation();
-                      if (task.id !== undefined) toggleTask(task.id);
-                    }}
-                  >
-                    {task.status === 1 ? <i className="fas fa-check"></i> : ''}
+        <div className="schedule-list">
+          {scheduleSections.map((schedule) => {
+            const tasksByWeek = groupTasksByWeek(schedule.subScheduleList);
+
+            return (
+              <section className="schedule-section" key={schedule.scheduleId}>
+                <div className="schedule-heading">
+                  <div className="schedule-heading-main">
+                    <h2>{schedule.title}</h2>
                   </div>
-                  <div className="task-content" onClick={() => handleTaskContentClick(task)}>
-                    <div className="task-week">{task.day}</div>
-                    <div className="task-title">{task.task}</div>
+                </div>
+
+                {Object.entries(tasksByWeek).map(([week, weekTasks]) => (
+                  <div key={`${schedule.scheduleId}-${week}`}>
+                    {/* <div className="section-title">{week}</div> */}
+                    <div className="task-list">
+                      {weekTasks.map((task, index) => (
+                        <Card
+                          key={task.id ?? `${schedule.scheduleId}-${week}-${index}`}
+                          variant="bordered"
+                          padding="md"
+                          className={`task-card ${task.status === 1 ? 'completed' : ''}`}
+                          style={{ animationDelay: `${index * 0.05}s` }}
+                        >
+                          <div
+                            className="task-check"
+                            onClick={(event) => {
+                              event.stopPropagation();
+                              if (task.id !== undefined) toggleTask(schedule.scheduleId, task.id);
+                            }}
+                          >
+                            {task.status === 1 ? <i className="fas fa-check"></i> : ''}
+                          </div>
+                          <div className="task-content" onClick={() => handleTaskContentClick(schedule, task)}>
+                            <div className="task-week">{task.day}</div>
+                            <div className="task-title">{task.task}</div>
+                          </div>
+                        </Card>
+                      ))}
+                    </div>
                   </div>
-                </Card>
-              ))}
-            </div>
-          </div>
-        ))}
+                ))}
+              </section>
+            );
+          })}
+        </div>
 
         {/* Action Buttons */}
         <div className="action-buttons">
           <button className="btn btn-secondary" onClick={handleClearAll}>
             重新开始
           </button>
-          <Link to={`/graph?goal=${encodeURIComponent(currentSchedule.title)}`} className="btn btn-primary">
+          <Link to={`/graph?goal=${encodeURIComponent(graphGoal)}`} className="btn btn-primary">
             查看知识图表
           </Link>
         </div>
