@@ -85,7 +85,7 @@ export function RegisterPage() {
 
     try {
       await register(username, password, email, phone || undefined);
-      navigate('/', { replace: true });
+      navigate('/login', { replace: true });
     } catch (err) {
       // 错误已在 store 中处理
     }
@@ -152,7 +152,7 @@ export function RegisterPage() {
             </div>
 
             <div className="form-group">
-              <label className="form-label">手机号 <span className="optional">(选填)</span></label>
+              <label className="form-label">手机号</label>
               <div className="input-wrapper">
                 <i className="fas fa-phone input-icon"></i>
                 <input

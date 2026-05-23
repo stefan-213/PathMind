@@ -76,29 +76,16 @@ export const useAuthStore = create<AuthState>()(
         set({ isLoading: true, error: null });
         try {
           const response = await authApi.register({ username, password, email, phone });
-          const data = response.data;
 
-          if (!data) {
-            throw new Error('注册响应数据异常');
+          if (response.success === false) {
+            throw new Error(response.error || '注册失败');
           }
 
-          // 保存 token 到 localStorage
-          if (data.token) {
-            localStorage.setItem('token', data.token);
-          }
-
-          // 获取完整用户信息
-          const userResponse = await authApi.getCurrentUser();
-          const user = userResponse.data;
-
-          if (!user) {
-            throw new Error('获取用户信息失败');
-          }
-
+          localStorage.removeItem('token');
           set({
-            user,
-            token: data.token,
-            isAuthenticated: true,
+            user: null,
+            token: null,
+            isAuthenticated: false,
             isLoading: false
           });
         } catch (err) {
