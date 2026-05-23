@@ -28,9 +28,8 @@ export const useTasksStore = create<TasksState>((set, get) => ({
     set({ isLoading: true, error: null });
     try {
       const response = await tasksApi.getTasks(goalId ? { goalId } : undefined);
-      const tasks: UserTask[] = Array.isArray(response.data)
-        ? response.data
-        : (response.data as PaginatedResponse<UserTask>).items || [];
+      const data = response.data as UserTask[] | PaginatedResponse<UserTask> | undefined;
+      const tasks: UserTask[] = Array.isArray(data) ? data : data?.items ?? [];
       set({ tasks, isLoading: false });
     } catch (err) {
       const message = err instanceof Error ? err.message : '获取任务失败';

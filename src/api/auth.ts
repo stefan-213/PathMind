@@ -39,6 +39,6 @@ export const updateUser = (data: { username?: string; email?: string; phone?: st
 /**
  * 修改密码
  */
-// export const changePassword = (oldPassword: string, newPassword: string) => {
-//   return post<void>('/api/auth/change-password', { oldPassword, newPassword });
-// };
+export const changePassword = (oldPassword: string, newPassword: string) => {
+  return post<void>('/api/auth/change-password', { oldPassword, newPassword });
+};

@@ -10,7 +10,6 @@ import { getUserProfile, getUserTasks, getUserProgress } from '../../utils/stora
 import type { Task, UserProfile, UserProgress } from '../../types/copilot';
 import { getScheduleList, deleteSchedule } from '../../api/tasks';
 import { useScheduleStore } from '../../stores/scheduleStore';
-import type { Schedule } from '../../types/api';
 import './ProfilePage.scss';
 
 export function ProfilePage() {
@@ -55,7 +54,7 @@ export function ProfilePage() {
   const loadSchedules = async () => {
     try {
       const list = await getScheduleList();
-      setSchedules(list);
+      setSchedules(list.data ?? []);
     } catch (err) {
       console.error('加载日程表列表失败:', err);
     }

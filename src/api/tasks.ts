@@ -7,6 +7,8 @@ import type {
   CreateScheduleRequest,
   UpdateScheduleRequest,
   UpdateSubTaskRequest,
+  UserProgress,
+  UserTask,
 } from '../types/api';
 
 /**
@@ -49,4 +51,16 @@ export const updateSubTask = (data: UpdateSubTaskRequest) => {
  */
 export const deleteSchedule = (scheduleId: string) => {
   return post<void>('/api/schedule/delete', { scheduleId });
+};
+
+export const getTasks = (params?: { goalId?: string; status?: string }) => {
+  return get<UserTask[]>('/api/tasks', params);
+};
+
+export const getProgress = (params?: { goalId?: string }) => {
+  return get<UserProgress>('/api/tasks/progress', params);
+};
+
+export const updateTask = (id: string, data: Partial<UserTask>) => {
+  return post<UserTask>('/api/tasks/update', { id, ...data });
 };

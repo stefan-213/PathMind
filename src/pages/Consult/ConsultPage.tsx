@@ -89,7 +89,7 @@ function parseAIContent(content: string): { thinking: string; response: string }
 async function fetchAIReply(message: string, agentId: string, sessionId: string) {
   try {
     const res = await conversationApi.consultation({ agentId, sessionId, message });
-    const content = res.data.content || '';
+    const content = res.data?.content ?? res.data?.message ?? '';
     
     const thinkMatch = content.match(/<think>[\s\S]*?<\/think>([\s\S]*)$/);
     if (!thinkMatch) {
@@ -157,6 +157,14 @@ function getWelcomeMessageHtml(): string {
 // }
 
 // ---------- 子组件：打字动画 ----------
+function buildBaseString(profile: Session['userProfile']): string {
+  return [
+    profile.experience && `Experience: ${profile.experience}`,
+    profile.timeframe && `Timeframe: ${profile.timeframe}`,
+    profile.scale && `Scale: ${profile.scale}`,
+  ].filter(Boolean).join('; ');
+}
+
 function TypingDots() {
   return (
     <div className="typing-dots">
@@ -522,7 +530,7 @@ export function ConsultPage() {
   }, [addMessage, updateCurrentSession]);
 
   // 核心：发送消息并处理 AI 响应
-  const sendAndProcess = useCallback(async (userInput: string, currentStep: string, userProfile: Session['userProfile']) => {
+  const sendAndProcess = useCallback(async (userInput: string, userProfile: Session['userProfile']) => {
     if (!currentSession?.agentId || !currentSession?.sessionId) {
       addMessage('assistant', '<p>连接失败，请重试</p>', true);
       return { success: false };
@@ -578,11 +586,11 @@ export function ConsultPage() {
       const newProfile = { ...userProfile, scale };
       updateCurrentSession({ userProfile: newProfile });
       
-      await sendAndProcess(text, currentStep, newProfile);
+      await sendAndProcess(text, newProfile);
     } else {
       // 更新步骤和画像后发送
       const { newProfile } = updateStepAndProfile(text, currentStep, userProfile);
-      await sendAndProcess(text, currentStep, newProfile);
+      await sendAndProcess(text, newProfile);
     }
 
     setIsWaitingForAI(false);

@@ -2,7 +2,7 @@
  * 知识图表页面
  * 支持 AI 生成图表
  */
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { Header } from '../../components/layout';
 import { GraphCanvas } from './GraphCanvas';

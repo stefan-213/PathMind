@@ -197,7 +197,7 @@ export interface ComparisonItem {
   b: string;
 }
 
-export interface ScheduleItem {
+export interface ProposalScheduleItem {
   week: string;
   items: string[];
 }
@@ -208,7 +208,7 @@ export interface GeneratedProposal {
   mainPath: string[];
   branches: PathNode[];
   comparison: ComparisonItem[];
-  schedule: ScheduleItem[];
+  schedule: ProposalScheduleItem[];
 }
 
 export interface AIChatMessage {

@@ -2,7 +2,6 @@
  * 图表 API 服务
  * 用于知识图表页面的图表操作
  */
-import { data } from 'react-router-dom';
 import { post } from './axios';
 
 /**
