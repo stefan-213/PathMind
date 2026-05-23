@@ -2,12 +2,130 @@ import { useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Header, Footer } from '../../components/layout';
 import { Card, Badge, EmptyState } from '../../components/common';
-import { getScheduleList, getScheduleContent, updateSubTask, deleteSchedule } from '../../api/tasks';
 import { useScheduleStore } from '../../stores/scheduleStore';
-import type { SubSchedule } from '../../types/api';
+import type { Schedule, SubSchedule } from '../../types/api';
 import './TasksPage.scss';
 
 type TasksByWeek = Record<string, SubSchedule[]>;
+type PlanDataRecord = Record<string, unknown>;
+
+const PLAN_DATA_STORAGE_KEY = 'pathmind_plan_data';
+
+const isRecord = (value: unknown): value is PlanDataRecord =>
+  typeof value === 'object' && value !== null && !Array.isArray(value);
+
+const getText = (value: unknown, fallback = '') => {
+  if (typeof value === 'string') return value;
+  if (typeof value === 'number') return String(value);
+  return fallback;
+};
+
+const getNumber = (value: unknown, fallback: number) => {
+  if (typeof value === 'number' && Number.isFinite(value)) return value;
+  if (typeof value === 'string') {
+    const parsed = Number(value);
+    if (Number.isFinite(parsed)) return parsed;
+  }
+  return fallback;
+};
+
+const getStatus = (value: unknown) => {
+  if (value === 1 || value === '1' || value === true || value === 'completed') return 1;
+  return 0;
+};
+
+const getOptionalText = (value: unknown): string | null => {
+  if (value === undefined || value === null) return null;
+  const text = getText(value);
+  return text || null;
+};
+
+const splitTasks = (value: unknown) => {
+  if (typeof value !== 'string') return [];
+  return value
+    .split(/[；;\n]+/)
+    .map(task => task.trim())
+    .filter(Boolean);
+};
+
+const getTaskInputs = (record: PlanDataRecord) => {
+  if (Array.isArray(record.subScheduleList)) return record.subScheduleList;
+  if (Array.isArray(record.tasks)) return record.tasks;
+  if (Array.isArray(record.details)) return record.details;
+  return splitTasks(record.details);
+};
+
+const normalizeSubSchedule = (
+  taskInput: unknown,
+  taskIndex: number,
+  parentId: number,
+  fallbackGoal: string,
+): SubSchedule | null => {
+  const fallbackId = parentId * 1000 + taskIndex + 1;
+
+  if (typeof taskInput === 'string') {
+    const task = taskInput.trim();
+    if (!task) return null;
+    return {
+      id: fallbackId,
+      parentId,
+      day: `第${taskIndex + 1}天`,
+      task,
+      taskGoal: fallbackGoal,
+      description: null,
+      status: 0,
+      completedAt: null,
+    };
+  }
+
+  if (!isRecord(taskInput)) return null;
+
+  const task = getText(taskInput.task ?? taskInput.title ?? taskInput.name).trim();
+  if (!task) return null;
+
+  return {
+    id: getNumber(taskInput.id, fallbackId),
+    parentId: getNumber(taskInput.parentId, parentId),
+    day: getText(taskInput.day, `第${taskIndex + 1}天`),
+    task,
+    taskGoal: getText(taskInput.taskGoal ?? taskInput.goal ?? taskInput.week, fallbackGoal),
+    description: getOptionalText(taskInput.description),
+    status: getStatus(taskInput.status),
+    completedAt: getOptionalText(taskInput.completedAt),
+  };
+};
+
+const normalizePlanData = (planData: unknown): Schedule[] => {
+  if (!Array.isArray(planData)) return [];
+
+  return planData
+    .map((item, scheduleIndex) => {
+      if (!isRecord(item)) return null;
+
+      const id = getNumber(item.id, scheduleIndex + 1);
+      const title = getText(item.title, `学习计划 ${scheduleIndex + 1}`);
+      const taskInputs = getTaskInputs(item);
+      const subScheduleList = taskInputs
+        .map((taskInput, taskIndex) => normalizeSubSchedule(taskInput, taskIndex, id, title))
+        .filter((task): task is SubSchedule => Boolean(task));
+
+      return {
+        id,
+        scheduleId: getText(item.scheduleId, `local-schedule-${scheduleIndex + 1}`),
+        userId: getText(item.userId, 'local'),
+        title,
+        time: getText(item.time),
+        content: getText(item.content),
+        status: getStatus(item.status),
+        subScheduleList,
+      };
+    })
+    .filter((schedule): schedule is Schedule => Boolean(schedule));
+};
+
+const saveLocalSchedules = (schedules: Schedule[]) => {
+  localStorage.setItem(PLAN_DATA_STORAGE_KEY, JSON.stringify(schedules));
+};
 
 export function TasksPage() {
   const { schedules, currentSchedule, setSchedules, setCurrentSchedule, setLoading, clearSchedules } = useScheduleStore();
@@ -16,25 +134,27 @@ export function TasksPage() {
     loadSchedules();
   }, []);
 
-  const loadSchedules = async () => {
+  const loadSchedules = () => {
     setLoading(true);
     try {
-      // 获取日程表列表
-      const listRes = await getScheduleList();
-      const listData = listRes.data;
-      if (listData && listData.length > 0) {
-        setSchedules(listData);
-
-        // 获取第一个日程表的内容
-        const firstSchedule = listData[0];
-        const contentRes = await getScheduleContent(firstSchedule.scheduleId);
-        const contentData = contentRes.data;
-        if (contentData && contentData.length > 0) {
-          setCurrentSchedule(contentData[0]);
-        }
+      const planDataStr = localStorage.getItem(PLAN_DATA_STORAGE_KEY);
+      if (!planDataStr) {
+        clearSchedules();
+        return;
       }
+
+      const localSchedules = normalizePlanData(JSON.parse(planDataStr));
+      if (localSchedules.length === 0) {
+        clearSchedules();
+        return;
+      }
+
+      setSchedules(localSchedules);
+      setCurrentSchedule(localSchedules[0]);
+      saveLocalSchedules(localSchedules);
     } catch (err) {
-      console.error('加载日程表失败:', err);
+      console.error('读取本地任务数据失败:', err);
+      clearSchedules();
     } finally {
       setLoading(false);
     }
@@ -42,44 +162,38 @@ export function TasksPage() {
 
   const tasks = currentSchedule?.subScheduleList || [];
 
-  const toggleTask = async (taskId: number) => {
+  const toggleTask = (taskId: number) => {
     const task = tasks.find(t => t.id === taskId);
-    if (!task || task.id === undefined) return;
+    if (!task || task.id === undefined || !currentSchedule) return;
 
     const newStatus = task.status === 1 ? 0 : 1;
-    try {
-      await updateSubTask({
-        id: task.id!,
-        parentId: task.parentId!,
-        day: task.day,
-        task: task.task,
-        taskGoal: task.taskGoal,
-        description: task.description,
-        status: newStatus,
-        completedAt: newStatus === 1 ? new Date().toISOString() : null
-      });
-      // Reload to get updated data
-      if (currentSchedule) {
-        const contentRes = await getScheduleContent(currentSchedule.scheduleId);
-        const contentData = contentRes.data;
-        if (contentData && contentData.length > 0) {
-          setCurrentSchedule(contentData[0]);
-        }
-      }
-    } catch (err) {
-      console.error('更新任务状态失败:', err);
-    }
+    const nextSchedule = {
+      ...currentSchedule,
+      subScheduleList: tasks.map(item =>
+        item.id === taskId
+          ? {
+              ...item,
+              status: newStatus,
+              completedAt: newStatus === 1 ? new Date().toISOString() : null,
+            }
+          : item,
+      ),
+    };
+    const nextSchedules = schedules.length > 0
+      ? schedules.map(schedule =>
+          schedule.scheduleId === currentSchedule.scheduleId ? nextSchedule : schedule,
+        )
+      : [nextSchedule];
+
+    setSchedules(nextSchedules);
+    setCurrentSchedule(nextSchedule);
+    saveLocalSchedules(nextSchedules);
   };
 
   const handleClearAll = () => {
     if (confirm('确定要删除这个日程表吗？')) {
-      const scheduleId = currentSchedule?.scheduleId;
-      if (scheduleId) {
-        deleteSchedule(scheduleId).then(() => {
-          clearSchedules();
-          loadSchedules();
-        });
-      }
+      localStorage.removeItem(PLAN_DATA_STORAGE_KEY);
+      clearSchedules();
     }
   };
 
@@ -132,10 +246,7 @@ export function TasksPage() {
               onChange={(e) => {
                 const selected = schedules.find(s => s.scheduleId === e.target.value);
                 if (selected) {
-                  getScheduleContent(selected.scheduleId).then(res => {
-                    const data = res.data;
-                    if (data && data.length > 0) setCurrentSchedule(data[0]);
-                  });
+                  setCurrentSchedule(selected);
                 }
               }}
             >
@@ -174,11 +285,11 @@ export function TasksPage() {
             <div className="task-list">
               {weekTasks.map((task, index) => (
                 <Card
-                  key={task.id}
+                  key={task.id ?? `${week}-${index}`}
                   variant="bordered"
                   padding="md"
                   className={`task-card ${task.status === 1 ? 'completed' : ''}`}
-                  onClick={() => toggleTask(task.id!)}
+                  onClick={() => task.id !== undefined && toggleTask(task.id)}
                   style={{ animationDelay: `${index * 0.05}s` }}
                 >
                   <div className="task-check">

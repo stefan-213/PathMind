@@ -4,7 +4,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useChatStore } from '../../stores/chatStore';
-import { createTask } from '../../api/tasks';
 import './AISidePanel.scss';
 
 interface AISidePanelProps {
@@ -70,36 +69,21 @@ export function AISidePanel({ hasInitialGraph, onSendMessage, isLoading }: AISid
     }
   };
 
-  const handleSatisfied = async () => {
+  const handleSatisfied = () => {
     setIsCreating(true);
 
     const planDataStr = localStorage.getItem('pathmind_plan_data');
     if (planDataStr) {
       try {
-        const planData = JSON.parse(planDataStr);
-        const scheduleItems = planData.map((item: any) => ({
-          title: item.title || '',
-          time: item.time || '',
-          content: item.content || '',
-          tasks: item.details ? item.details.split(/[；]/).map((task: string, idx: number) => ({
-            day: `第${idx + 1}天`,
-            task: task.trim(),
-            taskGoal: '',
-            status: 0,
-          })) : [],
-        }));
-
-        await createTask({ data: scheduleItems });
+        JSON.parse(planDataStr);
 
         setSatisfactionState('satisfied');
-
-        localStorage.removeItem('pathmind_plan_data');
         localStorage.removeItem('pathmind_consult_chart');
 
         navigate('/tasks');
       } catch (err) {
-        console.error('创建日程表失败:', err);
-        alert('创建日程表失败，请重试');
+        console.error('读取本地计划数据失败:', err);
+        alert('读取本地计划数据失败，请重试');
       } finally {
         setIsCreating(false);
       }
