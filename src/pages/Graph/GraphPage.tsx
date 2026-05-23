@@ -5,6 +5,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { Header } from '../../components/layout';
+import { Spin } from '../../components/common';
 import { GraphCanvas } from './GraphCanvas';
 import { AISidePanel } from './AISidePanel';
 import type { GraphNode } from '../../types/graph';
@@ -13,13 +14,107 @@ import { charts } from '../../api/graph';
 // import { mockGraphXml } from '../../api/mock';
 import './GraphPage.scss';
 
+const CONSULT_CHART_STORAGE_KEY = 'pathmind_consult_chart';
+const PLAN_DATA_STORAGE_KEY = 'pathmind_plan_data';
+
+type ChartContent = {
+  xml?: unknown;
+  data?: unknown;
+};
+
+const isRecord = (value: unknown): value is Record<string, unknown> =>
+  typeof value === 'object' && value !== null && !Array.isArray(value);
+
+const stripThinkTags = (value: string) =>
+  value.replace(/<think>[\s\S]*?<\/think>/g, '').trim();
+
+const extractJsonObjectText = (value: string) => {
+  const preferredStart = value.search(/\{\s*"xml"\s*:/);
+  const start = preferredStart >= 0 ? preferredStart : value.indexOf('{');
+  if (start < 0) return null;
+
+  let depth = 0;
+  let inString = false;
+  let escaped = false;
+
+  for (let i = start; i < value.length; i++) {
+    const char = value[i];
+
+    if (inString) {
+      if (escaped) {
+        escaped = false;
+      } else if (char === '\\') {
+        escaped = true;
+      } else if (char === '"') {
+        inString = false;
+      }
+      continue;
+    }
+
+    if (char === '"') {
+      inString = true;
+    } else if (char === '{') {
+      depth++;
+    } else if (char === '}') {
+      depth--;
+      if (depth === 0) {
+        return value.slice(start, i + 1);
+      }
+    }
+  }
+
+  return null;
+};
+
+const parseChartContent = (contentData: unknown): ChartContent | null => {
+  if (isRecord(contentData)) return contentData;
+  if (typeof contentData !== 'string') return null;
+
+  const contentWithoutThink = stripThinkTags(contentData);
+
+  try {
+    const parsed = JSON.parse(contentWithoutThink);
+    return isRecord(parsed) ? parsed : null;
+  } catch {
+    const jsonText = extractJsonObjectText(contentWithoutThink);
+    if (!jsonText) return null;
+
+    try {
+      const parsed = JSON.parse(jsonText);
+      return isRecord(parsed) ? parsed : null;
+    } catch {
+      return null;
+    }
+  }
+};
+
+const getChartContent = (response: unknown) => {
+  if (!isRecord(response)) return undefined;
+
+  if (isRecord(response.data)) {
+    return response.data.content;
+  }
+
+  if (typeof response.data === 'string') {
+    return response.data;
+  }
+
+  return response.content;
+};
+
 export function GraphPage() {
   const [selectedNode, setSelectedNode] = useState<GraphNode | null>(null);
   const pageRef = useRef<HTMLDivElement>(null);
+  const hasRequestedChartRef = useRef(false);
 
   // AI 生成图表 XML 数据
   // const graphXml = mockGraphXml;
   const [graphXml, setGraphXml] = useState<string | null>(null);
+  const [isChartLoading, setIsChartLoading] = useState(() =>
+    Boolean(localStorage.getItem(CONSULT_CHART_STORAGE_KEY))
+  );
+  const [chartLoadingText, setChartLoadingText] = useState('正在生成计划图表...');
+  const [chartLoadError, setChartLoadError] = useState<string | null>(null);
   // console.log('【GraphPage】render, graphXml:', graphXml ? graphXml.substring(0, 100) + '...' : null);
 
   // // 加载状态
@@ -79,106 +174,77 @@ export function GraphPage() {
 
   // 检查是否有咨询方案数据，如果有则调用 charts API
   useEffect(() => {
-    // TODO: 暂时使用静态数据，如需启用接口则取消注释下方代码
-    const chartDataStr = localStorage.getItem('pathmind_consult_chart');
+    const chartDataStr = localStorage.getItem(CONSULT_CHART_STORAGE_KEY);
     console.log('【GraphPage】charts useEffect, chartDataStr:', chartDataStr ? '有数据' : '无数据');
-    if (chartDataStr) {
+    if (!chartDataStr || hasRequestedChartRef.current) return;
+    hasRequestedChartRef.current = true;
+
+    const loadGeneratedChart = async () => {
+      setIsChartLoading(true);
+      setChartLoadingText('正在生成计划图表...');
+      setChartLoadError(null);
+
       try {
         const chartData = JSON.parse(chartDataStr);
         console.log('【GraphPage】chartData:', chartData);
-        // 使用固定 agentId 100004 调用 charts API
-        charts({ ...chartData, agentId: '100004', sessionId: '' }).then((res) => {
-          console.log('【GraphPage】Charts API response:', res);
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          const response = res as any;
-          console.log('【GraphPage】response?.data:', response?.data);
-    
-          // 解析 content 字段获取数据
-          if (response?.data?.content) {
-            const contentData = response.data.content;
-            console.log('【GraphPage】contentData 类型:', typeof contentData);
-    
-            try {
-              // eslint-disable-next-line @typescript-eslint/no-explicit-any
-              let contentObj: any;
-    
-              if (typeof contentData === 'string') {
-                // 去掉 think 标签内容
-                const contentWithoutThink = contentData.replace(/<think>[\s\S]*?<\/think>/g, '').trim();
-    
-                // 尝试直接解析
-                try {
-                  contentObj = JSON.parse(contentWithoutThink);
-                  console.log('【GraphPage】直接解析 JSON 成功');
-                } catch {
-                  // 查找 {"xml": 的位置
-                  const jsonStart = contentWithoutThink.indexOf('{"xml":');
-                  if (jsonStart !== -1) {
-                    // 找到匹配的结束括号
-                    let braceCount = 0;
-                    let jsonEnd = -1;
-    
-                    for (let i = jsonStart; i < contentWithoutThink.length; i++) {
-                      if (contentWithoutThink[i] === '{') braceCount++;
-                      else if (contentWithoutThink[i] === '}') {
-                        braceCount--;
-                        if (braceCount === 0) {
-                          jsonEnd = i;
-                          break;
-                        }
-                      }
-                    }
-    
-                    if (jsonEnd !== -1) {
-                      const jsonStr = contentWithoutThink.substring(jsonStart, jsonEnd + 1);
-                      console.log('【GraphPage】提取的 JSON 长度:', jsonStr.length);
-                      contentObj = JSON.parse(jsonStr);
-                    }
-                  }
-                }
-              } else {
-                contentObj = contentData;
-              }
-    
-              console.log('【GraphPage】contentObj keys:', contentObj ? Object.keys(contentObj) : 'null');
-    
-              // 提取 XML 数据
-              if (contentObj?.xml) {
-                console.log('【GraphPage】成功获取 XML，长度:', contentObj.xml.length);
-                if (contentObj.xml.includes('<mxGraphModel')) {
-                  setGraphXml(contentObj.xml);
-                }
-              } else {
-                console.log('【GraphPage】content 中没有 xml 字段');
-              }
-    
-              // 提取 data 数据，传递给 task 页面
-              if (contentObj?.data && Array.isArray(contentObj.data)) {
-                console.log('【GraphPage】成功获取 data，长度:', contentObj.data.length);
-                localStorage.setItem('pathmind_plan_data', JSON.stringify(contentObj.data));
-              }
-            } catch (e) {
-              console.log('【GraphPage】content 解析失败:', e);
-            }
-          }
-    
-          // 清空 localStorage
-          localStorage.removeItem('pathmind_consult_chart');
-        }).catch((err) => {
-          console.error('Charts API error:', err);
-          localStorage.removeItem('pathmind_consult_chart');
-        });
-      } catch (err) {
-        console.error('Parse chart data error:', err);
-        localStorage.removeItem('pathmind_consult_chart');
-      }
-    }
 
+        localStorage.removeItem(CONSULT_CHART_STORAGE_KEY);
+
+        // 使用固定 agentId 100004 调用 charts API
+        const res = await charts({ ...chartData, agentId: '100004', sessionId: '' });
+
+        console.log('【GraphPage】Charts API response:', res);
+        const contentData = getChartContent(res);
+        console.log('【GraphPage】contentData 类型:', typeof contentData);
+
+        const contentObj = parseChartContent(contentData);
+        console.log('【GraphPage】contentObj keys:', contentObj ? Object.keys(contentObj) : 'null');
+
+        let hasGraphXml = false;
+
+        // 提取 XML 数据
+        if (typeof contentObj?.xml === 'string') {
+          console.log('【GraphPage】成功获取 XML，长度:', contentObj.xml.length);
+          if (contentObj.xml.includes('<mxGraphModel')) {
+            hasGraphXml = true;
+            setGraphXml(contentObj.xml);
+            setIsChartLoading(false);
+          }
+        } else {
+          console.log('【GraphPage】content 中没有 xml 字段');
+        }
+
+        // 提取 data 数据，传递给 task 页面
+        if (Array.isArray(contentObj?.data)) {
+          console.log('【GraphPage】成功获取 data，长度:', contentObj.data.length);
+          localStorage.setItem(PLAN_DATA_STORAGE_KEY, JSON.stringify(contentObj.data));
+        }
+
+        if (!hasGraphXml) {
+          setChartLoadError('计划图表生成失败，请稍后重试');
+          setIsChartLoading(false);
+        }
+      } catch (err) {
+        console.error('Charts API error:', err);
+        setChartLoadError('计划图表加载失败，请稍后重试');
+        setIsChartLoading(false);
+      } finally {
+        localStorage.removeItem(CONSULT_CHART_STORAGE_KEY);
+      }
+    };
+
+    loadGeneratedChart();
   }, []);
 
   return (
     <div className="graph-page" ref={pageRef}>
       <Header />
+
+      {isChartLoading && (
+        <div className="graph-loading-overlay" role="status" aria-live="polite">
+          <Spin size="large" tip={chartLoadingText} />
+        </div>
+      )}
 
       <div className="graph-main">
         {/* Page Header */}
@@ -215,7 +281,16 @@ export function GraphPage() {
             )} */}
 
             {/* 图表渲染 */}
-            <GraphCanvas xml={graphXml} />
+            <GraphCanvas
+              xml={graphXml}
+            />
+
+            {chartLoadError && !isChartLoading && (
+              <div className="graph-load-error">
+                <i className="fas fa-circle-exclamation"></i>
+                {chartLoadError}
+              </div>
+            )}
 
             {/* Node Detail Panel */}
             {selectedNode && (

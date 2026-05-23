@@ -42,6 +42,17 @@
   overflow: hidden;
 }
 
+.graph-loading-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.94);
+  backdrop-filter: blur(2px);
+}
+
 /* Graph Container */
 .graph-wrapper {
   flex: 1;
@@ -50,6 +61,29 @@
   // border-radius: var(--radius-xl);
   border: 1px solid var(--border-color);
   overflow: hidden;
+}
+
+.graph-load-error {
+  position: absolute;
+  top: var(--space-md);
+  left: 50%;
+  z-index: 30;
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  max-width: min(420px, calc(100% - 32px));
+  padding: var(--space-sm) var(--space-md);
+  border: 1px solid #ffd3cc;
+  border-radius: 8px;
+  background: #fff4f2;
+  color: #b42318;
+  font-size: 14px;
+  box-shadow: var(--shadow-md);
+  transform: translateX(-50%);
+
+  i {
+    flex-shrink: 0;
+  }
 }
 
 /* AI Side Panel */
