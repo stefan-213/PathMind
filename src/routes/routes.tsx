@@ -1,7 +1,7 @@
 import { Navigate, Route, createRoutesFromElements } from 'react-router-dom';
 import { ProtectedRoute, PublicRoute } from '../components/ProtectedRoute';
 import { HomePage } from '../pages/Home';
-import { TasksPage } from '../pages/Tasks';
+import { TaskDetailPage, TasksPage } from '../pages/Tasks';
 import { GraphPage } from '../pages/Graph';
 import { ConsultPage } from '../pages/Consult';
 import { ProfilePage } from '../pages/Profile';
@@ -14,6 +14,7 @@ export const routes = createRoutesFromElements(
     <Route path="/login" element={<PublicRoute><LoginPage /></PublicRoute>} />
     <Route path="/register" element={<PublicRoute><RegisterPage /></PublicRoute>} />
     <Route path="/tasks" element={<ProtectedRoute><TasksPage /></ProtectedRoute>} />
+    <Route path="/task-detail" element={<ProtectedRoute><TaskDetailPage /></ProtectedRoute>} />
     <Route path="/graph" element={<ProtectedRoute><GraphPage /></ProtectedRoute>} />
     <Route path="/consult" element={<ProtectedRoute><ConsultPage /></ProtectedRoute>} />
     <Route path="/profile" element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />

@@ -125,7 +125,6 @@
   align-items: center;
   gap: var(--space-md);
   transition: var(--transition);
-  cursor: pointer;
 }
 
 .task-card:hover {
@@ -148,6 +147,7 @@
   justify-content: center;
   flex-shrink: 0;
   transition: var(--transition);
+  cursor: pointer;
 }
 
 .task-card.completed .task-check {
@@ -158,6 +158,11 @@
 
 .task-content {
   flex: 1;
+  cursor: pointer;
+}
+
+.task-content:hover .task-title {
+  color: var(--primary);
 }
 
 .task-week {
@@ -213,4 +218,14 @@
 .task-card {
   animation: fadeIn 0.3s ease forwards;
   opacity: 0;
+}
+
+.task-loading-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.92);
 }

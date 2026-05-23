@@ -1,7 +1,7 @@
-import { useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { useCallback, useEffect, useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 import { Header, Footer } from '../../components/layout';
-import { Card, Badge, EmptyState } from '../../components/common';
+import { Card, Badge, EmptyState, Spin } from '../../components/common';
 import { useScheduleStore } from '../../stores/scheduleStore';
 import type { Schedule, SubSchedule } from '../../types/api';
 import './TasksPage.scss';
@@ -128,13 +128,11 @@ const saveLocalSchedules = (schedules: Schedule[]) => {
 };
 
 export function TasksPage() {
+  const navigate = useNavigate();
   const { schedules, currentSchedule, setSchedules, setCurrentSchedule, setLoading, clearSchedules } = useScheduleStore();
+  const [isTaskLoading, setIsTaskLoading] = useState(false);
 
-  useEffect(() => {
-    loadSchedules();
-  }, []);
-
-  const loadSchedules = () => {
+  const loadSchedules = useCallback(() => {
     setLoading(true);
     try {
       const planDataStr = localStorage.getItem(PLAN_DATA_STORAGE_KEY);
@@ -158,7 +156,11 @@ export function TasksPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [clearSchedules, setCurrentSchedule, setLoading, setSchedules]);
+
+  useEffect(() => {
+    loadSchedules();
+  }, [loadSchedules]);
 
   const tasks = currentSchedule?.subScheduleList || [];
 
@@ -188,6 +190,24 @@ export function TasksPage() {
     setSchedules(nextSchedules);
     setCurrentSchedule(nextSchedule);
     saveLocalSchedules(nextSchedules);
+  };
+
+  const handleTaskContentClick = (task: SubSchedule) => {
+    if (!currentSchedule) return;
+
+    const params = new URLSearchParams({
+      schedule: currentSchedule.scheduleId,
+      task: task.task,
+    });
+
+    if (task.id !== undefined) {
+      params.set('taskId', String(task.id));
+    }
+
+    setIsTaskLoading(true);
+    setTimeout(() => {
+      navigate(`/task-detail?${params.toString()}`);
+    }, 300);
   };
 
   const handleClearAll = () => {
@@ -237,6 +257,11 @@ export function TasksPage() {
   return (
     <div className="tasks-page">
       <Header />
+      {isTaskLoading && (
+        <div className="task-loading-overlay">
+          <Spin size="large" />
+        </div>
+      )}
       <main className="main">
         {/* Schedule Selector */}
         {schedules.length > 1 && (
@@ -289,13 +314,18 @@ export function TasksPage() {
                   variant="bordered"
                   padding="md"
                   className={`task-card ${task.status === 1 ? 'completed' : ''}`}
-                  onClick={() => task.id !== undefined && toggleTask(task.id)}
                   style={{ animationDelay: `${index * 0.05}s` }}
                 >
-                  <div className="task-check">
+                  <div
+                    className="task-check"
+                    onClick={(event) => {
+                      event.stopPropagation();
+                      if (task.id !== undefined) toggleTask(task.id);
+                    }}
+                  >
                     {task.status === 1 ? <i className="fas fa-check"></i> : ''}
                   </div>
-                  <div className="task-content">
+                  <div className="task-content" onClick={() => handleTaskContentClick(task)}>
                     <div className="task-week">{task.day}</div>
                     <div className="task-title">{task.task}</div>
                   </div>
