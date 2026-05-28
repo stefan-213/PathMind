@@ -12,6 +12,7 @@ export default defineConfig({
     proxy: {
       '/api': {
         target: 'http://82.157.183.97:8091',
+        // target: 'http://cn-hk-bgp-4.ofalias.net:58171',
         changeOrigin: true,
       }
     }

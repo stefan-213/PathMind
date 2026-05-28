@@ -74,6 +74,7 @@ export const consultation = (data: {
   return post<{
     content?: string;
     message?: string;
+  // }>('/api/agent/Goal', data);
   }>('/api/agent/consultation', data);
 };
 

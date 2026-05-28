@@ -6,11 +6,36 @@ import { useScheduleStore } from '../../stores/scheduleStore';
 import type { Schedule, SubSchedule } from '../../types/api';
 import './TasksPage.scss';
 
-type TasksByWeek = Record<string, SubSchedule[]>;
 type PlanDataRecord = Record<string, unknown>;
+
+interface TaskTimeMeta {
+  weekLabel?: string;
+  dayLabel?: string;
+}
+
+interface StageTaskViewModel {
+  id: number | string;
+  scheduleId: string;
+  taskId?: number;
+  stageIndex: number;
+  stageTitle: string;
+  timeText: string;
+  taskTitle: string;
+  status: number;
+  completedAt?: string | null;
+}
+
+interface StageViewModel {
+  id: string;
+  title: string;
+  tasks: StageTaskViewModel[];
+}
 
 const PLAN_DATA_STORAGE_KEY = 'pathmind_plan_data';
 const PLAN_TITLE_STORAGE_KEY = 'pathmind_plan_title';
+const TIME_PREFIX_PATTERN = /^(第\d+(?:-\d+)?周(?:\s*[，,、]?\s*第\d+(?:-\d+)?天)?|第\d+(?:-\d+)?天|Day\s*\d+(?:-\d+)?)\s*[-—－:：]\s*(.+)$/i;
+const WEEK_PATTERN = /第\d+(?:-\d+)?周/;
+const DAY_PATTERN = /第\d+(?:-\d+)?天/;
 
 const isRecord = (value: unknown): value is PlanDataRecord =>
   typeof value === 'object' && value !== null && !Array.isArray(value);
@@ -41,11 +66,95 @@ const getOptionalText = (value: unknown): string | null => {
   return text || null;
 };
 
+const normalizeTimePrefix = (value: string) => {
+  const compactValue = value.replace(/\s*[，,、]\s*/g, '，').trim();
+  const dayMatch = compactValue.match(/^Day\s*(\d+(?:-\d+)?)$/i);
+  return dayMatch ? `第${dayMatch[1]}天` : compactValue;
+};
+
+const getTimePartLabel = (value: unknown, unit: '周' | '天'): string | undefined => {
+  if (typeof value === 'number' && Number.isFinite(value)) {
+    return `第${value}${unit}`;
+  }
+
+  if (typeof value !== 'string') return undefined;
+
+  const text = value.trim();
+  if (!text) return undefined;
+
+  const pattern = unit === '周' ? WEEK_PATTERN : DAY_PATTERN;
+  const match = text.match(pattern);
+  if (match) return match[0];
+
+  const numericMatch = text.match(/^\d+(?:-\d+)?$/);
+  if (numericMatch) return `第${text}${unit}`;
+
+  if (unit === '天') {
+    const dayMatch = text.match(/Day\s*(\d+(?:-\d+)?)/i);
+    if (dayMatch) return `第${dayMatch[1]}天`;
+  }
+
+  return undefined;
+};
+
+const formatTaskTimeText = ({ weekLabel, dayLabel }: TaskTimeMeta) => {
+  if (weekLabel && dayLabel) return `${weekLabel}，${dayLabel}`;
+  if (weekLabel) return weekLabel;
+  if (dayLabel) return dayLabel;
+  return '未标注时间';
+};
+
+const getUnknownField = (value: unknown, key: string) => (
+  isRecord(value) ? value[key] : undefined
+);
+
+const getTaskTimeText = (task: SubSchedule) => {
+  const weekLabel =
+    getTimePartLabel(getUnknownField(task, 'week'), '周') ||
+    getTimePartLabel(task.taskGoal, '周') ||
+    getTimePartLabel(task.day, '周') ||
+    getTimePartLabel(task.task, '周');
+  const dayLabel =
+    getTimePartLabel(task.day, '天') ||
+    getTimePartLabel(task.task, '天');
+
+  return formatTaskTimeText({ weekLabel, dayLabel });
+};
+
+const stripStagePrefix = (value: string) =>
+  value.replace(/^阶段\s*\d+\s*[·.．、:：\-—－]?\s*/, '').trim();
+
+const getStageTitle = (schedule: Schedule, stageIndex: number) => {
+  const title = stripStagePrefix(schedule.title) || '未命名阶段';
+  return `阶段${stageIndex + 1}·${title}`;
+};
+
+const createStageViewModel = (schedule: Schedule, stageIndex: number): StageViewModel => {
+  const stageTitle = getStageTitle(schedule, stageIndex);
+
+  return {
+    id: schedule.scheduleId,
+    title: stageTitle,
+    tasks: schedule.subScheduleList.map((task, taskIndex) => ({
+      id: task.id ?? `${schedule.scheduleId}-${taskIndex}`,
+      scheduleId: schedule.scheduleId,
+      taskId: task.id,
+      stageIndex,
+      stageTitle,
+      timeText: getTaskTimeText(task),
+      taskTitle: task.task || '未命名任务',
+      status: task.status,
+      completedAt: task.completedAt,
+    })),
+  };
+};
+
 const splitTasks = (value: unknown) => {
   if (typeof value !== 'string') return [];
   return value
     .replace(/\r\n?/g, '\n')
     .replace(/(第\d+(?:-\d+)?[天周])\s*\n\s*(?!第\d+(?:-\d+)?[天周])([^\n]+)/g, '$1-$2')
+    .replace(/(第\d+(?:-\d+)?周)\s*[，,、]\s*(第\d+(?:-\d+)?天)/g, '$1、$2')
     .replace(/[，,；;]\s*(?=第\d+(?:-\d+)?[天周](?:\s*[-—－:：])?)/g, '\n')
     .split(/[；;\n]+/)
     .map(task => task.trim())
@@ -54,11 +163,11 @@ const splitTasks = (value: unknown) => {
 
 const parseTaskText = (value: string, taskIndex: number) => {
   const text = value.trim();
-  const match = text.match(/^(第\d+(?:-\d+)?[天周])\s*[-—－:：]\s*(.+)$/);
+  const match = text.match(TIME_PREFIX_PATTERN);
 
   if (match) {
     return {
-      day: match[1],
+      day: normalizeTimePrefix(match[1]),
       task: match[2].trim(),
     };
   }
@@ -171,21 +280,11 @@ const saveLocalSchedules = (schedules: Schedule[]) => {
   localStorage.setItem(PLAN_DATA_STORAGE_KEY, JSON.stringify(schedules));
 };
 
-const groupTasksByWeek = (tasks: SubSchedule[]): TasksByWeek => {
-  return tasks.reduce((acc, task) => {
-    const week = task.taskGoal || '学习任务';
-    if (!acc[week]) {
-      acc[week] = [];
-    }
-    acc[week].push(task);
-    return acc;
-  }, {} as TasksByWeek);
-};
-
 export function TasksPage() {
   const navigate = useNavigate();
   const { schedules, setSchedules, setCurrentSchedule, setLoading, clearSchedules } = useScheduleStore();
   const [isTaskLoading, setIsTaskLoading] = useState(false);
+  const [collapsedStageIds, setCollapsedStageIds] = useState<Set<string>>(() => new Set());
   const [planTitle, setPlanTitle] = useState(() =>
     localStorage.getItem(PLAN_TITLE_STORAGE_KEY)?.trim() || ''
   );
@@ -258,14 +357,26 @@ export function TasksPage() {
     saveLocalSchedules(nextSchedules);
   };
 
-  const handleTaskContentClick = (schedule: Schedule, task: SubSchedule) => {
+  const handleToggleStage = (stageId: string) => {
+    setCollapsedStageIds(prev => {
+      const next = new Set(prev);
+      if (next.has(stageId)) {
+        next.delete(stageId);
+      } else {
+        next.add(stageId);
+      }
+      return next;
+    });
+  };
+
+  const handleTaskContentClick = (task: StageTaskViewModel) => {
     const params = new URLSearchParams({
-      schedule: schedule.scheduleId,
-      task: task.task,
+      schedule: task.scheduleId,
+      task: task.taskTitle,
     });
 
-    if (task.id !== undefined) {
-      params.set('taskId', String(task.id));
+    if (task.taskId !== undefined) {
+      params.set('taskId', String(task.taskId));
     }
 
     setIsTaskLoading(true);
@@ -288,6 +399,9 @@ export function TasksPage() {
   const percentage = totalCount > 0 ? Math.round((completedCount / totalCount) * 100) : 0;
   const totalGoalTitle = planTitle || 'AI 对话中的学习任务（总）';
   const graphGoal = planTitle || scheduleSections.map(schedule => schedule.title).join('、') || totalGoalTitle;
+  const stages = scheduleSections.map((schedule, stageIndex) =>
+    createStageViewModel(schedule, stageIndex)
+  );
 
   if (scheduleSections.length === 0 || allTasks.length === 0) {
     return (
@@ -343,48 +457,54 @@ export function TasksPage() {
         </Card>
 
         {/* Task List */}
-        <div className="schedule-list">
-          {scheduleSections.map((schedule) => {
-            const tasksByWeek = groupTasksByWeek(schedule.subScheduleList);
-
+        <div className="stage-task-list">
+          {stages.map((stage) => {
+            const isCollapsed = collapsedStageIds.has(stage.id);
             return (
-              <section className="schedule-section" key={schedule.scheduleId}>
-                <div className="schedule-heading">
-                  <div className="schedule-heading-main">
-                    <h2>{schedule.title}</h2>
-                  </div>
-                </div>
+              <section className="stage-task-section" key={stage.id}>
+                <button
+                  type="button"
+                  className="stage-task-section__header"
+                  aria-expanded={!isCollapsed}
+                  onClick={() => handleToggleStage(stage.id)}
+                >
+                  <span className="stage-task-section__triangle" aria-hidden="true">
+                    {isCollapsed ? '▶' : '▼'}
+                  </span>
+                  <span className="stage-task-section__title">{stage.title}</span>
+                </button>
 
-                {Object.entries(tasksByWeek).map(([week, weekTasks]) => (
-                  <div key={`${schedule.scheduleId}-${week}`}>
-                    {/* <div className="section-title">{week}</div> */}
-                    <div className="task-list">
-                      {weekTasks.map((task, index) => (
-                        <Card
-                          key={task.id ?? `${schedule.scheduleId}-${week}-${index}`}
-                          variant="bordered"
-                          padding="md"
-                          className={`task-card ${task.status === 1 ? 'completed' : ''}`}
-                          style={{ animationDelay: `${index * 0.05}s` }}
-                        >
-                          <div
-                            className="task-check"
-                            onClick={(event) => {
-                              event.stopPropagation();
-                              if (task.id !== undefined) toggleTask(schedule.scheduleId, task.id);
+                {!isCollapsed ? (
+                  <div className="stage-task-section__tasks">
+                    {stage.tasks.map((task) => (
+                      <div
+                        key={task.id}
+                        className={`stage-task-item ${task.status === 1 ? 'stage-task-item--completed' : ''}`}
+                      >
+                        <label className="stage-task-item__meta">
+                          <input
+                            type="checkbox"
+                            checked={task.status === 1}
+                            disabled={task.taskId === undefined}
+                            onChange={() => {
+                              if (task.taskId !== undefined) {
+                                toggleTask(task.scheduleId, task.taskId);
+                              }
                             }}
-                          >
-                            {task.status === 1 ? <i className="fas fa-check"></i> : ''}
-                          </div>
-                          <div className="task-content" onClick={() => handleTaskContentClick(schedule, task)}>
-                            <div className="task-week">{task.day}</div>
-                            <div className="task-title">{task.task}</div>
-                          </div>
-                        </Card>
-                      ))}
-                    </div>
+                          />
+                          <span>{task.timeText}</span>
+                        </label>
+                        <button
+                          type="button"
+                          className="stage-task-item__content"
+                          onClick={() => handleTaskContentClick(task)}
+                        >
+                          {task.taskTitle}
+                        </button>
+                      </div>
+                    ))}
                   </div>
-                ))}
+                ) : null}
               </section>
             );
           })}

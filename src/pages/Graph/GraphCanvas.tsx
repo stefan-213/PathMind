@@ -28,7 +28,7 @@ export function GraphCanvas({ xml }: GraphCanvasProps) {
           baseUrl={drawIoBaseUrl}
           xml={xml}
           urlParameters={{
-            ui: 'min',
+            ui: 'sketch',
             spin: false,
             libraries: false,
             noSaveBtn: true,
