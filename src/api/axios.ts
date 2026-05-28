@@ -51,7 +51,22 @@ const endRequest = () => {
     document.body.style.cursor = 'default';
   }
 };
+const normalizeErrorMessage = (
+  value: unknown,
+  fallback = '请求失败，请稍后重试',
+) => {
+  if (typeof value !== 'string') {
+    return fallback;
+  }
 
+  const optionalMatch = value.match(/^Optional\[(.*)\]$/);
+
+  if (optionalMatch?.[1]) {
+    return optionalMatch[1];
+  }
+
+  return value || fallback;
+};
 // 请求拦截器
 axiosInstance.interceptors.request.use(
   (config: InternalAxiosRequestConfig) => {
@@ -88,7 +103,9 @@ axiosInstance.interceptors.response.use(
       response.data = {
         success: isSuccess,
         data: backendResponse.data,
-        error: isSuccess ? undefined : backendResponse.info
+        error: isSuccess
+        ? undefined
+        : normalizeErrorMessage(backendResponse.info),
       };
     }
 

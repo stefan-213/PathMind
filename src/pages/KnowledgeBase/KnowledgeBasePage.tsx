@@ -266,8 +266,8 @@ export function KnowledgeBasePage() {
   );
 
   const isDialogSubmitting = isCreatingKnowledgeBase || isSavingName;
-  const dialogTitle = dialogMode === 'rename' ? '重命名知识库' : '上传知识库';
-  const dialogSubmitText = dialogMode === 'rename' ? '保存' : '创建知识库';
+  const dialogTitle = dialogMode === 'rename' ? '重命名知识库' : '创建知识库';
+  const dialogSubmitText = dialogMode === 'rename' ? '保存' : '创建';
 
   const sidebarItems = useMemo<ResourceSidebarItem[]>(
     () =>
@@ -760,9 +760,9 @@ export function KnowledgeBasePage() {
             subtitle: `${knowledgeBases.length} 个知识库`,
           }}
           primaryAction={{
-            label: '新增知识库',
+            label: '创建知识库',
             iconClass: 'fas fa-cloud-upload-alt',
-            title: '上传知识库',
+            title: '创建知识库',
             disabled: isUploading || isLoadingList,
             onClick: openCreateDialog,
           }}
@@ -791,7 +791,7 @@ export function KnowledgeBasePage() {
           <header className="knowledge-main__header">
             <div className="knowledge-main__title-area">
               <span className="knowledge-main__eyebrow">Knowledge Base</span>
-              <h1>知识库上传</h1>
+              <h1>知识库上传（后端接口未接入）</h1>
               <p>
                 {selectedKnowledgeBase
                   ? `当前知识库：${selectedKnowledgeBase.name}`

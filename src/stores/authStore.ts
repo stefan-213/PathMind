@@ -39,6 +39,9 @@ export const useAuthStore = create<AuthState>()(
           // 后端返回的 data 是 token 字符串（可能是 "Bearer xxx" 格式）
           let token = response.data as string;
 
+          if (response.success === false) {
+            throw new Error(response.error || '登录响应数据异常');
+          }
           if (!token) {
             throw new Error('登录响应数据异常');
           }

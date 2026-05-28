@@ -122,13 +122,13 @@ export function RegisterPage() {
           {/* 表单 */}
           <form onSubmit={handleSubmit}>
             <div className="form-group">
-              <label className="form-label">用户名</label>
+              <label className="form-label">用户名(不可重复)</label>
               <div className="input-wrapper">
                 <i className="fas fa-user input-icon"></i>
                 <input
                   type="text"
                   className={`form-input ${formErrors.username ? 'error' : ''}`}
-                  placeholder="你的名字"
+                  placeholder="你的昵称"
                   value={username}
                   onChange={(e) => setUsername(e.target.value)}
                 />
@@ -137,7 +137,7 @@ export function RegisterPage() {
             </div>
 
             <div className="form-group">
-              <label className="form-label">邮箱</label>
+              <label className="form-label">邮箱(不可重复)</label>
               <div className="input-wrapper">
                 <i className="fas fa-envelope input-icon"></i>
                 <input
@@ -173,7 +173,7 @@ export function RegisterPage() {
                 <input
                   type={showPassword ? 'text' : 'password'}
                   className={`form-input ${formErrors.password ? 'error' : ''}`}
-                  placeholder="至少8位"
+                  placeholder="至少6位"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                 />
