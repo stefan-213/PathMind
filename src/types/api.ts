@@ -274,6 +274,54 @@ export interface Agent {
   agentDesc: string;
 }
 
+// ==================== 知识库相关 ====================
+
+/** 知识库文件 */
+export interface KnowledgeBaseFile {
+  id: string;
+  name: string;
+  size?: number;
+  type?: string;
+  createdAt?: string;
+}
+
+/** 知识库 */
+export interface KnowledgeBase {
+  id: string;
+  name: string;
+  files: KnowledgeBaseFile[];
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+/** 新增知识库请求 */
+export interface CreateKnowledgeBaseRequest {
+  name: string;
+}
+
+/** 修改知识库请求 */
+export interface UpdateKnowledgeBaseRequest {
+  id: string;
+  name: string;
+}
+
+/** 删除知识库请求 */
+export interface DeleteKnowledgeBaseRequest {
+  id: string;
+}
+
+/** 上传知识库文件请求 */
+export interface UploadKnowledgeBaseFileRequest {
+  knowledgeBaseId: string;
+  files: File[];
+}
+
+/** 删除知识库文件请求 */
+export interface DeleteKnowledgeBaseFileRequest {
+  knowledgeBaseId: string;
+  fileId: string;
+}
+
 // ==================== Copilot相关 ====================
 
 /** 咨询会话用户画像 */

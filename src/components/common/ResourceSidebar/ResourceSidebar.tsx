@@ -36,6 +36,7 @@ export interface ResourceSidebarProps {
   onSelectItem: (id: string) => void;
   onDeleteItem?: (id: string) => void;
   emptyText?: string;
+  children?: React.ReactNode;
   className?: string;
   collapseTitle?: string;
   expandTitle?: string;
@@ -71,6 +72,7 @@ export function ResourceSidebar({
   onSelectItem,
   onDeleteItem,
   emptyText = '暂无数据',
+  children,
   className = '',
   collapseTitle = '收起侧边栏',
   expandTitle = '展开',
@@ -150,58 +152,62 @@ export function ResourceSidebar({
 
           <div className="resource-sidebar__section">
             <span className="resource-sidebar__section-title">{sectionTitle}</span>
-            <div className="resource-sidebar__list">
-              {items.length > 0 ? (
-                items.map((item) => {
-                  const isActive = activeItemId === item.id;
-                  const itemClassName = [
-                    'resource-sidebar__item',
-                    isActive ? 'resource-sidebar__item--active' : '',
-                    item.disabled ? 'resource-sidebar__item--disabled' : '',
-                  ].filter(Boolean).join(' ');
+            {children ? (
+              <div className="resource-sidebar__custom-content">{children}</div>
+            ) : (
+              <div className="resource-sidebar__list">
+                {items.length > 0 ? (
+                  items.map((item) => {
+                    const isActive = activeItemId === item.id;
+                    const itemClassName = [
+                      'resource-sidebar__item',
+                      isActive ? 'resource-sidebar__item--active' : '',
+                      item.disabled ? 'resource-sidebar__item--disabled' : '',
+                    ].filter(Boolean).join(' ');
 
-                  return (
-                    <div
-                      key={item.id}
-                      className={itemClassName}
-                      role="button"
-                      tabIndex={item.disabled ? -1 : 0}
-                      aria-current={isActive ? 'page' : undefined}
-                      aria-disabled={item.disabled || undefined}
-                      onClick={() => handleSelectItem(item)}
-                      onKeyDown={(event) => handleItemKeyDown(event, item)}
-                    >
-                      <div className="resource-sidebar__item-content">
-                        {item.iconClass ? (
-                          <i className={`${item.iconClass} resource-sidebar__item-icon`}></i>
-                        ) : null}
-                        <span className="resource-sidebar__item-text">
-                          <span className="resource-sidebar__item-title">{item.title}</span>
-                          {item.description ? (
-                            <span className="resource-sidebar__item-description">{item.description}</span>
+                    return (
+                      <div
+                        key={item.id}
+                        className={itemClassName}
+                        role="button"
+                        tabIndex={item.disabled ? -1 : 0}
+                        aria-current={isActive ? 'page' : undefined}
+                        aria-disabled={item.disabled || undefined}
+                        onClick={() => handleSelectItem(item)}
+                        onKeyDown={(event) => handleItemKeyDown(event, item)}
+                      >
+                        <div className="resource-sidebar__item-content">
+                          {item.iconClass ? (
+                            <i className={`${item.iconClass} resource-sidebar__item-icon`}></i>
                           ) : null}
-                        </span>
+                          <span className="resource-sidebar__item-text">
+                            <span className="resource-sidebar__item-title">{item.title}</span>
+                            {item.description ? (
+                              <span className="resource-sidebar__item-description">{item.description}</span>
+                            ) : null}
+                          </span>
+                        </div>
+                        {onDeleteItem ? (
+                          <button
+                            type="button"
+                            className="resource-sidebar__delete-btn"
+                            title={deleteTitle}
+                            onClick={(event) => {
+                              event.stopPropagation();
+                              onDeleteItem(item.id);
+                            }}
+                          >
+                            <i className="fas fa-trash"></i>
+                          </button>
+                        ) : null}
                       </div>
-                      {onDeleteItem ? (
-                        <button
-                          type="button"
-                          className="resource-sidebar__delete-btn"
-                          title={deleteTitle}
-                          onClick={(event) => {
-                            event.stopPropagation();
-                            onDeleteItem(item.id);
-                          }}
-                        >
-                          <i className="fas fa-trash"></i>
-                        </button>
-                      ) : null}
-                    </div>
-                  );
-                })
-              ) : (
-                <div className="resource-sidebar__empty">{emptyText}</div>
-              )}
-            </div>
+                    );
+                  })
+                ) : (
+                  <div className="resource-sidebar__empty">{emptyText}</div>
+                )}
+              </div>
+            )}
           </div>
         </>
       )}

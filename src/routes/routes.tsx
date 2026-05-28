@@ -5,6 +5,7 @@ import { TaskDetailPage, TasksPage } from '../pages/Tasks';
 import { GraphPage } from '../pages/Graph';
 import { ConsultPage } from '../pages/Consult';
 import { ProfilePage } from '../pages/Profile';
+import { KnowledgeBasePage } from '../pages/KnowledgeBase';
 import { LoginPage, RegisterPage } from '../pages/Auth';
 import { RootLayout } from './RootLayout';
 
@@ -17,6 +18,7 @@ export const routes = createRoutesFromElements(
     <Route path="/task-detail" element={<ProtectedRoute><TaskDetailPage /></ProtectedRoute>} />
     <Route path="/graph" element={<ProtectedRoute><GraphPage /></ProtectedRoute>} />
     <Route path="/consult" element={<ProtectedRoute><ConsultPage /></ProtectedRoute>} />
+    <Route path="/knowledge-base" element={<ProtectedRoute><KnowledgeBasePage /></ProtectedRoute>} />
     <Route path="/profile" element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />
     <Route path="*" element={<Navigate to="/" replace />} />
   </Route>

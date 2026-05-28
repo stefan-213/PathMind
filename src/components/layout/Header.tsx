@@ -6,13 +6,14 @@ import { useAuthStore } from '../../stores/authStore';
 import { useNavStore } from '../../stores/navStore';
 import './Header.scss';
 
-type NavItem = 'home' | 'graph' | 'consult' | 'tasks' | 'profile';
+type NavItem = 'home' | 'graph' | 'consult' | 'tasks' | 'knowledge' | 'profile';
 
 const navItems: { key: NavItem; label: string; path: string; icon: string }[] = [
   { key: 'home', label: '首页', path: '/', icon: 'fa-home' },
   { key: 'consult', label: 'Copilot', path: '/consult', icon: 'fa-comments' },
   { key: 'graph', label: '知识图表', path: '/graph', icon: 'fa-project-diagram' },
   { key: 'tasks', label: '我的任务', path: '/tasks', icon: 'fa-tasks' },
+  { key: 'knowledge', label: '知识库', path: '/knowledge-base', icon: 'fa-database' },
   { key: 'profile', label: '个人中心', path: '/profile', icon: 'fa-user' },
 ];
 
