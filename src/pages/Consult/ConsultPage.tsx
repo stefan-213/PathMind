@@ -422,13 +422,20 @@ export function ConsultPage() {
     );
   }, [currentSessionId]);
 
-  // 添加消息
+  // 添加消息（使用函数式更新避免闭包中的旧状态问题）
   const addMessage = useCallback((role: 'user' | 'assistant', content: string, isHtml = false) => {
-    if (!currentSession) return;
+    if (!currentSessionId) return;
     const newMessage: Message = { role, content, isHtml, timestamp: Date.now() };
-    updateCurrentSession({ messages: [...currentSession.messages, newMessage] });
+    setSessions((prev) =>
+      prev.map((s) => {
+        if (s.id === currentSessionId) {
+          return { ...s, messages: [...s.messages, newMessage] };
+        }
+        return s;
+      })
+    );
     scrollToBottom();
-  }, [currentSession, updateCurrentSession, scrollToBottom]);
+  }, [currentSessionId, scrollToBottom]);
 
   // 添加 AI 响应消息
   const addAIReply = useCallback((reply: Awaited<ReturnType<typeof fetchAIReply>>, userProfile?: Session['userProfile']) => {

@@ -17,7 +17,8 @@ interface AISidePanelProps {
 
 export function AISidePanel({ hasInitialGraph, onSendMessage, isLoading }: AISidePanelProps) {
   const navigate = useNavigate();
-  const { messages, addMessage, sessionId, satisfactionState, setSatisfactionState } = useChatStore();
+  // sessionId 保留用于未来计划表跳转功能（见下方注释代码）
+  const { messages, addMessage, sessionId: _sessionId, satisfactionState, setSatisfactionState } = useChatStore();
   const [input, setInput] = useState('');
   const [isCreating, setIsCreating] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
