@@ -46,7 +46,7 @@ export function GraphCanvas({ xml }: GraphCanvasProps) {
       ) : (
         <div className="empty-graph">
           <i className="fas fa-project-diagram"></i>
-          <p>在右侧输入需求，让 AI 为你生成图表</p>
+          <p>在Copilot页面输入需求，让 AI 为你生成计划图表</p>
         </div>
       )}
     </div>

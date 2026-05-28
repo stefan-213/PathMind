@@ -838,21 +838,21 @@ export function ConsultPage() {
             href: '/',
           }}
           primaryAction={{
-            label: '新建咨询',
+            label: '新建会话',
             iconClass: 'fas fa-plus',
-            title: '新建咨询',
+            title: '新建会话',
             disabled: isWaitingForAI,
             onClick: handleNewSession,
           }}
-          sectionTitle="历史对话"
+          sectionTitle="历史会话"
           items={sidebarItems}
           activeItemId={currentSessionId || ''}
           isCollapsed={isCollapsed}
           onToggleCollapse={() => setIsCollapsed((collapsed) => !collapsed)}
           onSelectItem={handleSwitchSession}
           onDeleteItem={handleDeleteSession}
-          emptyText="暂无历史对话"
-          deleteTitle="删除对话"
+          emptyText="暂无历史会话"
+          deleteTitle="删除会话"
         />
         <main className="consult-main">
           <section className="chat-area" ref={chatScrollRef} onClick={handleChatClick}>
@@ -891,7 +891,7 @@ export function ConsultPage() {
                 <textarea
                   ref={inputRef}
                   className="consult-chat-input"
-                  placeholder="输入你的技术目标或问题..."
+                  placeholder="输入你的目标或问题..."
                   value={inputText}
                   onChange={(e) => {
                     setInputText(e.target.value);

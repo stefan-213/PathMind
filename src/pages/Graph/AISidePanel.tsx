@@ -98,15 +98,15 @@ export function AISidePanel({ hasInitialGraph, onSendMessage, isLoading }: AISid
         <h3>
           <i className="fas fa-comment-dots"></i> AI 助手
         </h3>
-        <p className="panel-hint">描述你想要的技术图表，AI 会自动分析并生成</p>
+        <p className="panel-hint">描述你想要的图表，AI 会自动分析并修改</p>
       </div>
 
       <div className="messages-container">
         {messages.length === 0 && (
           <div className="empty-state">
             <i className="fas fa-lightbulb"></i>
-            <p>例如："帮我画一个前端学习路线图"</p>
-            <p>AI 会分析你的需求，自动选择合适的图表类型</p>
+            <p>在Copilot页面输入需求，让 AI 为你生成计划图表"</p>
+            <p>AI 会分析你的需求，自动调整图表</p>
           </div>
         )}
 
@@ -141,7 +141,7 @@ export function AISidePanel({ hasInitialGraph, onSendMessage, isLoading }: AISid
                   </div>
                 )}
               {/* 计划表跳转按钮 - 仅在满意后显示 */}
-              {msg.role === 'assistant' &&
+              {/* {msg.role === 'assistant' &&
                 msg === messages[messages.length - 1] &&
                 satisfactionState === 'satisfied' && (
                   <div className="plan-link">
@@ -149,7 +149,7 @@ export function AISidePanel({ hasInitialGraph, onSendMessage, isLoading }: AISid
                       <i className="fas fa-tasks"></i> 查看计划表
                     </a>
                   </div>
-                )}
+                )} */}
               <div className="message-time">
                 {new Date(msg.timestamp).toLocaleTimeString()}
               </div>
