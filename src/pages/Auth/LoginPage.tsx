@@ -20,6 +20,7 @@ export function LoginPage() {
   const [rememberMe, setRememberMe] = useState(false);
   const [formErrors, setFormErrors] = useState<{ username?: string; password?: string }>({});
 
+
   const from = (location.state as RouteLocationState | null)?.from?.pathname || '/';
 
   const validate = () => {
@@ -76,7 +77,7 @@ export function LoginPage() {
           {/* 切换标签 */}
           <div className="tabs">
             <Link to="/login" className="tab active">登录</Link>
-            <Link to="/register" className="tab">注册</Link>
+            <Link to="/register" onClick={clearError} className="tab">注册</Link>
           </div>
 
           {/* 表单 */}

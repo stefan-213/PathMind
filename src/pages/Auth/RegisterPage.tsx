@@ -115,7 +115,7 @@ export function RegisterPage() {
         <div className="auth-card">
           {/* 切换标签 */}
           <div className="tabs">
-            <Link to="/login" className="tab">登录</Link>
+            <Link to="/login" onClick={clearError} className="tab">登录</Link>
             <Link to="/register" className="tab active">注册</Link>
           </div>
 

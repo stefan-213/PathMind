@@ -120,10 +120,11 @@
   gap: var(--space-md);
 }
 
-// .schedule-section {
-//   border-top: 1px solid var(--border-color);
-//   padding-top: var(--space-md);
-// }
+.schedule-section {
+  margin: 0;
+  // border-top: 1px solid var(--border-color);
+  // padding-top: var(--space-md);
+}
 
 .schedule-heading {
   display: flex;
@@ -179,6 +180,7 @@
   flex-direction: column;
   gap: var(--space-sm);
   margin-bottom: var(--space-lg);
+  margin-left: 30px;
 }
 
 .task-card {
