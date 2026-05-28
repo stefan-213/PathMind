@@ -10,11 +10,22 @@ interface GraphCanvasProps {
   xml: string | null;
 }
 
+const getDrawIoBaseUrl = () => {
+  const protocol = typeof window !== 'undefined' && window.location.protocol === 'http:'
+    ? 'http'
+    : 'https';
+
+  return `${protocol}://embed.diagrams.net`;
+};
+
 export function GraphCanvas({ xml }: GraphCanvasProps) {
+  const drawIoBaseUrl = getDrawIoBaseUrl();
+
   return (
     <div className="graph-canvas">
       {xml ? (
         <DrawIoEmbed
+          baseUrl={drawIoBaseUrl}
           xml={xml}
           urlParameters={{
             ui: 'min',

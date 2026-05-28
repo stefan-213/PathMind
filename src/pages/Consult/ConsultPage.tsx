@@ -179,6 +179,7 @@ function TypingDots() {
 interface MessageItemProps {
   message: Message;
   onOptionSelect?: (option: string) => void;
+  optionsDisabled?: boolean;
 }
 
 // 解析 JSON 格式的 AI 回复
@@ -231,7 +232,7 @@ function formatOptionText(option: string): string {
   return match ? match[1] : option;
 }
 
-function MessageItem({ message, onOptionSelect }: MessageItemProps) {
+function MessageItem({ message, onOptionSelect, optionsDisabled = false }: MessageItemProps) {
   const [showThinking, setShowThinking] = useState(false);
   const isAssistant = message.role === 'assistant';
   const { thinking, response } = parseAIContent(message.content);
@@ -305,14 +306,19 @@ function MessageItem({ message, onOptionSelect }: MessageItemProps) {
                     const prefix = String.fromCharCode(65 + idx);
                     const optionText = formatOptionText(opt);
                     return (
-                      <div
+                      <button
                         key={idx}
+                        type="button"
                         className="question-option-item"
-                        onClick={() => onOptionSelect?.(opt)}
+                        disabled={optionsDisabled}
+                        onClick={() => {
+                          if (optionsDisabled) return;
+                          onOptionSelect?.(opt);
+                        }}
                       >
                         <span className="option-prefix">{prefix}.</span>
                         <span className="option-text">{optionText}</span>
-                      </div>
+                      </button>
                     );
                   })}
                 </div>
@@ -342,11 +348,19 @@ interface QuickOptionsProps {
 }
 
 function QuickOptions({ options, onSelect, disabled }: QuickOptionsProps) {
-  if (disabled || options.length === 0) return null;
+  if (options.length === 0) return null;
   return (
     <div className="quick-options">
       {options.map((opt, i) => (
-        <button key={i} className="quick-option-btn" onClick={() => onSelect(opt)}>
+        <button
+          key={i}
+          type="button"
+          className="quick-option-btn"
+          disabled={disabled}
+          onClick={() => {
+            if (!disabled) onSelect(opt);
+          }}
+        >
           {opt}
         </button>
       ))}
@@ -446,6 +460,7 @@ export function ConsultPage() {
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const navigate = useNavigate();
   const hasLoadedHistoryRef = useRef<string | null>(null);
+  const quickSelectLockRef = useRef(false);
 
   // 当前会话
   const currentSession = sessions.find((s) => s.id === currentSessionId) || sessions[0];
@@ -469,7 +484,7 @@ export function ConsultPage() {
     setSessions((prev) =>
       prev.map((s) => {
         if (s.id === currentSessionId) {
-          let updated = { ...s, ...updates };
+          const updated = { ...s, ...updates };
           // 自动更新标题
           if (updates.messages && s.title === '默认对话') {
             const firstUserMsg = updates.messages.find((m: Message) => m.role === 'user');
@@ -574,6 +589,7 @@ export function ConsultPage() {
 
     setIsWaitingForAI(true);
     addMessage('user', text);
+    updateCurrentSession({ quickOptions: [] });
 
     const { currentStep, userProfile } = currentSession;
     
@@ -646,7 +662,7 @@ export function ConsultPage() {
 
   // 快捷选项处理
   const handleQuickSelect = useCallback(async (option: string) => {
-    if (isWaitingForAI || !currentSession) return;
+    if (isWaitingForAI || !currentSession || quickSelectLockRef.current) return;
 
     // 处理图表查看
     if (option === '__VIEW_GRAPH__') {
@@ -666,8 +682,29 @@ export function ConsultPage() {
     // 初始快捷选项拼接"我想学"前缀，AI返回的选项不拼接
     const isInitialOption = INITIAL_QUICK_OPTIONS.includes(option);
     const messageToSend = isInitialOption ? `我想学${option}` : option;
-    await handleSendMessage(messageToSend);
+    quickSelectLockRef.current = true;
+    try {
+      await handleSendMessage(messageToSend);
+    } finally {
+      quickSelectLockRef.current = false;
+    }
   }, [isWaitingForAI, isResultStep, currentSession, handleSendMessage, handleViewGraph, handleRegenerate]);
+
+  // 判断问题选项是否已经回答
+  const isAnsweredQuestionMessage = useCallback((messageIndex: number) => {
+    if (!currentSession) return false;
+
+    const message = currentSession.messages[messageIndex];
+    if (!message || message.role !== 'assistant') return false;
+
+    const { response } = parseAIContent(message.content);
+    const parsed = parseJSONResponse(response);
+    if (parsed.type !== 'question' || !parsed.options?.length) return false;
+
+    return currentSession.messages
+      .slice(messageIndex + 1)
+      .some((nextMessage) => nextMessage.role === 'user');
+  }, [currentSession]);
 
   // 发送输入框消息
   const handleSend = useCallback(async () => {
@@ -886,7 +923,12 @@ export function ConsultPage() {
           <section className="chat-area" ref={chatScrollRef} onClick={handleChatClick}>
             <div className="chat-messages">
               {currentSession?.messages.map((msg, i) => (
-                <MessageItem key={i} message={msg} onOptionSelect={handleQuickSelect} />
+                <MessageItem
+                  key={i}
+                  message={msg}
+                  onOptionSelect={handleQuickSelect}
+                  optionsDisabled={isWaitingForAI || isResultStep || isAnsweredQuestionMessage(i)}
+                />
               ))}
               {isWaitingForAI && (
                 <div className="message-item">

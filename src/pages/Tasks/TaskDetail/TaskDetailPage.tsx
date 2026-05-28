@@ -1,8 +1,8 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import ReactMarkdown from 'react-markdown';
-import { Header } from '../../components/layout';
-import type { Schedule, SubSchedule } from '../../types/api';
+import { Header } from '../../../components/layout';
+import type { Schedule, SubSchedule } from '../../../types/api';
 import './TaskDetailPage.scss';
 
 type Message = {
@@ -43,10 +43,52 @@ const toNumber = (value: unknown, fallback: number) => {
 const splitDetails = (value: unknown) => {
   if (typeof value !== 'string') return [];
   return value
+    .replace(/\r\n?/g, '\n')
+    .replace(/(第\d+(?:-\d+)?[天周])\s*\n\s*(?!第\d+(?:-\d+)?[天周])([^\n]+)/g, '$1-$2')
+    .replace(/[，,；;]\s*(?=第\d+(?:-\d+)?[天周](?:\s*[-—－:：])?)/g, '\n')
     .split(/[；;\n]+/)
     .map(item => item.trim())
     .filter(Boolean);
 };
+
+const parseTaskText = (value: string, taskIndex: number) => {
+  const text = value.trim();
+  const match = text.match(/^(第\d+(?:-\d+)?[天周])\s*[-—－:：]\s*(.+)$/);
+
+  if (match) {
+    return {
+      day: match[1],
+      task: match[2].trim(),
+    };
+  }
+
+  return {
+    day: `第${taskIndex + 1}天`,
+    task: text,
+  };
+};
+
+const expandTaskInputs = (inputs: unknown[]) =>
+  inputs.flatMap(input => {
+    if (typeof input === 'string') return splitDetails(input);
+
+    if (isRecord(input)) {
+      const taskText = toText(input.task ?? input.title ?? input.name);
+      const splitItems = splitDetails(taskText);
+      if (splitItems.length > 1) {
+        return splitItems.map(task => ({
+          ...input,
+          id: undefined,
+          day: undefined,
+          task,
+          status: 0,
+          completedAt: null,
+        }));
+      }
+    }
+
+    return [input];
+  });
 
 const normalizeTask = (
   taskInput: unknown,
@@ -57,11 +99,12 @@ const normalizeTask = (
   const fallbackId = parentId * 1000 + taskIndex + 1;
 
   if (typeof taskInput === 'string') {
+    const { day, task } = parseTaskText(taskInput, taskIndex);
     return {
       id: fallbackId,
       parentId,
-      day: `第${taskIndex + 1}天`,
-      task: taskInput,
+      day,
+      task,
       taskGoal: fallbackGoal,
       status: 0,
       description: null,
@@ -72,12 +115,13 @@ const normalizeTask = (
   if (!isRecord(taskInput)) return null;
   const task = toText(taskInput.task ?? taskInput.title ?? taskInput.name).trim();
   if (!task) return null;
+  const parsedTask = parseTaskText(task, taskIndex);
 
   return {
     id: toNumber(taskInput.id, fallbackId),
     parentId: toNumber(taskInput.parentId, parentId),
-    day: toText(taskInput.day, `第${taskIndex + 1}天`),
-    task,
+    day: toText(taskInput.day, parsedTask.day),
+    task: parsedTask.task,
     taskGoal: toText(taskInput.taskGoal ?? taskInput.goal ?? taskInput.week, fallbackGoal),
     description: toText(taskInput.description) || null,
     status: taskInput.status === 1 || taskInput.status === '1' || taskInput.status === true ? 1 : 0,
@@ -100,11 +144,11 @@ const readLocalSchedules = (): Schedule[] => {
         const id = toNumber(item.id, scheduleIndex + 1);
         const title = toText(item.title, `学习计划 ${scheduleIndex + 1}`);
         const rawTasks = Array.isArray(item.subScheduleList)
-          ? item.subScheduleList
+          ? expandTaskInputs(item.subScheduleList)
           : Array.isArray(item.tasks)
-            ? item.tasks
+            ? expandTaskInputs(item.tasks)
             : Array.isArray(item.details)
-              ? item.details
+              ? expandTaskInputs(item.details)
               : splitDetails(item.details);
 
         const subScheduleList = rawTasks

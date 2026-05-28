@@ -5,7 +5,21 @@ import axios from 'axios';
 import type { AxiosInstance, AxiosRequestConfig, AxiosResponse, InternalAxiosRequestConfig } from 'axios';
 import type { ApiResponse } from '../types/api';
 
-const BASE_URL = import.meta.env.VITE_API_BASE_URL || '';
+const normalizeBaseUrl = (baseUrl?: string) => {
+  const trimmedBaseUrl = baseUrl?.trim() ?? '';
+
+  if (!trimmedBaseUrl) {
+    return '';
+  }
+
+  if (trimmedBaseUrl.startsWith('/') || /^https?:\/\//i.test(trimmedBaseUrl)) {
+    return trimmedBaseUrl;
+  }
+
+  return `http://${trimmedBaseUrl}`;
+};
+
+const BASE_URL = normalizeBaseUrl(import.meta.env.VITE_API_BASE_URL);
 
 // 无需认证的接口白名单
 const NO_AUTH_WHITELIST = [
@@ -117,9 +131,9 @@ axiosInstance.interceptors.response.use(
 /**
  * 封装 GET 请求
  */
-export const get = <T = any>(
+export const get = <T = unknown>(
   url: string,
-  params?: Record<string, any>,
+  params?: AxiosRequestConfig['params'],
   config?: AxiosRequestConfig
 ): Promise<ApiResponse<T>> => {
   return axiosInstance.get<ApiResponse<T>>(url, { ...config, params }).then(res => res.data);
@@ -128,9 +142,9 @@ export const get = <T = any>(
 /**
  * 封装 POST 请求
  */
-export const post = <T = any>(
+export const post = <T = unknown>(
   url: string,
-  data?: any,
+  data?: unknown,
   config?: AxiosRequestConfig
 ): Promise<ApiResponse<T>> => {
   return axiosInstance.post<ApiResponse<T>>(url, data, config).then(res => res.data);
@@ -139,9 +153,9 @@ export const post = <T = any>(
 /**
  * 封装 PUT 请求
  */
-export const put = <T = any>(
+export const put = <T = unknown>(
   url: string,
-  data?: any,
+  data?: unknown,
   config?: AxiosRequestConfig
 ): Promise<ApiResponse<T>> => {
   return axiosInstance.put<ApiResponse<T>>(url, data, config).then(res => res.data);
@@ -150,7 +164,7 @@ export const put = <T = any>(
 /**
  * 封装 DELETE 请求
  */
-export const del = <T = any>(
+export const del = <T = unknown>(
   url: string,
   config?: AxiosRequestConfig
 ): Promise<ApiResponse<T>> => {

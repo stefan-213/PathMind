@@ -10,12 +10,14 @@ import { GraphCanvas } from './GraphCanvas';
 import { AISidePanel } from './AISidePanel';
 import type { GraphNode } from '../../types/graph';
 import { charts } from '../../api/graph';
+import { normalizeDrawioXml } from '../../utils/drawioXml';
 // import { conversationApi } from '../../api/useApi';
 // import { mockGraphXml } from '../../api/mock';
 import './GraphPage.scss';
 
 const CONSULT_CHART_STORAGE_KEY = 'pathmind_consult_chart';
 const PLAN_DATA_STORAGE_KEY = 'pathmind_plan_data';
+const PLAN_TITLE_STORAGE_KEY = 'pathmind_plan_title';
 
 type ChartContent = {
   xml?: unknown;
@@ -100,6 +102,28 @@ const getChartContent = (response: unknown) => {
   }
 
   return response.content;
+};
+
+const getChartTitle = (chartData: unknown) => {
+  if (!isRecord(chartData)) return '';
+  const title = isRecord(chartData.consultationMsg)
+    ? chartData.consultationMsg.goal
+    : chartData.goal;
+  return typeof title === 'string' ? title.trim() : '';
+};
+
+const getChartRequestData = (chartData: unknown) => {
+  if (!isRecord(chartData) || !isRecord(chartData.consultationMsg)) return null;
+
+  const { goal, base } = chartData.consultationMsg;
+  if (typeof goal !== 'string' || typeof base !== 'string') return null;
+
+  return {
+    consultationMsg: {
+      goal,
+      base,
+    },
+  };
 };
 
 export function GraphPage() {
@@ -187,11 +211,21 @@ export function GraphPage() {
       try {
         const chartData = JSON.parse(chartDataStr);
         console.log('【GraphPage】chartData:', chartData);
+        const chartTitle = getChartTitle(chartData);
+        const chartRequestData = getChartRequestData(chartData);
+
+        if (!chartRequestData) {
+          throw new Error('图表请求数据格式异常');
+        }
+
+        if (chartTitle) {
+          localStorage.setItem(PLAN_TITLE_STORAGE_KEY, chartTitle);
+        }
 
         localStorage.removeItem(CONSULT_CHART_STORAGE_KEY);
 
         // 使用固定 agentId 100004 调用 charts API
-        const res = await charts({ ...chartData, agentId: '100004', sessionId: '' });
+        const res = await charts({ ...chartRequestData, agentId: '100004', sessionId: '' });
 
         console.log('【GraphPage】Charts API response:', res);
         const contentData = getChartContent(res);
@@ -205,10 +239,17 @@ export function GraphPage() {
         // 提取 XML 数据
         if (typeof contentObj?.xml === 'string') {
           console.log('【GraphPage】成功获取 XML，长度:', contentObj.xml.length);
-          if (contentObj.xml.includes('<mxGraphModel')) {
+          const normalizedXml = normalizeDrawioXml(contentObj.xml);
+
+          if (normalizedXml.ok) {
+            if (normalizedXml.repaired) {
+              console.warn('【GraphPage】XML 格式有误，已自动修复后渲染');
+            }
             hasGraphXml = true;
-            setGraphXml(contentObj.xml);
+            setGraphXml(normalizedXml.xml);
             setIsChartLoading(false);
+          } else {
+            console.error('【GraphPage】XML 自动修复失败:', normalizedXml.error, normalizedXml.xmlPreview);
           }
         } else {
           console.log('【GraphPage】content 中没有 xml 字段');
@@ -218,6 +259,9 @@ export function GraphPage() {
         if (Array.isArray(contentObj?.data)) {
           console.log('【GraphPage】成功获取 data，长度:', contentObj.data.length);
           localStorage.setItem(PLAN_DATA_STORAGE_KEY, JSON.stringify(contentObj.data));
+          if (chartTitle) {
+            localStorage.setItem(PLAN_TITLE_STORAGE_KEY, chartTitle);
+          }
         }
 
         if (!hasGraphXml) {

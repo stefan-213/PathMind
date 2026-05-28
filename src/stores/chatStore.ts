@@ -2,6 +2,7 @@
  * AI 对话状态管理
  */
 import { create } from 'zustand';
+import { createId } from '../utils/id';
 
 export interface ChatMessage {
   id: string;
@@ -51,7 +52,7 @@ export const useChatStore = create<ChatState>((set) => ({
         ...state.messages,
         {
           ...message,
-          id: crypto.randomUUID(),
+          id: createId('message'),
           timestamp: Date.now(),
         },
       ],

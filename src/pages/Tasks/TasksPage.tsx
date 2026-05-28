@@ -10,6 +10,7 @@ type TasksByWeek = Record<string, SubSchedule[]>;
 type PlanDataRecord = Record<string, unknown>;
 
 const PLAN_DATA_STORAGE_KEY = 'pathmind_plan_data';
+const PLAN_TITLE_STORAGE_KEY = 'pathmind_plan_title';
 
 const isRecord = (value: unknown): value is PlanDataRecord =>
   typeof value === 'object' && value !== null && !Array.isArray(value);
@@ -43,15 +44,57 @@ const getOptionalText = (value: unknown): string | null => {
 const splitTasks = (value: unknown) => {
   if (typeof value !== 'string') return [];
   return value
+    .replace(/\r\n?/g, '\n')
+    .replace(/(第\d+(?:-\d+)?[天周])\s*\n\s*(?!第\d+(?:-\d+)?[天周])([^\n]+)/g, '$1-$2')
+    .replace(/[，,；;]\s*(?=第\d+(?:-\d+)?[天周](?:\s*[-—－:：])?)/g, '\n')
     .split(/[；;\n]+/)
     .map(task => task.trim())
     .filter(Boolean);
 };
 
+const parseTaskText = (value: string, taskIndex: number) => {
+  const text = value.trim();
+  const match = text.match(/^(第\d+(?:-\d+)?[天周])\s*[-—－:：]\s*(.+)$/);
+
+  if (match) {
+    return {
+      day: match[1],
+      task: match[2].trim(),
+    };
+  }
+
+  return {
+    day: `第${taskIndex + 1}天`,
+    task: text,
+  };
+};
+
+const expandTaskInputs = (inputs: unknown[]) =>
+  inputs.flatMap(input => {
+    if (typeof input === 'string') return splitTasks(input);
+
+    if (isRecord(input)) {
+      const taskText = getText(input.task ?? input.title ?? input.name);
+      const splitItems = splitTasks(taskText);
+      if (splitItems.length > 1) {
+        return splitItems.map(task => ({
+          ...input,
+          id: undefined,
+          day: undefined,
+          task,
+          status: 0,
+          completedAt: null,
+        }));
+      }
+    }
+
+    return [input];
+  });
+
 const getTaskInputs = (record: PlanDataRecord) => {
-  if (Array.isArray(record.subScheduleList)) return record.subScheduleList;
-  if (Array.isArray(record.tasks)) return record.tasks;
-  if (Array.isArray(record.details)) return record.details;
+  if (Array.isArray(record.subScheduleList)) return expandTaskInputs(record.subScheduleList);
+  if (Array.isArray(record.tasks)) return expandTaskInputs(record.tasks);
+  if (Array.isArray(record.details)) return expandTaskInputs(record.details);
   return splitTasks(record.details);
 };
 
@@ -64,12 +107,12 @@ const normalizeSubSchedule = (
   const fallbackId = parentId * 1000 + taskIndex + 1;
 
   if (typeof taskInput === 'string') {
-    const task = taskInput.trim();
+    const { day, task } = parseTaskText(taskInput, taskIndex);
     if (!task) return null;
     return {
       id: fallbackId,
       parentId,
-      day: `第${taskIndex + 1}天`,
+      day,
       task,
       taskGoal: fallbackGoal,
       description: null,
@@ -82,12 +125,13 @@ const normalizeSubSchedule = (
 
   const task = getText(taskInput.task ?? taskInput.title ?? taskInput.name).trim();
   if (!task) return null;
+  const parsedTask = parseTaskText(task, taskIndex);
 
   return {
     id: getNumber(taskInput.id, fallbackId),
     parentId: getNumber(taskInput.parentId, parentId),
-    day: getText(taskInput.day, `第${taskIndex + 1}天`),
-    task,
+    day: getText(taskInput.day, parsedTask.day),
+    task: parsedTask.task,
     taskGoal: getText(taskInput.taskGoal ?? taskInput.goal ?? taskInput.week, fallbackGoal),
     description: getOptionalText(taskInput.description),
     status: getStatus(taskInput.status),
@@ -142,22 +186,28 @@ export function TasksPage() {
   const navigate = useNavigate();
   const { schedules, setSchedules, setCurrentSchedule, setLoading, clearSchedules } = useScheduleStore();
   const [isTaskLoading, setIsTaskLoading] = useState(false);
+  const [planTitle, setPlanTitle] = useState(() =>
+    localStorage.getItem(PLAN_TITLE_STORAGE_KEY)?.trim() || ''
+  );
 
   const loadSchedules = useCallback(() => {
     setLoading(true);
     try {
       const planDataStr = localStorage.getItem(PLAN_DATA_STORAGE_KEY);
       if (!planDataStr) {
+        setPlanTitle('');
         clearSchedules();
         return;
       }
 
       const localSchedules = normalizePlanData(JSON.parse(planDataStr));
       if (localSchedules.length === 0) {
+        setPlanTitle('');
         clearSchedules();
         return;
       }
 
+      setPlanTitle(localStorage.getItem(PLAN_TITLE_STORAGE_KEY)?.trim() || '');
       setSchedules(localSchedules);
       setCurrentSchedule(localSchedules[0]);
       saveLocalSchedules(localSchedules);
@@ -227,6 +277,8 @@ export function TasksPage() {
   const handleClearAll = () => {
     if (confirm('确定要删除这个日程表吗？')) {
       localStorage.removeItem(PLAN_DATA_STORAGE_KEY);
+      localStorage.removeItem(PLAN_TITLE_STORAGE_KEY);
+      setPlanTitle('');
       clearSchedules();
     }
   };
@@ -234,8 +286,8 @@ export function TasksPage() {
   const completedCount = allTasks.filter(t => t.status === 1).length;
   const totalCount = allTasks.length;
   const percentage = totalCount > 0 ? Math.round((completedCount / totalCount) * 100) : 0;
-  const totalGoalTitle = 'AI 对话中的学习任务（总）';
-  const graphGoal = scheduleSections.map(schedule => schedule.title).join('、') || totalGoalTitle;
+  const totalGoalTitle = planTitle || 'AI 对话中的学习任务（总）';
+  const graphGoal = planTitle || scheduleSections.map(schedule => schedule.title).join('、') || totalGoalTitle;
 
   if (scheduleSections.length === 0 || allTasks.length === 0) {
     return (

@@ -3,6 +3,12 @@ import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuthStore } from '../../stores/authStore';
 import './Auth.scss';
 
+type RouteLocationState = {
+  from?: {
+    pathname?: string;
+  };
+};
+
 export function LoginPage() {
   const navigate = useNavigate();
   const location = useLocation();
@@ -14,7 +20,7 @@ export function LoginPage() {
   const [rememberMe, setRememberMe] = useState(false);
   const [formErrors, setFormErrors] = useState<{ username?: string; password?: string }>({});
 
-  const from = (location.state as any)?.from?.pathname || '/';
+  const from = (location.state as RouteLocationState | null)?.from?.pathname || '/';
 
   const validate = () => {
     const errors: { username?: string; password?: string } = {};
@@ -42,7 +48,7 @@ export function LoginPage() {
     try {
       await login(username, password);
       navigate(from, { replace: true });
-    } catch (err) {
+    } catch {
       // 错误已在 store 中处理
     }
   };

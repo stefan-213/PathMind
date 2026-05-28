@@ -6,6 +6,12 @@ interface ProtectedRouteProps {
   children: React.ReactNode;
 }
 
+type RouteLocationState = {
+  from?: {
+    pathname?: string;
+  };
+};
+
 /**
  * 受保护的路由组件
  * - 未登录时重定向到登录页
@@ -63,7 +69,7 @@ export function PublicRoute({ children }: ProtectedRouteProps) {
   // 已登录，重定向到首页
   if (isAuthenticated) {
     // 如果是从其他页面跳转过来的，则跳转回去
-    const from = (location.state as any)?.from?.pathname || '/';
+    const from = (location.state as RouteLocationState | null)?.from?.pathname || '/';
     return <Navigate to={from} replace />;
   }
 

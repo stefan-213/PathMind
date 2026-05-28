@@ -86,7 +86,7 @@ export function RegisterPage() {
     try {
       await register(username, password, email, phone || undefined);
       navigate('/login', { replace: true });
-    } catch (err) {
+    } catch {
       // 错误已在 store 中处理
     }
   };

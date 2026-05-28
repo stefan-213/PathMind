@@ -1,7 +1,7 @@
 /**
  * 个人中心页面
  */
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuthStore } from '../../stores/authStore';
 import { Header, Footer } from '../../components/layout';
@@ -17,16 +17,16 @@ export function ProfilePage() {
   const { schedules, setSchedules, removeSchedule } = useScheduleStore();
 
   // 用户任务数据
-  const [profile, setProfile] = useState<UserProfile | null>(null);
-  const [tasks, setTasks] = useState<Task[]>([]);
-  const [progress, setProgress] = useState<UserProgress>({ completedTasks: 0, totalTasks: 0, percentage: 0 });
+  const [profile] = useState<UserProfile | null>(() => getUserProfile());
+  const [tasks] = useState<Task[]>(() => getUserTasks());
+  const [progress] = useState<UserProgress>(() => getUserProgress());
 
   // 编辑模式
   const [isEditing, setIsEditing] = useState(false);
   const [editForm, setEditForm] = useState({
-    username: '',
-    email: '',
-    phone: '',
+    username: user?.username ?? '',
+    email: user?.email ?? '',
+    phone: user?.phone || '',
   });
 
   // 修改密码
@@ -38,55 +38,37 @@ export function ProfilePage() {
   });
   const [passwordError, setPasswordError] = useState('');
 
-  // 加载用户数据
-  useEffect(() => {
-    const userProfile = getUserProfile();
-    const userTasks = getUserTasks();
-    const userProgress = getUserProgress();
-    setProfile(userProfile);
-    setTasks(userTasks);
-    setProgress(userProgress);
-
-    // 加载日程表列表
-    loadSchedules();
-  }, []);
-
-  const loadSchedules = async () => {
+  const loadSchedules = useCallback(async () => {
     try {
       const list = await getScheduleList();
       setSchedules(list.data ?? []);
     } catch (err) {
       console.error('加载日程表列表失败:', err);
     }
-  };
+  }, [setSchedules]);
 
-  // 加载编辑表单
+  const getCurrentUserForm = () => ({
+    username: user?.username ?? '',
+    email: user?.email ?? '',
+    phone: user?.phone || '',
+  });
+
+  // 加载日程表列表
   useEffect(() => {
-    if (user) {
-      setEditForm({
-        username: user.username,
-        email: user.email,
-        phone: user.phone || '',
-      });
-    }
-  }, [user]);
+    loadSchedules();
+  }, [loadSchedules]);
 
   // 判断任务是否全部完成
   const isAllTasksCompleted = tasks.length > 0 && tasks.every(t => t.status === 'completed');
   const taskStatus = isAllTasksCompleted ? '已完成' : '进行中';
 
   const handleEdit = () => {
+    setEditForm(getCurrentUserForm());
     setIsEditing(true);
   };
 
   const handleCancel = () => {
-    if (user) {
-      setEditForm({
-        username: user.username,
-        email: user.email,
-        phone: user.phone || '',
-      });
-    }
+    setEditForm(getCurrentUserForm());
     setIsEditing(false);
   };
 
