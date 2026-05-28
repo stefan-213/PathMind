@@ -5,12 +5,14 @@
 import { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { Header } from '../../components/layout';
-import { Spin } from '../../components/common';
+import { ResourceSidebar, Spin, type ResourceSidebarItem } from '../../components/common';
 import { GraphCanvas } from './GraphCanvas';
 import { AISidePanel } from './AISidePanel';
 import type { GraphNode } from '../../types/graph';
 import { charts } from '../../api/graph';
+import { getChatSessions } from '../../api/useApi';
 import { normalizeDrawioXml } from '../../utils/drawioXml';
+import { normalizeCopilotSessionMap, type CopilotSessionResource } from '../../utils';
 // import { conversationApi } from '../../api/useApi';
 // import { mockGraphXml } from '../../api/mock';
 import './GraphPage.scss';
@@ -18,6 +20,7 @@ import './GraphPage.scss';
 const CONSULT_CHART_STORAGE_KEY = 'pathmind_consult_chart';
 const PLAN_DATA_STORAGE_KEY = 'pathmind_plan_data';
 const PLAN_TITLE_STORAGE_KEY = 'pathmind_plan_title';
+const COPILOT_AGENT_ID = '100003';
 
 type ChartContent = {
   xml?: unknown;
@@ -112,6 +115,11 @@ const getChartTitle = (chartData: unknown) => {
   return typeof title === 'string' ? title.trim() : '';
 };
 
+const getChartSessionId = (chartData: unknown) => {
+  if (!isRecord(chartData)) return '';
+  return typeof chartData.sessionId === 'string' ? chartData.sessionId.trim() : '';
+};
+
 const getChartRequestData = (chartData: unknown) => {
   if (!isRecord(chartData) || !isRecord(chartData.consultationMsg)) return null;
 
@@ -139,6 +147,11 @@ export function GraphPage() {
   );
   const [chartLoadingText, setChartLoadingText] = useState('正在生成计划图表...');
   const [chartLoadError, setChartLoadError] = useState<string | null>(null);
+  const [sessions, setSessions] = useState<CopilotSessionResource[]>([]);
+  const [activeSessionId, setActiveSessionId] = useState<string | null>(null);
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+  const [isSessionListLoading, setIsSessionListLoading] = useState(false);
+  const [sessionListError, setSessionListError] = useState<string | null>(null);
   // console.log('【GraphPage】render, graphXml:', graphXml ? graphXml.substring(0, 100) + '...' : null);
 
   // // 加载状态
@@ -196,6 +209,52 @@ export function GraphPage() {
     }
   }, []);
 
+  useEffect(() => {
+    let isMounted = true;
+
+    const loadCopilotSessions = async () => {
+      setIsSessionListLoading(true);
+      setSessionListError(null);
+
+      try {
+        const response = await getChatSessions(COPILOT_AGENT_ID);
+        if (response.success === false) {
+          throw new Error(response.error || '会话列表加载失败');
+        }
+
+        const nextSessions = normalizeCopilotSessionMap(response.data);
+        if (!isMounted) return;
+
+        setSessions(nextSessions);
+        setActiveSessionId((currentSessionId) => {
+          if (
+            currentSessionId &&
+            nextSessions.some((session) => session.sessionId === currentSessionId)
+          ) {
+            return currentSessionId;
+          }
+
+          return nextSessions[0]?.sessionId ?? null;
+        });
+      } catch (error) {
+        console.error('Load copilot sessions failed:', error);
+        if (isMounted) {
+          setSessionListError('会话列表加载失败');
+        }
+      } finally {
+        if (isMounted) {
+          setIsSessionListLoading(false);
+        }
+      }
+    };
+
+    void loadCopilotSessions();
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
   // 检查是否有咨询方案数据，如果有则调用 charts API
   useEffect(() => {
     const chartDataStr = localStorage.getItem(CONSULT_CHART_STORAGE_KEY);
@@ -212,10 +271,15 @@ export function GraphPage() {
         const chartData = JSON.parse(chartDataStr);
         console.log('【GraphPage】chartData:', chartData);
         const chartTitle = getChartTitle(chartData);
+        const chartSessionId = getChartSessionId(chartData);
         const chartRequestData = getChartRequestData(chartData);
 
         if (!chartRequestData) {
           throw new Error('图表请求数据格式异常');
+        }
+
+        if (chartSessionId) {
+          setActiveSessionId(chartSessionId);
         }
 
         if (chartTitle) {
@@ -280,6 +344,22 @@ export function GraphPage() {
     loadGeneratedChart();
   }, []);
 
+  const activeSessionTitle =
+    sessions.find((session) => session.sessionId === activeSessionId)?.title ?? '';
+  const sessionSidebarItems: ResourceSidebarItem[] = sessions.map((session) => ({
+    id: session.sessionId,
+    title: session.title,
+    iconClass: 'fas fa-project-diagram',
+    // description: session.sessionId === activeSessionId ? '当前图表' : '待接入图表接口',
+  }));
+  const sessionSidebarEmptyText = isSessionListLoading
+    ? '会话加载中...'
+    : sessionListError || '暂无历史会话';
+
+  const handleSelectGraphSession = (sessionId: string) => {
+    setActiveSessionId(sessionId);
+  };
+
   return (
     <div className="graph-page" ref={pageRef}>
       <Header />
@@ -304,6 +384,23 @@ export function GraphPage() {
 
         {/* Main Container */}
         <div className="graph-main-container">
+          <ResourceSidebar
+            header={{
+              title: '知识图表',
+              iconClass: 'fas fa-project-diagram',
+              subtitle: activeSessionTitle || 'Copilot 会话图表',
+            }}
+            sectionTitle="历史会话"
+            items={sessionSidebarItems}
+            activeItemId={activeSessionId ?? ''}
+            isCollapsed={isSidebarCollapsed}
+            onToggleCollapse={() => setIsSidebarCollapsed((current) => !current)}
+            onSelectItem={handleSelectGraphSession}
+            emptyText={sessionSidebarEmptyText}
+            collapseTitle="收起侧栏"
+            expandTitle="展开侧栏"
+            className="graph-resource-sidebar"
+          />
           {/* Graph Container */}
           <div className="graph-wrapper with-ai-panel">
             {/* AI 图谱标题 */}

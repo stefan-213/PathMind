@@ -1,8 +1,10 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Header, Footer } from '../../components/layout';
-import { Card, Badge, EmptyState, Spin } from '../../components/common';
+import { Card, Badge, EmptyState, ResourceSidebar, Spin, type ResourceSidebarItem } from '../../components/common';
+import { getChatSessions } from '../../api/useApi';
 import { useScheduleStore } from '../../stores/scheduleStore';
+import { normalizeCopilotSessionMap, type CopilotSessionResource } from '../../utils';
 import type { Schedule, SubSchedule } from '../../types/api';
 import './TasksPage.scss';
 
@@ -33,6 +35,7 @@ interface StageViewModel {
 
 const PLAN_DATA_STORAGE_KEY = 'pathmind_plan_data';
 const PLAN_TITLE_STORAGE_KEY = 'pathmind_plan_title';
+const COPILOT_AGENT_ID = '100003';
 const TIME_PREFIX_PATTERN = /^(第\d+(?:-\d+)?周(?:\s*[，,、]?\s*第\d+(?:-\d+)?天)?|第\d+(?:-\d+)?天|Day\s*\d+(?:-\d+)?)\s*[-—－:：]\s*(.+)$/i;
 const WEEK_PATTERN = /第\d+(?:-\d+)?周/;
 const DAY_PATTERN = /第\d+(?:-\d+)?天/;
@@ -288,6 +291,11 @@ export function TasksPage() {
   const [planTitle, setPlanTitle] = useState(() =>
     localStorage.getItem(PLAN_TITLE_STORAGE_KEY)?.trim() || ''
   );
+  const [sessions, setSessions] = useState<CopilotSessionResource[]>([]);
+  const [activeSessionId, setActiveSessionId] = useState<string | null>(null);
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+  const [isSessionListLoading, setIsSessionListLoading] = useState(false);
+  const [sessionListError, setSessionListError] = useState<string | null>(null);
 
   const loadSchedules = useCallback(() => {
     setLoading(true);
@@ -321,6 +329,52 @@ export function TasksPage() {
   useEffect(() => {
     loadSchedules();
   }, [loadSchedules]);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    const loadCopilotSessions = async () => {
+      setIsSessionListLoading(true);
+      setSessionListError(null);
+
+      try {
+        const response = await getChatSessions(COPILOT_AGENT_ID);
+        if (response.success === false) {
+          throw new Error(response.error || '会话列表加载失败');
+        }
+
+        const nextSessions = normalizeCopilotSessionMap(response.data);
+        if (!isMounted) return;
+
+        setSessions(nextSessions);
+        setActiveSessionId((currentSessionId) => {
+          if (
+            currentSessionId &&
+            nextSessions.some((session) => session.sessionId === currentSessionId)
+          ) {
+            return currentSessionId;
+          }
+
+          return nextSessions[0]?.sessionId ?? null;
+        });
+      } catch (error) {
+        console.error('Load copilot sessions failed:', error);
+        if (isMounted) {
+          setSessionListError('会话列表加载失败');
+        }
+      } finally {
+        if (isMounted) {
+          setIsSessionListLoading(false);
+        }
+      }
+    };
+
+    void loadCopilotSessions();
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   const scheduleSections = schedules.filter(schedule => schedule.subScheduleList.length > 0);
   const allTasks = scheduleSections.reduce<SubSchedule[]>(
@@ -402,26 +456,64 @@ export function TasksPage() {
   const stages = scheduleSections.map((schedule, stageIndex) =>
     createStageViewModel(schedule, stageIndex)
   );
+  const activeSessionTitle =
+    sessions.find((session) => session.sessionId === activeSessionId)?.title ?? '';
+  const sessionSidebarItems: ResourceSidebarItem[] = sessions.map((session) => ({
+    id: session.sessionId,
+    title: session.title,
+    iconClass: 'fas fa-tasks',
+    // description: session.sessionId === activeSessionId ? '当前任务' : '待接入任务接口',
+  }));
+  const sessionSidebarEmptyText = isSessionListLoading
+    ? '会话加载中...'
+    : sessionListError || '暂无历史会话';
+
+  const handleSelectTaskSession = (sessionId: string) => {
+    setActiveSessionId(sessionId);
+  };
+
+  const renderSessionSidebar = (fallbackSubtitle: string) => (
+    <ResourceSidebar
+      header={{
+        title: '我的任务',
+        iconClass: 'fas fa-tasks',
+        subtitle: activeSessionTitle || fallbackSubtitle,
+      }}
+      sectionTitle="历史会话"
+      items={sessionSidebarItems}
+      activeItemId={activeSessionId ?? ''}
+      isCollapsed={isSidebarCollapsed}
+      onToggleCollapse={() => setIsSidebarCollapsed((current) => !current)}
+      onSelectItem={handleSelectTaskSession}
+      emptyText={sessionSidebarEmptyText}
+      collapseTitle="收起侧栏"
+      expandTitle="展开侧栏"
+      className="tasks-resource-sidebar"
+    />
+  );
 
   if (scheduleSections.length === 0 || allTasks.length === 0) {
     return (
       <div className="tasks-page">
         <Header />
-        <main className="main">
-          <EmptyState
-            icon={<i className="fas fa-clipboard-list"></i>}
-            title="还没有任务"
-            description="先去AI Copilot制定你的学习计划吧"
-            action={
-              <Link to="/consult" className="btn btn-primary">
-                制定计划
-                <div className="arrow-right">
-                  <i className="fas fa-arrow-right"></i>
-                </div>
-              </Link>
-            }
-          />
-        </main>
+        <div className="tasks-layout">
+          {renderSessionSidebar('暂无任务数据')}
+          <main className="main tasks-main tasks-main--empty">
+            <EmptyState
+              icon={<i className="fas fa-clipboard-list"></i>}
+              title="还没有任务"
+              description="先去AI Copilot制定你的学习计划吧"
+              action={
+                <Link to="/consult" className="btn btn-primary">
+                  制定计划
+                  <div className="arrow-right">
+                    <i className="fas fa-arrow-right"></i>
+                  </div>
+                </Link>
+              }
+            />
+          </main>
+        </div>
         <Footer />
       </div>
     );
@@ -435,7 +527,9 @@ export function TasksPage() {
           <Spin size="large" />
         </div>
       )}
-      <main className="main">
+      <div className="tasks-layout">
+        {renderSessionSidebar(`${completedCount}/${totalCount} 已完成`)}
+        <main className="main tasks-main">
         {/* Progress Card */}
         <Card className="progress-card">
           <div className="progress-header">
@@ -519,7 +613,8 @@ export function TasksPage() {
             查看知识图表
           </Link>
         </div>
-      </main>
+        </main>
+      </div>
       <Footer />
     </div>
   );

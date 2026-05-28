@@ -27,7 +27,7 @@ export interface ResourceSidebarItem {
 
 export interface ResourceSidebarProps {
   header: ResourceSidebarHeader;
-  primaryAction: ResourceSidebarAction;
+  primaryAction?: ResourceSidebarAction;
   sectionTitle: string;
   items: ResourceSidebarItem[];
   activeItemId?: string;
@@ -127,28 +127,32 @@ export function ResourceSidebar({
           >
             <i className="fas fa-angle-right"></i>
           </button>
-          <button
-            type="button"
-            className="resource-sidebar__compact-btn resource-sidebar__compact-btn--primary"
-            onClick={primaryAction.onClick}
-            title={primaryAction.title || primaryAction.label}
-            disabled={primaryAction.disabled}
-          >
-            {primaryAction.iconClass ? <i className={primaryAction.iconClass}></i> : null}
-          </button>
+          {primaryAction ? (
+            <button
+              type="button"
+              className="resource-sidebar__compact-btn resource-sidebar__compact-btn--primary"
+              onClick={primaryAction.onClick}
+              title={primaryAction.title || primaryAction.label}
+              disabled={primaryAction.disabled}
+            >
+              {primaryAction.iconClass ? <i className={primaryAction.iconClass}></i> : null}
+            </button>
+          ) : null}
         </div>
       ) : (
         <>
-          <button
-            type="button"
-            className="resource-sidebar__primary-action"
-            onClick={primaryAction.onClick}
-            disabled={primaryAction.disabled}
-            title={primaryAction.title || primaryAction.label}
-          >
-            {primaryAction.iconClass ? <i className={primaryAction.iconClass}></i> : null}
-            <span className="resource-sidebar__primary-action-text">{primaryAction.label}</span>
-          </button>
+          {primaryAction ? (
+            <button
+              type="button"
+              className="resource-sidebar__primary-action"
+              onClick={primaryAction.onClick}
+              disabled={primaryAction.disabled}
+              title={primaryAction.title || primaryAction.label}
+            >
+              {primaryAction.iconClass ? <i className={primaryAction.iconClass}></i> : null}
+              <span className="resource-sidebar__primary-action-text">{primaryAction.label}</span>
+            </button>
+          ) : null}
 
           <div className="resource-sidebar__section">
             <span className="resource-sidebar__section-title">{sectionTitle}</span>
