@@ -6,3 +6,10 @@ export { Input } from './Input';
 export { Textarea } from './Textarea';
 export { EmptyState } from './EmptyState';
 export { Spin } from './Spin';
+export {
+  ResourceSidebar,
+  type ResourceSidebarAction,
+  type ResourceSidebarHeader,
+  type ResourceSidebarItem,
+  type ResourceSidebarProps,
+} from './ResourceSidebar';

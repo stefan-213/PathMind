@@ -4,7 +4,8 @@
    流程: /api/agent/list -> /api/agent/createSession -> /api/agent/consultation
 ============================================ */
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
+import { ResourceSidebar, type ResourceSidebarItem } from '../../components/common';
 import { Header } from '../../components/layout/Header';
 import { conversationApi, deleteChatSession, getChatSessions } from '../../api/useApi';
 import { getChatHistory } from '../../api/conversation';
@@ -45,11 +46,6 @@ const AGENT_ID = '100003';
 // ---------- 工具函数 ----------
 function generateId(): string {
   return Date.now() + '-' + Math.random().toString(36).substr(2, 8);
-}
-
-function escapeHtml(str: string): string {
-  if (!str) return '';
-  return str.replace(/[&<>]/g, (m) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[m] || m));
 }
 
 // 初始快捷选项
@@ -365,87 +361,6 @@ function QuickOptions({ options, onSelect, disabled }: QuickOptionsProps) {
         </button>
       ))}
     </div>
-  );
-}
-
-// ---------- 子组件：侧边栏 ----------
-interface SidebarProps {
-  sessions: Session[];
-  currentSessionId: string;
-  isCollapsed: boolean;
-  onToggleCollapse: () => void;
-  onSwitchSession: (id: string) => void;
-  onDeleteSession: (id: string) => void;
-  onNewSession: () => void;
-}
-
-function Sidebar({
-  sessions,
-  currentSessionId,
-  isCollapsed,
-  onToggleCollapse,
-  onSwitchSession,
-  onDeleteSession,
-  onNewSession,
-}: SidebarProps) {
-  return (
-    <aside className={`consult-sidebar ${isCollapsed ? 'consult-sidebar--collapsed' : ''}`}>
-      <div className="sidebar-header">
-        <Link to="/" className="sidebar-logo">
-          <i className="fas fa-code-branch"></i>
-        </Link>
-        <div className="sidebar-title-area">
-          <span className="sidebar-title">PathMind</span>
-          <button className="sidebar-collapse-btn" onClick={onToggleCollapse} title="收起侧边栏">
-            <i className="fas fa-angle-left"></i>
-          </button>
-        </div>
-      </div>
-
-      {isCollapsed ? (
-        <div className="btn-capsule">
-          <button className="collapse-btn" onClick={onToggleCollapse} title="展开">
-            <i className="fas fa-angle-right"></i>
-          </button>
-          <button className="new-session-btn" onClick={onNewSession} title="新建咨询">
-            <i className="fas fa-plus"></i>
-          </button>
-        </div>
-      ) : (
-        <>
-          <button className="new-session-btn-expand" onClick={onNewSession}>
-            <i className="fas fa-plus"></i>
-            <span className="new-consult-text">新建咨询</span>
-          </button>
-          <div className="sidebar-history">
-            <label className="recent-label">历史对话</label>
-            <div className="history-list">
-              {sessions.map((sess) => (
-                <div
-                  key={sess.id}
-                  className={`history-item ${currentSessionId === sess.id ? 'history-item--active' : ''}`}
-                  onClick={() => onSwitchSession(sess.id)}
-                >
-                  <div className="history-item-content">
-                    <i className="fas fa-comments history-icon"></i>
-                    <span className="history-title">{escapeHtml(sess.title)}</span>
-                  </div>
-                  <button
-                    className="delete-session-btn"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      onDeleteSession(sess.id);
-                    }}
-                  >
-                    <i className="fas fa-trash"></i>
-                  </button>
-                </div>
-              ))}
-            </div>
-          </div>
-        </>
-      )}
-    </aside>
   );
 }
 
@@ -906,18 +821,38 @@ export function ConsultPage() {
     }
   };
 
+  const sidebarItems: ResourceSidebarItem[] = sessions.map((session) => ({
+    id: session.id,
+    title: session.title,
+    iconClass: 'fas fa-comments',
+  }));
+
   return (
     <div className="consult-page">
       <Header />
       <div className="consult-container">
-        <Sidebar
-          sessions={sessions}
-          currentSessionId={currentSessionId || ''}
+        <ResourceSidebar
+          header={{
+            title: 'PathMind',
+            iconClass: 'fas fa-code-branch',
+            href: '/',
+          }}
+          primaryAction={{
+            label: '新建咨询',
+            iconClass: 'fas fa-plus',
+            title: '新建咨询',
+            disabled: isWaitingForAI,
+            onClick: handleNewSession,
+          }}
+          sectionTitle="历史对话"
+          items={sidebarItems}
+          activeItemId={currentSessionId || ''}
           isCollapsed={isCollapsed}
-          onToggleCollapse={() => setIsCollapsed(!isCollapsed)}
-          onSwitchSession={handleSwitchSession}
-          onDeleteSession={handleDeleteSession}
-          onNewSession={handleNewSession}
+          onToggleCollapse={() => setIsCollapsed((collapsed) => !collapsed)}
+          onSelectItem={handleSwitchSession}
+          onDeleteItem={handleDeleteSession}
+          emptyText="暂无历史对话"
+          deleteTitle="删除对话"
         />
         <main className="consult-main">
           <section className="chat-area" ref={chatScrollRef} onClick={handleChatClick}>
