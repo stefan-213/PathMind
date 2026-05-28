@@ -90,18 +90,6 @@
   }
 }
 
-/* AI Side Panel */
-.ai-side-panel {
-  width: 380px;
-  height: 100%;
-  display: flex;
-  flex-direction: column;
-  background: var(--bg-secondary);
-  // border-left: 1px solid var(--border-color);
-  flex-shrink: 0;
-  // border-radius: var(--radius-xl);
-}
-
 /* Node Detail Panel */
 .node-detail-panel {
   position: absolute;
@@ -220,11 +208,6 @@
   .graph-main-container {
     flex-direction: column;
     height: auto;
-  }
-
-  .ai-side-panel {
-    width: 100%;
-    height: 400px;
   }
 
   .graph-wrapper {

@@ -150,6 +150,7 @@ export function GraphPage() {
   const [sessions, setSessions] = useState<CopilotSessionResource[]>([]);
   const [activeSessionId, setActiveSessionId] = useState<string | null>(null);
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+  const [isAiPanelCollapsed, setIsAiPanelCollapsed] = useState(false);
   const [isSessionListLoading, setIsSessionListLoading] = useState(false);
   const [sessionListError, setSessionListError] = useState<string | null>(null);
   // console.log('【GraphPage】render, graphXml:', graphXml ? graphXml.substring(0, 100) + '...' : null);
@@ -474,8 +475,10 @@ export function GraphPage() {
 
           {/* AI 对话面板 - 默认展开 */}
           <AISidePanel
-              hasInitialGraph={Boolean(graphXml)}
-            />
+            hasInitialGraph={Boolean(graphXml)}
+            isCollapsed={isAiPanelCollapsed}
+            onToggleCollapse={() => setIsAiPanelCollapsed((current) => !current)}
+          />
         </div>
       </div>
     </div>

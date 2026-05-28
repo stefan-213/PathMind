@@ -615,7 +615,7 @@ export function TasksPage() {
         </div>
         </main>
       </div>
-      <Footer />
+      {/* <Footer /> */}
     </div>
   );
 }

@@ -2,6 +2,7 @@
  * AI 对话面板组件
  */
 import { useState, useRef, useEffect } from 'react';
+import type { KeyboardEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useChatStore } from '../../stores/chatStore';
 import './AISidePanel.scss';
@@ -13,15 +14,30 @@ interface AISidePanelProps {
   onSendMessage?: (message: string) => void;
   /** 加载状态 */
   isLoading?: boolean;
+  /** 是否收起 AI 面板 */
+  isCollapsed?: boolean;
+  /** 展开 / 收起 AI 面板 */
+  onToggleCollapse?: () => void;
 }
 
-export function AISidePanel({ hasInitialGraph, onSendMessage, isLoading }: AISidePanelProps) {
+export function AISidePanel({
+  hasInitialGraph,
+  onSendMessage,
+  isLoading,
+  isCollapsed = false,
+  onToggleCollapse,
+}: AISidePanelProps) {
   const navigate = useNavigate();
   const { messages, addMessage, satisfactionState, setSatisfactionState } = useChatStore();
   const [input, setInput] = useState('');
   const [isCreating, setIsCreating] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const hasInitializedRef = useRef(false);
+  const panelClassName = [
+    'ai-side-panel',
+    isCollapsed ? 'ai-side-panel--collapsed' : '',
+  ].filter(Boolean).join(' ');
+  const toggleTitle = isCollapsed ? '展开 AI 助手' : '收起 AI 助手';
 
   // 自动滚动到最新消息
   useEffect(() => {
@@ -62,7 +78,7 @@ export function AISidePanel({ hasInitialGraph, onSendMessage, isLoading }: AISid
     onSendMessage?.(userMessage);
   };
 
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+  const handleKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
       handleSend();
@@ -93,89 +109,111 @@ export function AISidePanel({ hasInitialGraph, onSendMessage, isLoading }: AISid
   };
 
   return (
-    <div className="ai-side-panel">
+    <aside className={panelClassName} aria-label="AI 助手">
       <div className="panel-header">
-        <h3>
-          <i className="fas fa-comment-dots"></i> AI 助手
-        </h3>
-        <p className="panel-hint">描述你想要的图表，AI 会自动分析并修改</p>
+        <div className="panel-title-area">
+          <h3>
+            <i className="fas fa-robot"></i> AI 助手
+          </h3>
+          <p className="panel-hint">描述你想要的图表，AI 会自动分析并修改</p>
+        </div>
+        {onToggleCollapse ? (
+          <button
+            type="button"
+            className="panel-toggle-btn"
+            onClick={onToggleCollapse}
+            title={toggleTitle}
+            aria-label={toggleTitle}
+            aria-expanded={!isCollapsed}
+          >
+            <i className={`fas ${isCollapsed ? 'fa-angle-left' : 'fa-angle-right'}`}></i>
+          </button>
+        ) : null}
       </div>
 
-      <div className="messages-container">
-        {messages.length === 0 && (
-          <div className="empty-state">
-            <i className="fas fa-lightbulb"></i>
-            <p>在Copilot页面输入需求，让 AI 为你生成计划图表"</p>
-            <p>AI 会分析你的需求，自动调整图表</p>
-          </div>
-        )}
-
-        {messages.map((msg) => (
-          <div key={msg.id} className={`message ${msg.role}`}>
-            <div className="message-avatar">
-              {msg.role === 'user' ? (
-                <i className="fas fa-user"></i>
-              ) : (
-                <i className="fas fa-robot"></i>
-              )}
-            </div>
-            <div className="message-content">
-              <div className="message-text">{msg.content}</div>
-              {msg.hasGraph && (
-                <div className="graph-indicator">
-                  <i className="fas fa-chart-pie"></i> 已生成图表
-                </div>
-              )}
-              {/* 满意度按钮 - 仅在最后一条 AI 消息且状态为 waiting 时显示 */}
-              {msg.role === 'assistant' &&
-                msg === messages[messages.length - 1] &&
-                satisfactionState === 'waiting' && (
-                  <div className="satisfaction-buttons">
-                    <button
-                      className="btn-satisfy"
-                      onClick={handleSatisfied}
-                      disabled={isCreating}
-                    >
-                      满意
-                    </button>
-                  </div>
-                )}
-              {/* 计划表跳转按钮 - 仅在满意后显示 */}
-              {/* {msg.role === 'assistant' &&
-                msg === messages[messages.length - 1] &&
-                satisfactionState === 'satisfied' && (
-                  <div className="plan-link">
-                    <a href={`/tasks?sessionId=${sessionId}`} className="btn-to-plan">
-                      <i className="fas fa-tasks"></i> 查看计划表
-                    </a>
-                  </div>
-                )} */}
-              <div className="message-time">
-                {new Date(msg.timestamp).toLocaleTimeString()}
+      {isCollapsed ? (
+        <div className="panel-collapsed-body" aria-hidden="true">
+          <i className="fas fa-robot"></i>
+        </div>
+      ) : (
+        <>
+          <div className="messages-container">
+            {messages.length === 0 && (
+              <div className="empty-state">
+                <i className="fas fa-lightbulb"></i>
+                <p>在Copilot页面输入需求，让 AI 为你生成计划图表"</p>
+                <p>AI 会分析你的需求，自动调整图表</p>
               </div>
-            </div>
-          </div>
-        ))}
-        <div ref={messagesEndRef} />
-      </div>
+            )}
 
-      <div className="input-area">
-        <input
-          type="text"
-          className="message-input"
-          placeholder="输入你的修改意见..."
-          value={input}
-          onChange={(e) => setInput(e.target.value)}
-          onKeyDown={handleKeyDown}
-        />
-        <button
-          className="send-btn"
-          onClick={handleSend}
-          disabled={!input.trim() || isLoading}
-        >
-          <i className="fas fa-paper-plane"></i>
-        </button>
-      </div>
-    </div>
+            {messages.map((msg) => (
+              <div key={msg.id} className={`message ${msg.role}`}>
+                <div className="message-avatar">
+                  {msg.role === 'user' ? (
+                    <i className="fas fa-user"></i>
+                  ) : (
+                    <i className="fas fa-robot"></i>
+                  )}
+                </div>
+                <div className="message-content">
+                  <div className="message-text">{msg.content}</div>
+                  {msg.hasGraph && (
+                    <div className="graph-indicator">
+                      <i className="fas fa-chart-pie"></i> 已生成图表
+                    </div>
+                  )}
+                  {/* 满意度按钮 - 仅在最后一条 AI 消息且状态为 waiting 时显示 */}
+                  {msg.role === 'assistant' &&
+                    msg === messages[messages.length - 1] &&
+                    satisfactionState === 'waiting' && (
+                      <div className="satisfaction-buttons">
+                        <button
+                          className="btn-satisfy"
+                          onClick={handleSatisfied}
+                          disabled={isCreating}
+                        >
+                          满意
+                        </button>
+                      </div>
+                    )}
+                  {/* 计划表跳转按钮 - 仅在满意后显示 */}
+                  {/* {msg.role === 'assistant' &&
+                    msg === messages[messages.length - 1] &&
+                    satisfactionState === 'satisfied' && (
+                      <div className="plan-link">
+                        <a href={`/tasks?sessionId=${sessionId}`} className="btn-to-plan">
+                          <i className="fas fa-tasks"></i> 查看计划表
+                        </a>
+                      </div>
+                    )} */}
+                  <div className="message-time">
+                    {new Date(msg.timestamp).toLocaleTimeString()}
+                  </div>
+                </div>
+              </div>
+            ))}
+            <div ref={messagesEndRef} />
+          </div>
+
+          <div className="input-area">
+            <input
+              type="text"
+              className="message-input"
+              placeholder="输入你的修改意见..."
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              onKeyDown={handleKeyDown}
+            />
+            <button
+              className="send-btn"
+              onClick={handleSend}
+              disabled={!input.trim() || isLoading}
+            >
+              <i className="fas fa-paper-plane"></i>
+            </button>
+          </div>
+        </>
+      )}
+    </aside>
   );
 }
