@@ -3,7 +3,6 @@
  */
 import { useState, useRef, useEffect } from 'react';
 import type { KeyboardEvent } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { useChatStore } from '../../stores/chatStore';
 import './AISidePanel.scss';
 
@@ -11,26 +10,30 @@ interface AISidePanelProps {
   /** 是否有初始图表（进入页面时已有） */
   hasInitialGraph?: boolean;
   /** 发送消息回调（由父组件处理 API 调用） */
-  onSendMessage?: (message: string) => void;
+  onSendMessage?: (message: string) => void | Promise<void>;
   /** 加载状态 */
   isLoading?: boolean;
+  /** 是否正在生成日程表 */
+  isScheduleGenerating?: boolean;
   /** 是否收起 AI 面板 */
   isCollapsed?: boolean;
   /** 展开 / 收起 AI 面板 */
   onToggleCollapse?: () => void;
+  /** 点击满意后的提交回调 */
+  onSatisfied?: () => void | Promise<void>;
 }
 
 export function AISidePanel({
   hasInitialGraph,
   onSendMessage,
   isLoading,
+  isScheduleGenerating = false,
   isCollapsed = false,
   onToggleCollapse,
+  onSatisfied,
 }: AISidePanelProps) {
-  const navigate = useNavigate();
   const { messages, addMessage, satisfactionState, setSatisfactionState } = useChatStore();
   const [input, setInput] = useState('');
-  const [isCreating, setIsCreating] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const hasInitializedRef = useRef(false);
   const panelClassName = [
@@ -58,24 +61,14 @@ export function AISidePanel({
   }, [hasInitialGraph]);
 
   const handleSend = () => {
-    if (!input.trim()) return;
+    if (!input.trim() || isLoading || isScheduleGenerating) return;
 
     const userMessage = input.trim();
     setInput('');
     addMessage({ role: 'user', content: userMessage });
 
-    // 如果是满意度询问阶段，用户输入视为修改意见，AI 自动回复
-    if (satisfactionState === 'waiting') {
-      setTimeout(() => {
-        addMessage({
-          role: 'assistant',
-          content: '已按照您的需求修改，请查看，如果不满意请提出修改意见',
-        });
-      }, 100);
-    }
-
     // 通知父组件发送消息
-    onSendMessage?.(userMessage);
+    void onSendMessage?.(userMessage);
   };
 
   const handleKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
@@ -86,26 +79,8 @@ export function AISidePanel({
   };
 
   const handleSatisfied = () => {
-    setIsCreating(true);
-
-    const planDataStr = localStorage.getItem('pathmind_plan_data');
-    if (planDataStr) {
-      try {
-        JSON.parse(planDataStr);
-
-        setSatisfactionState('satisfied');
-        localStorage.removeItem('pathmind_consult_chart');
-
-        navigate('/tasks');
-      } catch (err) {
-        console.error('读取本地计划数据失败:', err);
-        alert('读取本地计划数据失败，请重试');
-      } finally {
-        setIsCreating(false);
-      }
-    } else {
-      setIsCreating(false);
-    }
+    if (isScheduleGenerating) return;
+    void onSatisfied?.();
   };
 
   return (
@@ -170,9 +145,9 @@ export function AISidePanel({
                         <button
                           className="btn-satisfy"
                           onClick={handleSatisfied}
-                          disabled={isCreating}
+                          disabled={isScheduleGenerating}
                         >
-                          满意
+                          {isScheduleGenerating ? '生成中...' : '满意'}
                         </button>
                       </div>
                     )}
@@ -203,11 +178,12 @@ export function AISidePanel({
               value={input}
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={handleKeyDown}
+              disabled={isLoading || isScheduleGenerating}
             />
             <button
               className="send-btn"
               onClick={handleSend}
-              disabled={!input.trim() || isLoading}
+              disabled={!input.trim() || isLoading || isScheduleGenerating}
             >
               <i className="fas fa-paper-plane"></i>
             </button>

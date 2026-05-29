@@ -56,6 +56,9 @@ const stripCodeFence = (value: string) =>
     .replace(/\s*```$/i, '')
     .trim();
 
+const stripThinkTags = (value: string) =>
+  value.replace(/<think\b[^>]*>[\s\S]*?<\/think>/gi, '').trim();
+
 const isValidXmlChar = (char: string) => {
   const codePoint = char.codePointAt(0);
 
@@ -72,24 +75,117 @@ const isValidXmlChar = (char: string) => {
 
 const removeInvalidXmlChars = (value: string) => Array.from(value).filter(isValidXmlChar).join('');
 
+const extractGraphModel = (value: string) => {
+  const graphStart = value.indexOf('<mxGraphModel');
+
+  if (graphStart < 0) {
+    return null;
+  }
+
+  const graphEnd = value.lastIndexOf('</mxGraphModel>');
+
+  if (graphEnd >= graphStart) {
+    return value.slice(graphStart, graphEnd + '</mxGraphModel>'.length);
+  }
+
+  const rootEnd = value.indexOf('</root>', graphStart);
+
+  if (rootEnd >= graphStart) {
+    return `${value.slice(graphStart, rootEnd + '</root>'.length)}</mxGraphModel>`;
+  }
+
+  return value.slice(graphStart);
+};
+
+const getParserError = (document: Document) => {
+  const parserError = document.querySelector('parsererror');
+
+  return parserError ? parserError.textContent?.trim() || 'Invalid XML' : null;
+};
+
+const parseXmlDocument = (xml: string) => {
+  if (typeof DOMParser === 'undefined') {
+    return null;
+  }
+
+  const document = new DOMParser().parseFromString(xml, 'application/xml');
+  const parserError = getParserError(document);
+
+  return parserError ? null : document;
+};
+
+const extractEscapedGraphModel = (mxfileXml: string) => {
+  const document = parseXmlDocument(mxfileXml);
+  if (!document) return null;
+
+  const diagrams = Array.from(document.querySelectorAll('diagram'));
+
+  for (const diagram of diagrams) {
+    const diagramText = diagram.textContent?.trim() ?? '';
+
+    if (!diagramText.includes('<mxGraphModel')) {
+      continue;
+    }
+
+    const graphModel = extractGraphModel(diagramText);
+
+    if (graphModel) {
+      return graphModel;
+    }
+  }
+
+  return null;
+};
+
 const extractDrawioXml = (value: string) => {
-  const cleaned = stripCodeFence(removeInvalidXmlChars(value));
+  const cleaned = stripCodeFence(stripThinkTags(removeInvalidXmlChars(value)));
   const mxfileStart = cleaned.indexOf('<mxfile');
   const mxfileEnd = cleaned.lastIndexOf('</mxfile>');
 
   if (mxfileStart >= 0 && mxfileEnd >= mxfileStart) {
-    return cleaned.slice(mxfileStart, mxfileEnd + '</mxfile>'.length);
+    const mxfileXml = cleaned.slice(mxfileStart, mxfileEnd + '</mxfile>'.length);
+    const rawGraphModel = extractGraphModel(mxfileXml);
+
+    return rawGraphModel ?? extractEscapedGraphModel(mxfileXml) ?? mxfileXml;
   }
 
-  const graphStart = cleaned.indexOf('<mxGraphModel');
-  const graphEnd = cleaned.lastIndexOf('</mxGraphModel>');
+  const graphModel = extractGraphModel(cleaned);
 
-  if (graphStart >= 0 && graphEnd >= graphStart) {
-    const graphModel = cleaned.slice(graphStart, graphEnd + '</mxGraphModel>'.length);
-    return `<mxfile host="app.diagrams.net"><diagram name="Page-1">${graphModel}</diagram></mxfile>`;
+  if (graphModel) {
+    return graphModel;
   }
 
   return cleaned;
+};
+
+const isLikelyBase64 = (value: string) => {
+  const normalized = value.replace(/\s/g, '');
+
+  if (!normalized) {
+    return false;
+  }
+
+  if (!/^[A-Za-z0-9+/_-]+={0,2}$/.test(normalized)) {
+    return false;
+  }
+
+  return normalized.length % 4 !== 1;
+};
+
+const getCompressedMxfileValidationError = (document: Document) => {
+  const diagrams = Array.from(document.querySelectorAll('diagram'));
+
+  if (diagrams.length === 0) {
+    return 'Missing diagram';
+  }
+
+  const invalidDiagram = diagrams.find((diagram) => {
+    const diagramText = diagram.textContent?.trim() ?? '';
+
+    return !isLikelyBase64(diagramText);
+  });
+
+  return invalidDiagram ? 'Compressed diagram content is not valid Base64' : null;
 };
 
 const escapeAttributeValue = (value: string) =>
@@ -250,17 +346,21 @@ const getXmlValidationError = (xml: string) => {
   }
 
   const document = new DOMParser().parseFromString(xml, 'application/xml');
-  const parserError = document.querySelector('parsererror');
+  const parserError = getParserError(document);
 
   if (parserError) {
-    return parserError.textContent?.trim() || 'Invalid XML';
+    return parserError;
   }
 
-  if (!document.querySelector('mxGraphModel')) {
-    return 'Missing mxGraphModel';
+  if (document.querySelector('mxGraphModel')) {
+    return null;
   }
 
-  return null;
+  if (document.documentElement.tagName === 'mxfile') {
+    return getCompressedMxfileValidationError(document);
+  }
+
+  return 'Missing mxGraphModel';
 };
 
 export const normalizeDrawioXml = (value: string): NormalizeDrawioXmlResult => {

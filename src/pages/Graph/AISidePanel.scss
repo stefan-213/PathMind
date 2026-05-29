@@ -303,6 +303,11 @@ $panel-accent: #F59E0B;
         font-weight: 500;
         cursor: pointer;
         transition: all 0.2s;
+
+        &:disabled {
+          cursor: not-allowed;
+          opacity: 0.55;
+        }
       }
 
       .btn-satisfy {
@@ -310,7 +315,7 @@ $panel-accent: #F59E0B;
         color: $panel-on-primary;
         box-shadow: 0 2px 4px rgba($panel-primary, 0.25);
 
-        &:hover {
+        &:hover:not(:disabled) {
           background: $panel-primary-text;
           transform: translateY(-1px);
         }
@@ -321,7 +326,7 @@ $panel-accent: #F59E0B;
         color: $panel-on-surface-variant;
         border: 1px solid $panel-surface-variant;
 
-        &:hover {
+        &:hover:not(:disabled) {
           border-color: $panel-primary;
           color: $panel-primary;
           background: rgba($panel-primary, 0.04);
@@ -389,6 +394,11 @@ $panel-accent: #F59E0B;
 
     &::placeholder {
       color: #94a3b8;
+    }
+
+    &:disabled {
+      cursor: not-allowed;
+      opacity: 0.65;
     }
   }
 

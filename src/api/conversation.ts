@@ -3,7 +3,11 @@
  * 统一管理会话和对话
  */
 import { get, post } from './axios';
-import type { Agent } from '../types/api';
+import type {
+  Agent,
+  GeneratePlanByOptionRequest,
+  GeneratePlanByOptionResponse,
+} from '../types/api';
 
 // ==================== 智能体相关 ====================
 
@@ -76,6 +80,20 @@ export const consultation = (data: {
     message?: string;
   }>('/api/agent/goal', data);
   // }>('/api/agent/consultation', data);
+};
+
+/**
+ * 根据用户选择的方案生成后续计划
+ */
+export const generatePlanByOption = (data: GeneratePlanByOptionRequest) => {
+  return post<GeneratePlanByOptionResponse>('/api/agent/group', data);
+};
+
+/**
+ * 根据sessionId获取图表记录
+ */
+export const getXmlGroupBySession = (sessionId: string) => {
+  return post<GeneratePlanByOptionResponse>('/api/agent/getXml', { sessionId });
 };
 
 /**

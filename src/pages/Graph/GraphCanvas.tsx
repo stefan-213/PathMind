@@ -8,7 +8,10 @@ import './GraphCanvas.scss';
 interface GraphCanvasProps {
   /** draw.io XML 数据 */
   xml: string | null;
+  emptyMessage?: string;
 }
+
+const DEFAULT_EMPTY_MESSAGE = '在Copilot页面输入需求，让 AI 为你生成计划图表';
 
 const getDrawIoBaseUrl = () => {
   const protocol = typeof window !== 'undefined' && window.location.protocol === 'http:'
@@ -18,7 +21,7 @@ const getDrawIoBaseUrl = () => {
   return `${protocol}://embed.diagrams.net`;
 };
 
-export function GraphCanvas({ xml }: GraphCanvasProps) {
+export function GraphCanvas({ xml, emptyMessage = DEFAULT_EMPTY_MESSAGE }: GraphCanvasProps) {
   const drawIoBaseUrl = getDrawIoBaseUrl();
 
   return (
@@ -46,7 +49,7 @@ export function GraphCanvas({ xml }: GraphCanvasProps) {
       ) : (
         <div className="empty-graph">
           <i className="fas fa-project-diagram"></i>
-          <p>在Copilot页面输入需求，让 AI 为你生成计划图表</p>
+          <p>{emptyMessage}</p>
         </div>
       )}
     </div>

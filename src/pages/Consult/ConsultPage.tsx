@@ -5,10 +5,11 @@
 ============================================ */
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ResourceSidebar, type ResourceSidebarItem } from '../../components/common';
+import { Badge, Button, ResourceSidebar, type ResourceSidebarItem } from '../../components/common';
 import { Header } from '../../components/layout/Header';
 import { conversationApi, deleteChatSession, getChatSessions } from '../../api/useApi';
 import { getChatHistory } from '../../api/conversation';
+import type { PlanComparisonResponse, PlanOption } from '../../types/api';
 import './ConsultPage.scss';
 
 // ---------- 类型定义 ----------
@@ -56,6 +57,12 @@ const INITIAL_QUICK_OPTIONS = [
   '数据分析平台',
 ];
 
+interface OpenGraphPayload {
+  optionId?: string;
+  goal?: string;
+  base?: string;
+}
+
 function getDefaultSession(): Session {
   return {
     id: generateId(),
@@ -81,35 +88,195 @@ function parseAIContent(content: string): { thinking: string; response: string }
   return { thinking, response };
 }
 
+type ParsedJSONResponse =
+  | { type: 'plan-options'; planComparison: PlanComparisonResponse }
+  | { type: 'question'; question: string; options: string[] }
+  | { type: 'result'; goal: string; base: string }
+  | { type: 'unknown' };
+
+interface AIReply {
+  thinking: string;
+  question: string;
+  options: string[];
+  goal: string;
+  base: string;
+  rawContent: string;
+  planComparison?: PlanComparisonResponse;
+  extraText?: string;
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null && !Array.isArray(value);
+}
+
+function getString(value: unknown, fallback = ''): string {
+  return typeof value === 'string' ? value : fallback;
+}
+
+function getStringArray(value: unknown): string[] {
+  return Array.isArray(value)
+    ? value.filter((item): item is string => typeof item === 'string')
+    : [];
+}
+
+function normalizePlanOption(value: unknown): PlanOption | null {
+  if (!isRecord(value)) return null;
+
+  const id = getString(value.id);
+  const name = getString(value.name);
+
+  if (!id || !name) return null;
+
+  return {
+    id,
+    name,
+    core_idea: getString(value.core_idea, '-'),
+    suitable_for: getString(value.suitable_for, '-'),
+    path: getStringArray(value.path),
+    pros: getStringArray(value.pros),
+    cons: getStringArray(value.cons),
+    cost: getString(value.cost, '-'),
+    difficulty: getString(value.difficulty, '-'),
+  };
+}
+
+function normalizePlanComparison(value: unknown): PlanComparisonResponse | null {
+  if (!isRecord(value)) return null;
+  if (!Array.isArray(value.options)) return null;
+
+  const options = value.options
+    .map(normalizePlanOption)
+    .filter((option): option is PlanOption => option !== null);
+
+  if (options.length === 0 || !isRecord(value.recommended)) return null;
+
+  const message = getString(value.recommended.option_id);
+  const reason = getString(value.recommended.reason);
+
+  if (!message || !reason) return null;
+
+  return {
+    options,
+    recommended: {
+      option_id: message,
+      reason,
+    },
+    decision_points: getStringArray(value.decision_points),
+  };
+}
+
+function extractJsonText(content: string): string | null {
+  const jsonStr = content.trim().replace(/^```json\s*/i, '').replace(/\s*```$/, '');
+  const jsonMatch = jsonStr.match(/\{[\s\S]*\}/);
+  return jsonMatch ? jsonMatch[0] : null;
+}
+
+// 解析 JSON 格式的 AI 回复
+function parseJSONResponse(content: string): ParsedJSONResponse {
+  const jsonText = extractJsonText(content);
+  if (!jsonText) return { type: 'unknown' };
+
+  try {
+    const parsed: unknown = JSON.parse(jsonText);
+    const planComparison = normalizePlanComparison(parsed);
+
+    if (planComparison) {
+      return { type: 'plan-options', planComparison };
+    }
+
+    if (!isRecord(parsed)) return { type: 'unknown' };
+
+    // 保留旧最终方案格式（goal/base），作为后端链路未完善时的兜底。
+    if (parsed.goal !== undefined && parsed.base !== undefined) {
+      return {
+        type: 'result',
+        goal: getString(parsed.goal),
+        base: getString(parsed.base),
+      };
+    }
+
+    if (parsed.question !== undefined) {
+      return {
+        type: 'question',
+        question: getString(parsed.question),
+        options: getStringArray(parsed.options),
+      };
+    }
+
+    return { type: 'unknown' };
+  } catch {
+    return { type: 'unknown' };
+  }
+}
+
+function extractFallbackTextFromJson(content: string): string {
+  const jsonText = extractJsonText(content);
+  if (!jsonText) return '';
+
+  try {
+    const parsed: unknown = JSON.parse(jsonText);
+    if (!isRecord(parsed)) return '';
+
+    return (
+      getString(parsed.message) ||
+      getString(parsed.text) ||
+      getString(parsed.content) ||
+      JSON.stringify(parsed)
+    );
+  } catch {
+    return '';
+  }
+}
+
 // 发送消息到 consultation API 并解析响应
-async function fetchAIReply(message: string, agentId: string, sessionId: string) {
+async function fetchAIReply(message: string, agentId: string, sessionId: string): Promise<AIReply> {
   try {
     const res = await conversationApi.consultation({ agentId, sessionId, message });
     const content = res.data?.content ?? res.data?.message ?? '';
-    
-    const thinkMatch = content.match(/<think>[\s\S]*?<\/think>([\s\S]*)$/);
-    if (!thinkMatch) {
+
+    if (!content) {
       return { thinking: '', question: '', options: [] as string[], goal: '', base: '', rawContent: content };
     }
 
-    const thinking = thinkMatch[0].replace(/<\/think>$/, '').replace(/<think>/, '').trim();
-    let jsonStr = thinkMatch[1].trim();
-    jsonStr = jsonStr.replace(/^```json\s*/i, '').replace(/\s*```$/, '');
+    const { thinking, response } = parseAIContent(content);
+    const parsed = parseJSONResponse(response);
 
-    try {
-      const parsed = JSON.parse(jsonStr);
-      if (parsed.goal !== undefined && parsed.base !== undefined) {
-        return { thinking, question: '', options: [], goal: parsed.goal || '', base: parsed.base || '', rawContent: content };
-      }
-      if (parsed.question !== undefined || (parsed.options && Array.isArray(parsed.options))) {
-        return { thinking, question: parsed.question || '', options: parsed.options || [], goal: '', base: '', rawContent: content };
-      }
-      const extraText = parsed.message || parsed.text || parsed.content || JSON.stringify(parsed);
-      return { thinking, question: '', options: [], goal: '', base: '', extraText, rawContent: content };
-    } catch {
-      const extraText = jsonStr.trim() || content.trim();
-      return { thinking: '', question: '', options: [], goal: '', base: '', extraText, rawContent: content };
+    if (parsed.type === 'plan-options') {
+      return {
+        thinking,
+        question: '',
+        options: [],
+        goal: '',
+        base: '',
+        planComparison: parsed.planComparison,
+        rawContent: content,
+      };
     }
+
+    if (parsed.type === 'result') {
+      return {
+        thinking,
+        question: '',
+        options: [],
+        goal: parsed.goal,
+        base: parsed.base,
+        rawContent: content,
+      };
+    }
+
+    if (parsed.type === 'question') {
+      return {
+        thinking,
+        question: parsed.question,
+        options: parsed.options,
+        goal: '',
+        base: '',
+        rawContent: content,
+      };
+    }
+
+    const extraText = extractFallbackTextFromJson(response) || response.trim() || content.trim();
+    return { thinking, question: '', options: [], goal: '', base: '', extraText, rawContent: content };
   } catch (error) {
     console.error('Consultation API error:', error);
     return { thinking: '', question: '', options: [], goal: '', base: '', extraText: '', rawContent: '' };
@@ -175,50 +342,8 @@ function TypingDots() {
 interface MessageItemProps {
   message: Message;
   onOptionSelect?: (option: string) => void;
+  onPlanOptionSelect?: (optionId: string) => void;
   optionsDisabled?: boolean;
-}
-
-// 解析 JSON 格式的 AI 回复
-function parseJSONResponse(content: string): {
-  type: 'question' | 'result' | 'unknown';
-  question?: string;
-  options?: string[];
-  goal?: string;
-  base?: string;
-} {
-  // 提取 JSON 内容（可能被 markdown 代码块包裹）
-  let jsonStr = content.trim();
-
-  // 去除 markdown 代码块标记
-  jsonStr = jsonStr.replace(/^```json\s*/i, '').replace(/\s*```$/, '');
-
-  // 尝试找到 JSON 对象
-  const jsonMatch = jsonStr.match(/\{[\s\S]*\}/);
-  if (!jsonMatch) {
-    return { type: 'unknown' };
-  }
-
-  try {
-    const parsed = JSON.parse(jsonMatch[0]);
-
-    // 检测是否为最终方案格式（goal/base）
-    if (parsed.goal !== undefined && parsed.base !== undefined) {
-      return { type: 'result', goal: parsed.goal, base: parsed.base };
-    }
-
-    // 问答格式（question/options）
-    if (parsed.question !== undefined) {
-      return {
-        type: 'question',
-        question: parsed.question,
-        options: parsed.options || []
-      };
-    }
-
-    return { type: 'unknown' };
-  } catch {
-    return { type: 'unknown' };
-  }
 }
 
 // 格式化选项文本（去除 A. B. 等前缀）
@@ -228,18 +353,148 @@ function formatOptionText(option: string): string {
   return match ? match[1] : option;
 }
 
-function MessageItem({ message, onOptionSelect, optionsDisabled = false }: MessageItemProps) {
+interface PlanComparisonMessageProps {
+  data: PlanComparisonResponse;
+  disabled: boolean;
+  onSelectOption?: (optionId: string) => void;
+}
+
+function PlanComparisonList({ items }: { items: string[] }) {
+  if (items.length === 0) {
+    return <span className="plan-comparison-empty">-</span>;
+  }
+
+  return (
+    <ul className="plan-comparison-list">
+      {items.map((item, index) => (
+        <li key={`${item}-${index}`}>{item}</li>
+      ))}
+    </ul>
+  );
+}
+
+function PlanComparisonMessage({ data, disabled, onSelectOption }: PlanComparisonMessageProps) {
+  const recommendedOption = data.options.find(
+    (option) => option.id === data.recommended.option_id
+  );
+  const comparisonRows = [
+    { label: '核心思路', render: (option: PlanOption) => option.core_idea },
+    { label: '适合人群', render: (option: PlanOption) => option.suitable_for },
+    // { label: '学习路径', render: (option: PlanOption) => <PlanComparisonList items={option.path} /> },
+    { label: '优点', render: (option: PlanOption) => <PlanComparisonList items={option.pros} /> },
+    { label: '风险/不足', render: (option: PlanOption) => <PlanComparisonList items={option.cons} /> },
+    { label: '成本', render: (option: PlanOption) => option.cost },
+    { label: '难度', render: (option: PlanOption) => option.difficulty },
+  ];
+
+  return (
+    <div className="plan-comparison">
+      <div className="plan-comparison-table-wrap">
+        <table className="plan-comparison-table">
+          <thead>
+            <tr>
+              <th className="plan-comparison-table__metric">对比项</th>
+              {data.options.map((option) => {
+                const isRecommended = option.id === data.recommended.option_id;
+
+                return (
+                  <th
+                    key={option.id}
+                    className={isRecommended ? 'plan-comparison-table__column--recommended' : ''}
+                  >
+                    <div className="plan-option-name">
+                      <span>{option.name}</span>
+                      {isRecommended && <Badge variant="accent" size="sm">推荐</Badge>}
+                    </div>
+                  </th>
+                );
+              })}
+            </tr>
+          </thead>
+          <tbody>
+            {comparisonRows.map((row) => (
+              <tr key={row.label}>
+                <th scope="row" className="plan-comparison-table__metric">
+                  {row.label}
+                </th>
+                {data.options.map((option) => {
+                  const isRecommended = option.id === data.recommended.option_id;
+
+                  return (
+                    <td
+                      key={`${row.label}-${option.id}`}
+                      className={isRecommended ? 'plan-comparison-table__column--recommended' : ''}
+                    >
+                      {row.render(option)}
+                    </td>
+                  );
+                })}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      <section className="plan-recommendation">
+        <div className="plan-recommendation__title">
+          <i className="fas fa-star"></i>
+          <span>推荐方案</span>
+        </div>
+        <div className="plan-recommendation__name">
+          {recommendedOption?.name || data.recommended.option_id}
+        </div>
+        <p className="plan-recommendation__reason">{data.recommended.reason}</p>
+      </section>
+
+      {data.decision_points.length > 0 && (
+        <section className="plan-decision-points">
+          <div className="plan-decision-points__title">决策提示</div>
+          <ul>
+            {data.decision_points.map((point, index) => (
+              <li key={`${point}-${index}`}>{point}</li>
+            ))}
+          </ul>
+        </section>
+      )}
+
+      <div className="plan-option-actions">
+        {data.options.map((option) => {
+          const isRecommended = option.id === data.recommended.option_id;
+
+          return (
+            <Button
+              key={option.id}
+              variant={isRecommended ? 'primary' : 'secondary'}
+              disabled={disabled || !onSelectOption}
+              onClick={() => onSelectOption?.(option.id)}
+            >
+              生成：{option.name}
+            </Button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+function MessageItem({
+  message,
+  onOptionSelect,
+  onPlanOptionSelect,
+  optionsDisabled = false,
+}: MessageItemProps) {
   const [showThinking, setShowThinking] = useState(false);
   const isAssistant = message.role === 'assistant';
   const { thinking, response } = parseAIContent(message.content);
 
   // 解析 JSON 响应
   const jsonParsed = parseJSONResponse(response);
+  const isPlanOptionsFormat = jsonParsed.type === 'plan-options';
   const isQuestionFormat = jsonParsed.type === 'question';
   const isResultFormat = jsonParsed.type === 'result';
 
   return (
-    <div className={`message-item ${isAssistant ? '' : 'message-item--user'}`}>
+    <div className={`message-item ${isAssistant ? '' : 'message-item--user'}${isPlanOptionsFormat ? ' message-item--plan-options' : ''}`}>
       {isAssistant && (
         <div className="message-header">
           <span className="message-label">PathMind AI</span>
@@ -268,8 +523,13 @@ function MessageItem({ message, onOptionSelect, optionsDisabled = false }: Messa
 
         {/* 渲染内容 */}
         <div className="message-content">
-          {/* isResultFormat 时忽略 isHtml，直接用 JSX 渲染按钮 */}
-          {isResultFormat ? (
+          {isPlanOptionsFormat ? (
+            <PlanComparisonMessage
+              data={jsonParsed.planComparison}
+              disabled={optionsDisabled}
+              onSelectOption={onPlanOptionSelect}
+            />
+          ) : isResultFormat ? (
             // 最终方案：显示图表按钮
             <div className="result-container">
               <p className="result-text">
@@ -440,6 +700,12 @@ export function ConsultPage() {
 
   // 添加 AI 响应消息
   const addAIReply = useCallback((reply: Awaited<ReturnType<typeof fetchAIReply>>, userProfile?: Session['userProfile']) => {
+    if (reply.planComparison) {
+      addMessage('assistant', reply.rawContent);
+      updateCurrentSession({ quickOptions: [] });
+      return;
+    }
+
     // 处理最终方案
     if (reply.goal && reply.base) {
       const baseStr = reply.base || (userProfile ? buildBaseString(userProfile) : '');
@@ -536,20 +802,49 @@ export function ConsultPage() {
     inputRef.current?.focus();
   }, [currentSession, isWaitingForAI, addMessage, updateCurrentSession, sendAndProcess, updateStepAndProfile]);
 
-  // 查看知识图表
-  const handleViewGraph = useCallback(() => {
-    if (!currentSession?.consultationGoal || !currentSession?.consultationBase) return;
+  const openGraphFromConsultData = useCallback((payload: OpenGraphPayload) => {
+    if (!currentSession?.agentId || !currentSession?.sessionId) return;
+
     const sessionData = {
-      agentId: currentSession.agentId || '',
-      sessionId: currentSession.sessionId || '',
-      consultationMsg: {
-        goal: currentSession.consultationGoal,
-        base: currentSession.consultationBase,
-      },
+      agentId: currentSession.agentId,
+      sessionId: currentSession.sessionId,
+      optionId: payload.optionId,
+      consultationMsg: payload.goal && payload.base
+        ? {
+            goal: payload.goal,
+            base: payload.base,
+          }
+        : undefined,
     };
+
     localStorage.setItem('pathmind_consult_chart', JSON.stringify(sessionData));
     navigate('/graph');
   }, [currentSession, navigate]);
+
+  // 查看知识图表
+  const handleViewGraph = useCallback(() => {
+    if (!currentSession?.consultationGoal || !currentSession?.consultationBase) return;
+
+    openGraphFromConsultData({
+      goal: currentSession.consultationGoal,
+      base: currentSession.consultationBase,
+    });
+  }, [currentSession, openGraphFromConsultData]);
+
+  const handlePlanOptionSelect = useCallback((optionId: string) => {
+    if (isWaitingForAI || !currentSession?.agentId || !currentSession?.sessionId) return;
+
+    updateCurrentSession({
+      currentStep: 'RESULT',
+      quickOptions: [],
+    });
+    openGraphFromConsultData({ optionId });
+  }, [
+    currentSession,
+    isWaitingForAI,
+    openGraphFromConsultData,
+    updateCurrentSession,
+  ]);
 
   // 重新生成方案
   const handleRegenerate = useCallback(async () => {
@@ -613,8 +908,8 @@ export function ConsultPage() {
     }
   }, [isWaitingForAI, isResultStep, currentSession, handleSendMessage, handleViewGraph, handleRegenerate]);
 
-  // 判断问题选项是否已经回答
-  const isAnsweredQuestionMessage = useCallback((messageIndex: number) => {
+  // 判断消息内交互是否已经回答
+  const isAnsweredInteractiveMessage = useCallback((messageIndex: number) => {
     if (!currentSession) return false;
 
     const message = currentSession.messages[messageIndex];
@@ -622,6 +917,8 @@ export function ConsultPage() {
 
     const { response } = parseAIContent(message.content);
     const parsed = parseJSONResponse(response);
+
+    if (parsed.type === 'plan-options') return false;
     if (parsed.type !== 'question' || !parsed.options?.length) return false;
 
     return currentSession.messages
@@ -866,7 +1163,8 @@ export function ConsultPage() {
                   key={i}
                   message={msg}
                   onOptionSelect={handleQuickSelect}
-                  optionsDisabled={isWaitingForAI || isResultStep || isAnsweredQuestionMessage(i)}
+                  onPlanOptionSelect={handlePlanOptionSelect}
+                  optionsDisabled={isWaitingForAI || isResultStep || isAnsweredInteractiveMessage(i)}
                 />
               ))}
               {isWaitingForAI && (

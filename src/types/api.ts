@@ -224,6 +224,45 @@ export interface AIChatRequest {
   message: string;
 }
 
+export interface PlanOption {
+  id: string;
+  name: string;
+  core_idea: string;
+  suitable_for: string;
+  path: string[];
+  pros: string[];
+  cons: string[];
+  cost: string;
+  difficulty: string;
+}
+
+export interface RecommendedPlanOption {
+  option_id: string;
+  reason: string;
+}
+
+export interface PlanComparisonResponse {
+  options: PlanOption[];
+  recommended: RecommendedPlanOption;
+  decision_points: string[];
+}
+
+export interface GeneratePlanByOptionRequest {
+  agentId: string;
+  sessionId: string;
+  message: string;
+}
+
+export interface GeneratePlanByOptionResponse {
+  sessionId?: string;
+  messageId?: string | null;
+  role?: string;
+  content?: string;
+  message?: string;
+  goal?: string;
+  base?: string;
+}
+
 // ==================== 收藏与历史 ====================
 
 export interface Favorite {
