@@ -14,10 +14,11 @@ import { Header } from '../../components/layout/Header';
 import {
   createKnowledgeBase,
   deleteKnowledgeBase,
-  deleteKnowledgeBaseFile,
+  deleteDocument,
+  getDocuments,
   getKnowledgeBaseList,
   updateKnowledgeBase,
-  uploadKnowledgeBaseFiles,
+  uploadDocument,
 } from '../../api/knowledgeBase';
 import type { KnowledgeBase, KnowledgeBaseFile } from '../../types/api';
 import './KnowledgeBasePage.scss';
@@ -220,7 +221,8 @@ const formatFileSize = (size?: number): string => {
 
 const formatDate = (value?: string): string => {
   if (!value) return '刚刚';
-  const date = new Date(value);
+  const num = Number(value);
+  const date = Number.isFinite(num) && num > 1e12 ? new Date(num) : new Date(value);
   if (Number.isNaN(date.getTime())) return value;
   return new Intl.DateTimeFormat('zh-CN', {
     month: '2-digit',
@@ -290,7 +292,29 @@ export function KnowledgeBasePage() {
         throw new Error(response.error || response.message || '获取知识库列表失败');
       }
 
-      const nextKnowledgeBases = normalizeKnowledgeBaseList(response.data);
+      const rawList = normalizeKnowledgeBaseList(response.data);
+
+      // 为每个知识库加载文档列表
+      const nextKnowledgeBases: KnowledgeBase[] = await Promise.all(
+        rawList.map(async (kb) => {
+          try {
+            const docResponse = await getDocuments(kb.id);
+            if (docResponse.success === false) return kb;
+
+            const docs = Array.isArray(docResponse.data) ? docResponse.data : [];
+            const files: KnowledgeBaseFile[] = docs.map((doc: Record<string, unknown>) => ({
+              id: getFirstText(doc, ['id', 'documentId'], ''),
+              name: getFirstText(doc, ['fileName', 'name', 'title'], ''),
+              size: getNumber(doc.fileSize ?? doc.size),
+              type: getFirstText(doc, ['fileType', 'type'], ''),
+              createdAt: getFirstText(doc, ['createdAt', 'createTime'], ''),
+            }));
+            return { ...kb, files };
+          } catch {
+            return kb;
+          }
+        }),
+      );
 
       setKnowledgeBases(nextKnowledgeBases);
       setSelectedKnowledgeBaseId((currentId) => {
@@ -488,12 +512,12 @@ export function KnowledgeBasePage() {
     setErrorMessage(null);
 
     try {
-      const response = await uploadKnowledgeBaseFiles({
-        knowledgeBaseId: targetKnowledgeBaseId,
-        files,
-      });
-      if (response.success === false) {
-        throw new Error(response.error || response.message || '上传文件失败');
+      // 逐个文件上传
+      for (const file of files) {
+        const response = await uploadDocument(targetKnowledgeBaseId, file);
+        if (response.success === false) {
+          throw new Error(response.error || response.message || `上传文件「${file.name}」失败`);
+        }
       }
 
       setExpandedKnowledgeBaseIds((currentIds) => {
@@ -561,7 +585,7 @@ export function KnowledgeBasePage() {
     setErrorMessage(null);
 
     try {
-      const response = await deleteKnowledgeBase({ id: knowledgeBase.id });
+      const response = await deleteKnowledgeBase(knowledgeBase.id);
       if (response.success === false) {
         throw new Error(response.error || response.message || '删除知识库失败');
       }
@@ -597,10 +621,7 @@ export function KnowledgeBasePage() {
     setErrorMessage(null);
 
     try {
-      const response = await deleteKnowledgeBaseFile({
-        knowledgeBaseId,
-        fileId: file.id,
-      });
+      const response = await deleteDocument(file.id);
       if (response.success === false) {
         throw new Error(response.error || response.message || '删除文件失败');
       }
@@ -791,7 +812,7 @@ export function KnowledgeBasePage() {
           <header className="knowledge-main__header">
             <div className="knowledge-main__title-area">
               <span className="knowledge-main__eyebrow">Knowledge Base</span>
-              <h1>知识库上传（后端接口未接入）</h1>
+              <h1>知识库上传</h1>
               <p>
                 {selectedKnowledgeBase
                   ? `当前知识库：${selectedKnowledgeBase.name}`
