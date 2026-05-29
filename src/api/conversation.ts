@@ -4,16 +4,12 @@
  */
 import { get, post } from './axios';
 import type {
-  Agent,
-  GeneratePlanByOptionRequest,
-  GeneratePlanByOptionResponse,
+  Agent
 } from '../types/api';
 
 // ==================== 智能体相关 ====================
 
-/**
- * 获取智能体列表
- */
+/** 获取智能体列表 */
 export const getAgents = () => {
   return get<{
     code: string;
@@ -22,11 +18,7 @@ export const getAgents = () => {
   }>('/api/agent/list');
 };
 
-
-
-/**
- * 创建 AI 对话会话
- */
+/** 创建 AI 对话会话 */
 export const createChatSession = (agentId: string) => {
   return post<{
     code: string;
@@ -36,9 +28,8 @@ export const createChatSession = (agentId: string) => {
     };
   }>('/api/agent/createSession', { agentId });
 };
-/**
- * 删除 AI 对话会话
- */
+
+/** 删除 AI 对话会话 */
 export const deleteChatSession = (sessionId: string, agentId: string) => {
   return post<{
     code: string;
@@ -46,30 +37,16 @@ export const deleteChatSession = (sessionId: string, agentId: string) => {
   }>('/api/agent/deleteSession', { sessionId, agentId });
 };
 
-/**
- * 获取会话列表
- */
+/** 获取会话列表 */
 export const getChatSessions = (agentId: string) => {
   return post<{
     code: string;
     info: string;
-    data: Record<string, string>; // { sessionId: title }
+    data: Record<string, string>;
   }>('/api/agent/getSessionList', { agentId });
 };
-/**
- * 流式对话（AI 助手）
- */
-// export const chatStream = (data: {
-//   agentId: string;
-//   sessionId: string;
-//   message: string;
-// }) => {
-//   return post<{ message: string; graphData?: unknown }>('/api/agent/chatStream', data);
-// };
 
-/**
- * 用户咨询助手（获取用户信息）
- */
+/** 用户咨询助手（获取用户信息） */
 export const consultation = (data: {
   agentId: string;
   sessionId: string;
@@ -79,26 +56,13 @@ export const consultation = (data: {
     content?: string;
     message?: string;
   }>('/api/agent/goal', data);
-  // }>('/api/agent/consultation', data);
 };
 
-/**
- * 根据用户选择的方案生成后续计划
- */
-export const generatePlanByOption = (data: GeneratePlanByOptionRequest) => {
-  return post<GeneratePlanByOptionResponse>('/api/agent/group', data);
-};
 
-/**
- * 根据sessionId获取图表记录
- */
-export const getXmlGroupBySession = (sessionId: string) => {
-  return post<GeneratePlanByOptionResponse>('/api/agent/getXml', { sessionId });
-};
 
-/**
- * 获取会话记录
- */
+
+
+/** 获取会话记录 */
 export const getChatHistory = (data: {
   sessionId: string;
 }) => {
@@ -112,14 +76,3 @@ export const getChatHistory = (data: {
     }[];
   }>('/api/agent/transcript', data);
 };
-/**
- * 获取预览图
- */
-// export const getPreviewImage = (data:{
-//   sessionId: string;
-// })=> {
-//   return post<{
-//     content?: string;
-//     message?: string;
-//   }>('/api/agent/plan', data);
-// };

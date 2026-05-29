@@ -4,71 +4,47 @@
  */
 import { post } from './axios';
 
-type XmlContentResponse = {
+/** 生成xml图表 */
+export const generatePlanByOption = (data: {
+  agentId: string;
+  sessionId: string;
+  message: string;
+}) => {
+  return post<{
+  sessionId?: string;
+  messageId?: string | null;
+  role?: string;
+  content?: string;
+  message?: string;
+  goal?: string;
+  base?: string;
+}>('/api/agent/group', data);
+};
+
+/** 修改 XML图表 */
+export const updataGroup = (data: {
+  sessionId: string;
+  message: string;
+}) => {
+  return post<{
   content?: string;
   centent?: string;
   message?: string;
   xml?: string;
   data?: unknown;
   sessionId?: string;
+}>('/api/agent/updataGroup', data);
 };
 
-type GenerateScheduleResponse = {
-  content?: unknown;
-  centent?: unknown;
-  data?: unknown;
-  schedule?: unknown;
-  schedules?: unknown;
-  result?: unknown;
-  message?: string;
-};
-
-/**
- * 图表助手（生成 XML）
- * 根据用户咨询信息生成 draw.io 图表
- */
-export const charts = (data: {
-  agentId?: string;
+/** 获取图表记录 */
+export const getXmlGroupBySession = (sessionId: string) => {
+  return post<{
   sessionId?: string;
+  messageId?: string | null;
+  role?: string;
+  content?: string;
   message?: string;
-  consultationMsg?: {
-    goal: string;
-    base: string;
-  };
-}) => {
-  return post<{
-    content: string;
-  }>('/api/agent/charts', data);
-};
-/**
- * （保存 XML）
- */
-export const saveXmlFile = (data:{
-  id:string;
-  title:string;
-  xml:string
-}) => {
-  return post<{
-    centent:string;
-  }>('/api/agent/saveXmlFile', data);
-};
-/**
- * （修改 XML）
- */
-export const updataGroup = (data:{
-  sessionId:string;
-  message:string;
-  // xml:string
-}) => {
-  return post<XmlContentResponse>('/api/agent/updataGroup', data);
-};
-
-/**
- * （根据 XML 生成日程表）
- */
-export const generateSchedule = (data: {
-  sessionId: string;
-  xml: string;
-}) => {
-  return post<GenerateScheduleResponse>('/api/agent/generateSchedule', data);
+  goal?: string;
+  base?: string;
+}>('/api/agent/getXml', { sessionId });
 };

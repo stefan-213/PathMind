@@ -27,7 +27,7 @@ export const useTasksStore = create<TasksState>((set, get) => ({
   fetchTasks: async (goalId?: string) => {
     set({ isLoading: true, error: null });
     try {
-      const response = await tasksApi.getTasks(goalId ? { goalId } : undefined);
+      const response = await tasksApi.getSchedule(goalId ? { goalId } : undefined);
       const data = response.data as UserTask[] | PaginatedResponse<UserTask> | undefined;
       const tasks: UserTask[] = Array.isArray(data) ? data : data?.items ?? [];
       set({ tasks, isLoading: false });

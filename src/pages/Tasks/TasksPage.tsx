@@ -1,8 +1,9 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Header, Footer } from '../../components/layout';
 import { Card, Badge, EmptyState, ResourceSidebar, Spin, type ResourceSidebarItem } from '../../components/common';
 import { getChatSessions } from '../../api/useApi';
+import { getSchedule } from '../../api/tasks';
 import { useScheduleStore } from '../../stores/scheduleStore';
 import { normalizeCopilotSessionMap, type CopilotSessionResource } from '../../utils';
 import type { Schedule, SubSchedule } from '../../types/api';
@@ -288,47 +289,12 @@ export function TasksPage() {
   const { schedules, setSchedules, setCurrentSchedule, setLoading, clearSchedules } = useScheduleStore();
   const [isTaskLoading, setIsTaskLoading] = useState(false);
   const [collapsedStageIds, setCollapsedStageIds] = useState<Set<string>>(() => new Set());
-  const [planTitle, setPlanTitle] = useState(() =>
-    localStorage.getItem(PLAN_TITLE_STORAGE_KEY)?.trim() || ''
-  );
+  const [planTitle, setPlanTitle] = useState('');
   const [sessions, setSessions] = useState<CopilotSessionResource[]>([]);
   const [activeSessionId, setActiveSessionId] = useState<string | null>(null);
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [isSessionListLoading, setIsSessionListLoading] = useState(false);
   const [sessionListError, setSessionListError] = useState<string | null>(null);
-
-  const loadSchedules = useCallback(() => {
-    setLoading(true);
-    try {
-      const planDataStr = localStorage.getItem(PLAN_DATA_STORAGE_KEY);
-      if (!planDataStr) {
-        setPlanTitle('');
-        clearSchedules();
-        return;
-      }
-
-      const localSchedules = normalizePlanData(JSON.parse(planDataStr));
-      if (localSchedules.length === 0) {
-        setPlanTitle('');
-        clearSchedules();
-        return;
-      }
-
-      setPlanTitle(localStorage.getItem(PLAN_TITLE_STORAGE_KEY)?.trim() || '');
-      setSchedules(localSchedules);
-      setCurrentSchedule(localSchedules[0]);
-      saveLocalSchedules(localSchedules);
-    } catch (err) {
-      console.error('读取本地任务数据失败:', err);
-      clearSchedules();
-    } finally {
-      setLoading(false);
-    }
-  }, [clearSchedules, setCurrentSchedule, setLoading, setSchedules]);
-
-  useEffect(() => {
-    loadSchedules();
-  }, [loadSchedules]);
 
   useEffect(() => {
     let isMounted = true;
@@ -375,6 +341,43 @@ export function TasksPage() {
       isMounted = false;
     };
   }, []);
+
+  // 当选择会话时，从API加载任务数据
+  useEffect(() => {
+    if (!activeSessionId) return;
+
+    const title = sessions.find((s) => s.sessionId === activeSessionId)?.title ?? '';
+    setPlanTitle(title);
+    setLoading(true);
+    clearSchedules();
+
+    getSchedule(activeSessionId)
+      .then((response) => {
+        if (response.success && response.data) {
+          const planData = response.data.schedule ?? response.data.data ?? response.data.content;
+          if (planData) {
+            const apiSchedules = normalizePlanData(Array.isArray(planData) ? planData : [planData]);
+            if (apiSchedules.length > 0) {
+              setSchedules(apiSchedules);
+              setCurrentSchedule(apiSchedules[0]);
+              saveLocalSchedules(apiSchedules);
+              return;
+            }
+          }
+          clearSchedules();
+        } else {
+          console.error('获取任务数据失败:', response.error);
+          clearSchedules();
+        }
+      })
+      .catch((err) => {
+        console.error('获取任务数据异常:', err);
+        clearSchedules();
+      })
+      .finally(() => {
+        setLoading(false);
+      });
+  }, [activeSessionId, sessions, clearSchedules, setCurrentSchedule, setLoading, setSchedules]);
 
   const scheduleSections = schedules.filter(schedule => schedule.subScheduleList.length > 0);
   const allTasks = scheduleSections.reduce<SubSchedule[]>(
@@ -502,9 +505,9 @@ export function TasksPage() {
             <EmptyState
               icon={<i className="fas fa-clipboard-list"></i>}
               title="还没有任务"
-              description="先去AI Copilot制定你的学习计划吧"
+              description="请根据知识图表制定您满意的学习计划"
               action={
-                <Link to="/consult" className="btn btn-primary">
+                <Link to="/graph" className="btn btn-primary">
                   制定计划
                   <div className="arrow-right">
                     <i className="fas fa-arrow-right"></i>
