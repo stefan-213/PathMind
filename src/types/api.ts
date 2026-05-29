@@ -315,7 +315,7 @@ export interface Agent {
 
 // ==================== 知识库相关 ====================
 
-/** 知识库文件 */
+/** 知识库文件（对应后端 KnowledgeDocumentResponseDTO） */
 export interface KnowledgeBaseFile {
   id: string;
   name: string;
@@ -336,29 +336,14 @@ export interface KnowledgeBase {
 /** 新增知识库请求 */
 export interface CreateKnowledgeBaseRequest {
   name: string;
+  description?: string;
 }
 
 /** 修改知识库请求 */
 export interface UpdateKnowledgeBaseRequest {
   id: string;
   name: string;
-}
-
-/** 删除知识库请求 */
-export interface DeleteKnowledgeBaseRequest {
-  id: string;
-}
-
-/** 上传知识库文件请求 */
-export interface UploadKnowledgeBaseFileRequest {
-  knowledgeBaseId: string;
-  files: File[];
-}
-
-/** 删除知识库文件请求 */
-export interface DeleteKnowledgeBaseFileRequest {
-  knowledgeBaseId: string;
-  fileId: string;
+  description?: string;
 }
 
 // ==================== Copilot相关 ====================

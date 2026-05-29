@@ -1,57 +1,44 @@
 /**
  * 知识库 API 服务
  */
-import { get, post } from './axios';
+import { get, post, put, del } from './axios';
 import type {
   CreateKnowledgeBaseRequest,
-  DeleteKnowledgeBaseFileRequest,
-  DeleteKnowledgeBaseRequest,
   UpdateKnowledgeBaseRequest,
-  UploadKnowledgeBaseFileRequest,
 } from '../types/api';
 
-export const KNOWLEDGE_BASE_ENDPOINTS = {
-  list: '/api/knowledge-base/list',
-  create: '/api/knowledge-base/create',
-  update: '/api/knowledge-base/update',
-  delete: '/api/knowledge-base/delete',
-  upload: '/api/knowledge-base/upload',
-  deleteFile: '/api/knowledge-base/file/delete',
-} as const;
-
 export const getKnowledgeBaseList = () => {
-  return get<unknown>(KNOWLEDGE_BASE_ENDPOINTS.list);
+  return get<unknown>('/api/knowledge/base/list');
 };
 
 export const createKnowledgeBase = (data: CreateKnowledgeBaseRequest) => {
-  return post<unknown>(KNOWLEDGE_BASE_ENDPOINTS.create, data);
+  return post<unknown>('/api/knowledge/base', data);
 };
 
 export const updateKnowledgeBase = (data: UpdateKnowledgeBaseRequest) => {
-  return post<unknown>(KNOWLEDGE_BASE_ENDPOINTS.update, data);
+  return put<unknown>('/api/knowledge/base', data);
 };
 
-export const deleteKnowledgeBase = (data: DeleteKnowledgeBaseRequest) => {
-  return post<unknown>(KNOWLEDGE_BASE_ENDPOINTS.delete, data);
+export const deleteKnowledgeBase = (id: string) => {
+  return del<unknown>(`/api/knowledge/base/${id}`);
 };
 
-export const uploadKnowledgeBaseFiles = ({
-  knowledgeBaseId,
-  files,
-}: UploadKnowledgeBaseFileRequest) => {
+export const getDocuments = (knowledgeBaseId: string) => {
+  return get<unknown>('/api/knowledge/document/list', { knowledgeBaseId });
+};
+
+export const uploadDocument = (knowledgeBaseId: string, file: File) => {
   const formData = new FormData();
   formData.append('knowledgeBaseId', knowledgeBaseId);
-  files.forEach((file) => {
-    formData.append('files', file);
-  });
+  formData.append('file', file);
 
-  return post<unknown>(KNOWLEDGE_BASE_ENDPOINTS.upload, formData, {
+  return post<unknown>('/api/knowledge/document/upload', formData, {
     headers: {
       'Content-Type': 'multipart/form-data',
     },
   });
 };
 
-export const deleteKnowledgeBaseFile = (data: DeleteKnowledgeBaseFileRequest) => {
-  return post<unknown>(KNOWLEDGE_BASE_ENDPOINTS.deleteFile, data);
+export const deleteDocument = (documentId: string) => {
+  return del<unknown>(`/api/knowledge/document/${documentId}`);
 };
