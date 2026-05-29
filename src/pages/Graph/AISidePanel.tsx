@@ -45,7 +45,7 @@ export function AISidePanel({
   // 自动滚动到最新消息
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages]);
+  }, [messages, isLoading]);
 
   // 初始化：进入页面时如果已有图表，自动发送满意度询问
   useEffect(() => {
@@ -167,6 +167,19 @@ export function AISidePanel({
                 </div>
               </div>
             ))}
+            {isLoading ? (
+              <div className="message assistant message--loading" role="status" aria-live="polite">
+                <div className="message-avatar">
+                  <i className="fas fa-robot"></i>
+                </div>
+                <div className="message-content">
+                  <div className="message-text message-loading-text">
+                    <i className="fas fa-spinner fa-spin" aria-hidden="true"></i>
+                    <span>图表正在修改中...</span>
+                  </div>
+                </div>
+              </div>
+            ) : null}
             <div ref={messagesEndRef} />
           </div>
 

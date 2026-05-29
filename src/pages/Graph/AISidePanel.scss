@@ -239,6 +239,25 @@ $panel-accent: #F59E0B;
     }
   }
 
+  &.message--loading {
+    .message-content {
+      border-color: rgba($panel-secondary, 0.14);
+    }
+
+    .message-loading-text {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      color: $panel-secondary;
+      font-weight: 600;
+
+      i {
+        flex-shrink: 0;
+        font-size: 13px;
+      }
+    }
+  }
+
   .message-avatar {
     width: 32px;
     height: 32px;
