@@ -375,3 +375,46 @@ export interface ConsultResponse {
   finalXml?: string;        // draw.io XML 格式图表（RESULT 步骤时返回）
   planDetails?: PlanDetail[]; // 计划表详情（RESULT 步骤时返回）
 }
+
+// ==================== 个人中心相关 ====================
+
+/** 成就徽章 */
+export interface Achievement {
+  id: number;
+  name: string;
+  icon: string;
+  unlocked: boolean;
+  description?: string;      // 成就解锁条件描述
+  unlockedAt?: string;       // 解锁时间
+}
+
+/** 计划周次 */
+export interface PlanWeek {
+  weekNum: number;
+  date: string;
+  title: string;
+  completed: number;
+  total: number;
+  active?: boolean;
+}
+
+/** 用户学习计划（前端展示层） */
+export interface UserPlan {
+  id: number;
+  name: string;
+  period: string;
+  status: 'active' | 'completed';
+  date: string;
+  desc: string;
+  completedTasks: number;
+  totalTasks: number;
+  weeks: PlanWeek[];
+}
+
+/** 学习统计 */
+export interface StudyStats {
+  completedTasks: number;
+  studyDays: number;
+  unlockedAchievements: number;
+  totalGoals: number;
+}
