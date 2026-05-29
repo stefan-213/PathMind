@@ -25,7 +25,7 @@ interface AuthState {
 
 export const useAuthStore = create<AuthState>()(
   persist(
-    (set) => ({
+    (set, get) => ({
       user: null,
       token: null,
       isAuthenticated: false,
@@ -122,7 +122,8 @@ export const useAuthStore = create<AuthState>()(
           return;
         }
 
-        set({ isLoading: true });
+        const wasAuthenticated = get().isAuthenticated;
+        set({ isLoading: !wasAuthenticated });
         try {
           const response = await authApi.getCurrentUser();
           const user = response.data;

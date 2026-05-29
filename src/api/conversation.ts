@@ -74,8 +74,8 @@ export const consultation = (data: {
   return post<{
     content?: string;
     message?: string;
-  // }>('/api/agent/Goal', data);
-  }>('/api/agent/consultation', data);
+  }>('/api/agent/goal', data);
+  // }>('/api/agent/consultation', data);
 };
 
 /**
@@ -94,3 +94,14 @@ export const getChatHistory = (data: {
     }[];
   }>('/api/agent/transcript', data);
 };
+/**
+ * 获取预览图
+ */
+// export const getPreviewImage = (data:{
+//   sessionId: string;
+// })=> {
+//   return post<{
+//     content?: string;
+//     message?: string;
+//   }>('/api/agent/plan', data);
+// };

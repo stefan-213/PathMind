@@ -224,7 +224,7 @@ function parseJSONResponse(content: string): {
 // 格式化选项文本（去除 A. B. 等前缀）
 function formatOptionText(option: string): string {
   // 如果选项已经包含前缀，提取纯文本
-  const match = option.match(/^[A-D][.、]\s*(.+)$/);
+  const match = option.match(/^[A-F][.、]\s*(.+)$/);
   return match ? match[1] : option;
 }
 
@@ -374,7 +374,8 @@ export function ConsultPage() {
   const chatScrollRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const navigate = useNavigate();
-  const hasLoadedHistoryRef = useRef<string | null>(null);
+  const loadedHistorySessionIdsRef = useRef<Set<string>>(new Set());
+  const loadingHistorySessionIdsRef = useRef<Set<string>>(new Set());
   const quickSelectLockRef = useRef(false);
 
   // 当前会话
@@ -637,6 +638,10 @@ export function ConsultPage() {
   // 加载会话历史
   const loadSessionHistory = useCallback(async (sessionId: string) => {
     if (!sessionId) return;
+    if (loadedHistorySessionIdsRef.current.has(sessionId)) return;
+    if (loadingHistorySessionIdsRef.current.has(sessionId)) return;
+
+    loadingHistorySessionIdsRef.current.add(sessionId);
     try {
       const res = await getChatHistory({ sessionId });
       // 恢复 consult 数据
@@ -672,27 +677,21 @@ export function ConsultPage() {
           } : s)
         );
       }
+      loadedHistorySessionIdsRef.current.add(sessionId);
     } catch (err) {
       console.error('加载历史记录失败:', err);
+    } finally {
+      loadingHistorySessionIdsRef.current.delete(sessionId);
     }
   }, []);
 
   // 切换会话
-  const handleSwitchSession = useCallback(async (id: string) => {
+  const handleSwitchSession = useCallback((id: string) => {
     if (isWaitingForAI) return;
+    if (id === currentSessionId) return;
     setCurrentSessionId(id);
-    // 等待状态更新后加载历史
-    setTimeout(() => {
-      setSessions(prev => {
-        const session = prev.find((s) => s.id === id);
-        if (session?.sessionId) {
-          loadSessionHistory(session.sessionId);
-        }
-        return prev;
-      });
-    }, 0);
     scrollToBottom();
-  }, [isWaitingForAI, loadSessionHistory, scrollToBottom]);
+  }, [currentSessionId, isWaitingForAI, scrollToBottom]);
 
   // 删除会话
   const handleDeleteSession = useCallback(async (id: string) => {
@@ -798,14 +797,12 @@ export function ConsultPage() {
 
   // 加载会话历史（仅执行一次，且仅当有 sessionId 且无消息时）
   useEffect(() => {
-    if (!currentSession?.sessionId) return;
+    const sessionId = currentSession?.sessionId;
+    if (!sessionId) return;
     if (currentSession.messages.length > 0) return;
-    if (hasLoadedHistoryRef.current === currentSession.sessionId) return;
 
-    hasLoadedHistoryRef.current = currentSession.sessionId;
-    loadSessionHistory(currentSession.sessionId);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [currentSession?.sessionId, currentSessionId]);
+    loadSessionHistory(sessionId);
+  }, [currentSession?.sessionId, currentSession?.messages.length, loadSessionHistory]);
 
   // 输入框高度自适应
   const handleInputHeight = () => {
