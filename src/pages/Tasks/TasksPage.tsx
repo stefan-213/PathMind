@@ -1,9 +1,8 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Header, Footer } from '../../components/layout';
 import { Card, Badge, EmptyState, ResourceSidebar, Spin, type ResourceSidebarItem } from '../../components/common';
 import { getChatSessions } from '../../api/useApi';
-import { getSchedule } from '../../api/tasks';
 import { useScheduleStore } from '../../stores/scheduleStore';
 import { normalizeCopilotSessionMap, type CopilotSessionResource } from '../../utils';
 import type { Schedule, SubSchedule } from '../../types/api';
@@ -286,16 +285,61 @@ const saveLocalSchedules = (schedules: Schedule[]) => {
 
 export function TasksPage() {
   const navigate = useNavigate();
-  const { schedules, setSchedules, setCurrentSchedule, setLoading, clearSchedules } = useScheduleStore();
+  const {
+    schedules,
+    isLoading: isStoreLoading,
+    fetchSchedules,
+    setSchedules,
+    setCurrentSchedule,
+    clearSchedules,
+    toggleTask: storeToggleTask,
+  } = useScheduleStore();
   const [isTaskLoading, setIsTaskLoading] = useState(false);
   const [collapsedStageIds, setCollapsedStageIds] = useState<Set<string>>(() => new Set());
-  const [planTitle, setPlanTitle] = useState('');
+  const [planTitle, setPlanTitle] = useState(() =>
+    localStorage.getItem(PLAN_TITLE_STORAGE_KEY)?.trim() || ''
+  );
   const [sessions, setSessions] = useState<CopilotSessionResource[]>([]);
   const [activeSessionId, setActiveSessionId] = useState<string | null>(null);
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [isSessionListLoading, setIsSessionListLoading] = useState(false);
   const [sessionListError, setSessionListError] = useState<string | null>(null);
 
+  /**
+   * 从后端加载日程数据
+   * 优先使用 sessionId 从后端获取，失败时降级到 localStorage
+   */
+  const loadSchedules = useCallback(async (sessionId?: string) => {
+    if (sessionId) {
+      // 从后端获取
+      await fetchSchedules(sessionId);
+      setPlanTitle(localStorage.getItem(PLAN_TITLE_STORAGE_KEY)?.trim() || '');
+    } else {
+      // 降级: 从 localStorage 读取
+      try {
+        const planDataStr = localStorage.getItem(PLAN_DATA_STORAGE_KEY);
+        if (!planDataStr) {
+          setPlanTitle('');
+          clearSchedules();
+          return;
+        }
+        const localSchedules = normalizePlanData(JSON.parse(planDataStr));
+        if (localSchedules.length === 0) {
+          setPlanTitle('');
+          clearSchedules();
+          return;
+        }
+        setPlanTitle(localStorage.getItem(PLAN_TITLE_STORAGE_KEY)?.trim() || '');
+        setSchedules(localSchedules);
+        setCurrentSchedule(localSchedules[0]);
+      } catch (err) {
+        console.error('读取本地任务数据失败:', err);
+        clearSchedules();
+      }
+    }
+  }, [fetchSchedules, clearSchedules, setCurrentSchedule, setSchedules]);
+
+  // 加载会话列表
   useEffect(() => {
     let isMounted = true;
 
@@ -342,42 +386,17 @@ export function TasksPage() {
     };
   }, []);
 
-  // 当选择会话时，从API加载任务数据
+  // 页面加载时先从 localStorage 读取数据
   useEffect(() => {
-    if (!activeSessionId) return;
+    void loadSchedules(); // 无 sessionId，走 localStorage 降级
+  }, [loadSchedules]);
 
-    const title = sessions.find((s) => s.sessionId === activeSessionId)?.title ?? '';
-    setPlanTitle(title);
-    setLoading(true);
-    clearSchedules();
-
-    getSchedule(activeSessionId)
-      .then((response) => {
-        if (response.success && response.data) {
-          const planData = response.data.schedule ?? response.data.data ?? response.data.content;
-          if (planData) {
-            const apiSchedules = normalizePlanData(Array.isArray(planData) ? planData : [planData]);
-            if (apiSchedules.length > 0) {
-              setSchedules(apiSchedules);
-              setCurrentSchedule(apiSchedules[0]);
-              saveLocalSchedules(apiSchedules);
-              return;
-            }
-          }
-          clearSchedules();
-        } else {
-          console.error('获取任务数据失败:', response.error);
-          clearSchedules();
-        }
-      })
-      .catch((err) => {
-        console.error('获取任务数据异常:', err);
-        clearSchedules();
-      })
-      .finally(() => {
-        setLoading(false);
-      });
-  }, [activeSessionId, sessions, clearSchedules, setCurrentSchedule, setLoading, setSchedules]);
+  // 当 activeSessionId 变化时，尝试从后端加载
+  useEffect(() => {
+    if (activeSessionId) {
+      void loadSchedules(activeSessionId);
+    }
+  }, [activeSessionId, loadSchedules]);
 
   const scheduleSections = schedules.filter(schedule => schedule.subScheduleList.length > 0);
   const allTasks = scheduleSections.reduce<SubSchedule[]>(
@@ -386,32 +405,7 @@ export function TasksPage() {
   );
 
   const toggleTask = (scheduleId: string, taskId: number) => {
-    const targetSchedule = schedules.find(schedule => schedule.scheduleId === scheduleId);
-    const task = targetSchedule?.subScheduleList.find(item => item.id === taskId);
-    if (!targetSchedule || !task || task.id === undefined) return;
-
-    const newStatus = task.status === 1 ? 0 : 1;
-    const nextSchedule = {
-      ...targetSchedule,
-      subScheduleList: targetSchedule.subScheduleList.map(item =>
-        item.id === taskId
-          ? {
-              ...item,
-              status: newStatus,
-              completedAt: newStatus === 1 ? new Date().toISOString() : null,
-            }
-          : item,
-      ),
-    };
-    const nextSchedules = schedules.length > 0
-      ? schedules.map(schedule =>
-          schedule.scheduleId === targetSchedule.scheduleId ? nextSchedule : schedule,
-        )
-      : [nextSchedule];
-
-    setSchedules(nextSchedules);
-    setCurrentSchedule(nextSchedule);
-    saveLocalSchedules(nextSchedules);
+    storeToggleTask(scheduleId, taskId);
   };
 
   const handleToggleStage = (stageId: string) => {
@@ -434,6 +428,11 @@ export function TasksPage() {
 
     if (task.taskId !== undefined) {
       params.set('taskId', String(task.taskId));
+    }
+
+    // 传递 sessionId 以便任务详情页调用后端 API
+    if (activeSessionId) {
+      params.set('sessionId', activeSessionId);
     }
 
     setIsTaskLoading(true);
@@ -473,6 +472,8 @@ export function TasksPage() {
 
   const handleSelectTaskSession = (sessionId: string) => {
     setActiveSessionId(sessionId);
+    // 切换会话时加载对应日程
+    void loadSchedules(sessionId);
   };
 
   const renderSessionSidebar = (fallbackSubtitle: string) => (
@@ -505,9 +506,9 @@ export function TasksPage() {
             <EmptyState
               icon={<i className="fas fa-clipboard-list"></i>}
               title="还没有任务"
-              description="请根据知识图表制定您满意的学习计划"
+              description="先去AI Copilot制定你的学习计划吧"
               action={
-                <Link to="/graph" className="btn btn-primary">
+                <Link to="/consult" className="btn btn-primary">
                   制定计划
                   <div className="arrow-right">
                     <i className="fas fa-arrow-right"></i>

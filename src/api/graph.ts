@@ -4,47 +4,52 @@
  */
 import { post } from './axios';
 
-/** 生成xml图表 */
-export const generatePlanByOption = (data: {
-  agentId: string;
-  sessionId: string;
-  message: string;
-}) => {
-  return post<{
-  sessionId?: string;
-  messageId?: string | null;
-  role?: string;
-  content?: string;
-  message?: string;
-  goal?: string;
-  base?: string;
-}>('/api/agent/group', data);
-};
-
-/** 修改 XML图表 */
-export const updataGroup = (data: {
-  sessionId: string;
-  message: string;
-}) => {
-  return post<{
+type XmlContentResponse = {
   content?: string;
   centent?: string;
   message?: string;
   xml?: string;
   data?: unknown;
   sessionId?: string;
-}>('/api/agent/updataGroup', data);
 };
 
-/** 获取图表记录 */
-export const getXmlGroupBySession = (sessionId: string) => {
-  return post<{
+/**
+ * 图表助手（生成 XML）
+ * 根据用户咨询信息生成 draw.io 图表
+ */
+export const charts = (data: {
+  agentId?: string;
   sessionId?: string;
-  messageId?: string | null;
-  role?: string;
-  content?: string;
   message?: string;
-  goal?: string;
-  base?: string;
-}>('/api/agent/getXml', { sessionId });
+  consultationMsg?: {
+    goal: string;
+    base: string;
+  };
+}) => {
+  return post<{
+    content: string;
+  }>('/api/agent/charts', data);
+};
+
+/**
+ * 保存 XML
+ */
+export const saveXmlFile = (data:{
+  id:string;
+  title:string;
+  xml:string
+}) => {
+  return post<{
+    centent:string;
+  }>('/api/agent/saveXmlFile', data);
+};
+
+/**
+ * 修改 XML（AI 助手修改图表）
+ */
+export const updataGroup = (data:{
+  sessionId:string;
+  message:string;
+}) => {
+  return post<XmlContentResponse>('/api/agent/updataGroup', data);
 };

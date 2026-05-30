@@ -2,7 +2,7 @@
  * 图表渲染组件
  * 使用 react-drawio 嵌入 draw.io
  */
-import { useEffect, useRef, useState } from 'react';
+import { useMemo } from 'react';
 import { DrawIoEmbed } from 'react-drawio';
 import './GraphCanvas.scss';
 
@@ -24,64 +24,22 @@ const getDrawIoBaseUrl = () => {
 
 export function GraphCanvas({ xml, emptyMessage = DEFAULT_EMPTY_MESSAGE }: GraphCanvasProps) {
   const drawIoBaseUrl = getDrawIoBaseUrl();
-  const canvasRef = useRef<HTMLDivElement>(null);
-  const [readyXml, setReadyXml] = useState<string | null>(null);
 
-  useEffect(() => {
-    const canvas = canvasRef.current;
-
-    if (!canvas || !xml) {
-      return;
-    }
-
-    let firstFrameId = 0;
-    let secondFrameId = 0;
-
-    const updateReadyState = () => {
-      const { width, height } = canvas.getBoundingClientRect();
-      if (width > 0 && height > 0) {
-        setReadyXml(xml);
-      }
-    };
-
-    const scheduleReadyCheck = () => {
-      window.cancelAnimationFrame(firstFrameId);
-      window.cancelAnimationFrame(secondFrameId);
-
-      firstFrameId = window.requestAnimationFrame(() => {
-        secondFrameId = window.requestAnimationFrame(updateReadyState);
-      });
-    };
-
-    scheduleReadyCheck();
-
-    if (typeof ResizeObserver === 'undefined') {
-      return () => {
-        window.cancelAnimationFrame(firstFrameId);
-        window.cancelAnimationFrame(secondFrameId);
-      };
-    }
-
-    const resizeObserver = new ResizeObserver(scheduleReadyCheck);
-    resizeObserver.observe(canvas);
-
-    return () => {
-      resizeObserver.disconnect();
-      window.cancelAnimationFrame(firstFrameId);
-      window.cancelAnimationFrame(secondFrameId);
-    };
+  // 使用 XML 内容的哈希作为 key 的一部分，确保 XML 变化时组件重新挂载
+  const drawioKey = useMemo(() => {
+    if (!xml) return 'empty';
+    // 使用简单的方式生成唯一标识
+    const hash = xml.length + '-' + xml.substring(0, 100).replace(/\s/g, '').length;
+    return `drawio-${hash}-${Date.now()}`;
   }, [xml]);
 
-  const drawIoXml = xml ?? '';
-  const shouldRenderDrawIo = Boolean(drawIoXml && readyXml === drawIoXml);
-  const shouldRenderEmptyState = !xml;
-
   return (
-    <div className="graph-canvas" ref={canvasRef}>
-      {shouldRenderDrawIo && (
+    <div className="graph-canvas">
+      {xml ? (
         <DrawIoEmbed
+          key={drawioKey}
           baseUrl={drawIoBaseUrl}
-          xml={drawIoXml}
+          xml={xml}
           urlParameters={{
             ui: 'sketch',
             spin: false,
@@ -98,8 +56,7 @@ export function GraphCanvas({ xml, emptyMessage = DEFAULT_EMPTY_MESSAGE }: Graph
             toolbar: false,
           }}
         />
-      )}
-      {shouldRenderEmptyState && (
+      ) : (
         <div className="empty-graph">
           <i className="fas fa-project-diagram"></i>
           <p>{emptyMessage}</p>

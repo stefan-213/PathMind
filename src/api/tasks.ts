@@ -1,87 +1,63 @@
 /**
  * 学习任务 API 服务
+ * 对接后端 /api/agent/* 接口
  */
-import { post } from './axios';
+import { get, post } from './axios';
+import type { Schedule, ScheduleDTO } from '../types/api';
 
 /**
- * 生成日程表 - creatSchedule接口只返回 code:200, data:"success"
+ * 创建日程表
+ * 对应后端: POST /api/agent/createSchedule
  */
-export const generateSchedule = (data: {
-  sessionId: string;
-}) => {
-  return post<unknown>('/api/agent/createSchedule', data);
+export const createSchedule = (sessionId: string) => {
+  return post<string>('/api/agent/createSchedule', { sessionId });
 };
 
-// import { get, post } from './axios';
-// import type {
-//   Schedule,
-//   CreateScheduleRequest,
-//   UpdateScheduleRequest,
-//   UpdateSubTaskRequest,
-//   UserProgress,
-//   UserTask,
-// } from '../types/api';
-
-// /**
-//  * 创建日程表
-//  */
-// export const createTask = (data: CreateScheduleRequest) => {
-//   return post<void>('/api/schedule/createBatch', data);
-// };
-
-// /**
-//  * 获取日程表列表
-//  */
-// export const getScheduleList = () => {
-//   return get<Schedule[]>('/api/schedule/list');
-// };
-
-// /**
-//  * 获取日程表内容
-//  */
-// export const getScheduleContent = (scheduleId: string) => {
-//   return post<Schedule[]>('/api/schedule/get', { scheduleId });
-// };
-
-// /**
-//  * 更新日程表
-//  */
-// export const updateSchedule = (data: UpdateScheduleRequest) => {
-//   return post<void>('/api/schedule/update', data);
-// };
-
-// /**
-//  * 更新子任务
-//  */
-// export const updateSubTask = (data: UpdateSubTaskRequest) => {
-//   return post<void>('/api/schedule/updateSub', data);
-// };
-
-// /**
-//  * 删除日程表
-//  */
-// export const deleteSchedule = (scheduleId: string) => {
-//   return post<void>('/api/schedule/delete', { scheduleId });
-// };
-
-// export const getSchedule = (params?: { goalId?: string; status?: string }) => {
-//   return get<UserTask[]>('/api/tasks', params);
-// };
-
-// export const getProgress = (params?: { goalId?: string }) => {
-//   return get<UserProgress>('/api/tasks/progress', params);
-// };
-
-// export const updateTask = (id: string, data: Partial<UserTask>) => {
-//   return post<UserTask>('/api/tasks/update', { id, ...data });
-// };
-
-/** 获取任务记录 */
-export const getSchedule = (sessionId: string) => {
-  return post<{
-    sessionId?: string;
-    schedule?: unknown;
-    data?: unknown;
-    content?: unknown;
-  }>('/api/agent/getSchedule', { sessionId });
+/**
+ * 获取日程表列表
+ * 对应后端: POST /api/agent/getSchedule
+ */
+export const getScheduleList = (sessionId: string) => {
+  return post<ScheduleDTO[]>('/api/agent/getSchedule', { sessionId });
 };
+
+/**
+ * 日程任务对话 (学习助手)
+ * 对应后端: POST /api/agent/scheduleChat
+ */
+export const scheduleChat = (sessionId: string, message: string, scheduleId: string) => {
+  return post<{ content: string }>('/api/agent/scheduleChat', {
+    sessionId,
+    message,
+    agentId: scheduleId, // 后端用 agentId 字段传递 scheduleId
+  });
+};
+
+/**
+ * 将后端 ScheduleDTO 转换为前端 Schedule 格式
+ */
+export const convertDTOToSchedule = (dto: ScheduleDTO): Schedule => {
+  return {
+    id: dto.id || 0,
+    scheduleId: String(dto.id || ''),
+    userId: dto.userId || '',
+    title: dto.title || dto.scheduleName || '',
+    time: dto.time || '',
+    content: dto.content || '',
+    status: dto.status === 'completed' || dto.status === '1' ? 1 : 0,
+    subScheduleList: (dto.subSchedules || []).map((sub, index) => ({
+      id: sub.id || index,
+      parentId: dto.id || 0,
+      day: sub.step || `第${index + 1}天`,
+      task: sub.task || '',
+      taskGoal: sub.focus || '',
+      description: null,
+      status: sub.status === 'completed' || sub.status === '1' ? 1 : 0,
+      completedAt: null,
+    })),
+  };
+};
+
+// 兼容旧接口导出
+export const createTask = createSchedule;
+export const getScheduleContent = getScheduleList;

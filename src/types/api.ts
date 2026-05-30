@@ -91,7 +91,35 @@ export interface CreateTasksRequest {
   }[];
 }
 
-// ==================== 日程表相关（新版）====================
+// ==================== 日程表相关（后端 DTO）====================
+
+/** 后端返回的日程子任务 DTO */
+export interface SubScheduleDTO {
+  id?: number;
+  scheduleId?: number;
+  step?: string;
+  task?: string;
+  focus?: string;
+  estimatedTime?: string;
+  status?: string;
+  createTime?: string;
+}
+
+/** 后端返回的日程表 DTO */
+export interface ScheduleDTO {
+  id?: number;
+  scheduleName?: string;
+  userId?: string;
+  sessionId?: string;
+  title?: string;
+  time?: string;
+  content?: string;
+  status?: string;
+  createTime?: string;
+  subSchedules?: SubScheduleDTO[];
+}
+
+// ==================== 日程表相关（前端模型）====================
 
 /** 日程子任务 */
 export interface SubSchedule {

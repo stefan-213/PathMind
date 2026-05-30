@@ -98,7 +98,7 @@ axiosInstance.interceptors.response.use(
 
     // 转换后端响应格式 { code, info, data } -> { success, data, error }
     const backendResponse = response.data;
-    if (backendResponse && 'code' in backendResponse) {
+    if (backendResponse && typeof backendResponse === 'object' && 'code' in backendResponse) {
       const isSuccess = backendResponse.code === '200' || backendResponse.code === 200;
       response.data = {
         success: isSuccess,

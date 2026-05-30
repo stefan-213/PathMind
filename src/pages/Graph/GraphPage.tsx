@@ -9,8 +9,9 @@ import { ResourceSidebar, Spin, type ResourceSidebarItem } from '../../component
 import { GraphCanvas } from './GraphCanvas';
 import { AISidePanel } from './AISidePanel';
 import type { GraphNode } from '../../types/graph';
-import { getXmlGroupBySession,updataGroup,generatePlanByOption } from '../../api/graph';
-import { generateSchedule } from '../../api/tasks';
+import { charts, updataGroup } from '../../api/graph';
+import { createSchedule } from '../../api/tasks';
+import { generatePlanByOption, getXmlGroupBySession } from '../../api/conversation';
 import { getChatSessions } from '../../api/useApi';
 import { useChatStore } from '../../stores/chatStore';
 import { normalizeDrawioXml } from '../../utils/drawioXml';
@@ -23,7 +24,6 @@ const CONSULT_CHART_STORAGE_KEY = 'pathmind_consult_chart';
 const PLAN_DATA_STORAGE_KEY = 'pathmind_plan_data';
 const PLAN_TITLE_STORAGE_KEY = 'pathmind_plan_title';
 const COPILOT_AGENT_ID = '100003';
-const PERSISTED_CHART_RETRY_DELAYS_MS = [0, 200, 500];
 const DEFAULT_GRAPH_EMPTY_MESSAGE = '在Copilot页面输入需求，让 AI 为你生成计划图表';
 const MISSING_FINAL_GRAPH_MESSAGE = '最终方案图表未生成，请回Copilot页面继续完成对话';
 
@@ -52,12 +52,14 @@ type ChartRequestData =
   | {
       type: 'group';
       message: string;
+    }
+  | {
+      type: 'charts';
+      consultationMsg: {
+        goal: string;
+        base: string;
+      };
     };
-
-type LoadPersistedSessionChartOptions = {
-  staleXml?: string;
-  allowStale?: boolean;
-};
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === 'object' && value !== null && !Array.isArray(value);
@@ -366,46 +368,6 @@ const normalizeGeneratedChart = (contentData: unknown): GeneratedChart | null =>
   };
 };
 
-const wait = (durationMs: number) =>
-  new Promise<void>((resolve) => {
-    window.setTimeout(resolve, durationMs);
-  });
-
-const loadPersistedSessionChart = async (
-  sessionId: string,
-  { staleXml = '', allowStale = true }: LoadPersistedSessionChartOptions = {},
-) => {
-  const normalizedStaleXml = staleXml.trim();
-  let lastStaleChart: GeneratedChart | null = null;
-
-  for (const retryDelayMs of PERSISTED_CHART_RETRY_DELAYS_MS) {
-    if (retryDelayMs > 0) {
-      await wait(retryDelayMs);
-    }
-
-    const stableResponse = await getXmlGroupBySession(sessionId);
-    const stableContentData = getChartContent(stableResponse);
-
-    if (isEmptyChartContent(stableContentData)) {
-      continue;
-    }
-
-    const chart = normalizeGeneratedChart(stableContentData);
-
-    if (!chart) {
-      continue;
-    }
-
-    if (!normalizedStaleXml || chart.xml.trim() !== normalizedStaleXml) {
-      return chart;
-    }
-
-    lastStaleChart = chart;
-  }
-
-  return allowStale ? lastStaleChart : null;
-};
-
 const getChartTitle = (chartData: unknown) => {
   if (!isRecord(chartData)) return '';
   const title = isRecord(chartData.consultationMsg)
@@ -438,6 +400,19 @@ const getPlanOptionMessage = (optionId: string) => {
 
 const getChartRequestData = (chartData: unknown): ChartRequestData | null => {
   if (!isRecord(chartData)) return null;
+
+  if (isRecord(chartData.consultationMsg)) {
+    const { goal, base } = chartData.consultationMsg;
+    if (typeof goal !== 'string' || typeof base !== 'string') return null;
+
+    return {
+      type: 'charts',
+      consultationMsg: {
+        goal,
+        base,
+      },
+    };
+  }
 
   if (typeof chartData.optionId === 'string' && chartData.optionId.trim()) {
     return {
@@ -481,17 +456,14 @@ export function GraphPage() {
   const [sessionListError, setSessionListError] = useState<string | null>(null);
 
   const syncPlanStorage = useCallback((title: string, chart: GeneratedChart | null) => {
-    if (Array.isArray(chart?.data)) {
+    // 只在 chart 有 data 时更新 localStorage，不删除已有数据
+    if (Array.isArray(chart?.data) && chart.data.length > 0) {
       localStorage.setItem(PLAN_DATA_STORAGE_KEY, JSON.stringify(chart.data));
-    } else {
-      localStorage.removeItem(PLAN_DATA_STORAGE_KEY);
     }
 
     const normalizedTitle = title.trim();
     if (normalizedTitle) {
       localStorage.setItem(PLAN_TITLE_STORAGE_KEY, normalizedTitle);
-    } else {
-      localStorage.removeItem(PLAN_TITLE_STORAGE_KEY);
     }
   }, []);
 
@@ -563,8 +535,6 @@ export function GraphPage() {
       if (requestId !== latestChartRequestRef.current) return null;
 
       const contentData = getChartContent(response);
-      const responseSessionId = getChartResponseSessionId(response);
-      const resolvedSessionId = responseSessionId || normalizedSessionId;
 
       if (shouldLoadExistingChart && isEmptyChartContent(contentData)) {
         setGraphXml(null);
@@ -577,22 +547,13 @@ export function GraphPage() {
         };
       }
 
-      let chart: GeneratedChart | null = null;
-
-      if (!shouldLoadExistingChart && resolvedSessionId) {
-        try {
-          chart = await loadPersistedSessionChart(resolvedSessionId);
-          if (requestId !== latestChartRequestRef.current) return null;
-        } catch (error) {
-          console.warn('Stable group chart load failed, falling back to group response:', error);
-        }
-      }
-
-      chart = chart ?? normalizeGeneratedChart(contentData);
+      const chart = normalizeGeneratedChart(contentData);
       if (!chart) {
         throw new Error('图表数据格式异常');
       }
 
+      const responseSessionId = getChartResponseSessionId(response);
+      const resolvedSessionId = responseSessionId || normalizedSessionId;
       const normalizedTitle = title.trim() || resolvedSessionId;
 
       setSessions((currentSessions) => {
@@ -761,16 +722,76 @@ export function GraphPage() {
           setActiveSessionId(chartSessionId);
         }
 
-        const result = await fetchAndRenderGroupChart({
-          agentId: chartAgentId || COPILOT_AGENT_ID,
+        if (chartRequestData.type === 'group') {
+          const result = await fetchAndRenderGroupChart({
+            agentId: chartAgentId || COPILOT_AGENT_ID,
+            sessionId: chartSessionId,
+            title: chartTitle,
+            message: chartRequestData.message,
+            loadingText: '正在生成计划图表...',
+          });
+
+          if (!result) {
+            throw new Error('图表生成失败');
+          }
+
+          return;
+        }
+
+        if (chartTitle) {
+          localStorage.setItem(PLAN_TITLE_STORAGE_KEY, chartTitle);
+        }
+
+        localStorage.removeItem(CONSULT_CHART_STORAGE_KEY);
+
+        const res = await charts({
+          consultationMsg: chartRequestData.consultationMsg,
+          agentId: '100004',
           sessionId: chartSessionId,
-          title: chartTitle,
-          message: chartRequestData.type === 'group' ? chartRequestData.message : '',
-          loadingText: '正在生成计划图表...',
         });
 
-        if (!result) {
-          throw new Error('图表生成失败');
+        console.log('【GraphPage】Chart generation response:', res);
+        const contentData = getChartContent(res);
+        console.log('【GraphPage】contentData 类型:', typeof contentData);
+
+        const contentObj = parseChartContent(contentData);
+        console.log('【GraphPage】contentObj keys:', contentObj ? Object.keys(contentObj) : 'null');
+
+        let hasGraphXml = false;
+
+        // 提取 XML 数据
+        if (typeof contentObj?.xml === 'string') {
+          console.log('【GraphPage】成功获取 XML，长度:', contentObj.xml.length);
+          const normalizedXml = normalizeDrawioXml(contentObj.xml);
+
+          if (normalizedXml.ok) {
+            if (normalizedXml.repaired) {
+              console.warn('【GraphPage】XML 格式有误，已自动修复后渲染');
+            }
+            hasGraphXml = true;
+            setGraphXml(normalizedXml.xml);
+            setGraphRenderKey((current) => current + 1);
+            setGraphEmptyMessage(DEFAULT_GRAPH_EMPTY_MESSAGE);
+            setIsChartLoading(false);
+          } else {
+            console.error('【GraphPage】XML 自动修复失败:', normalizedXml.error, normalizedXml.xmlPreview);
+          }
+        } else {
+          console.log('【GraphPage】content 中没有 xml 字段');
+        }
+
+        // 提取 data 数据，传递给 task 页面
+        if (Array.isArray(contentObj?.data)) {
+          console.log('【GraphPage】成功获取 data，长度:', contentObj.data.length);
+          localStorage.setItem(PLAN_DATA_STORAGE_KEY, JSON.stringify(contentObj.data));
+          if (chartTitle) {
+            localStorage.setItem(PLAN_TITLE_STORAGE_KEY, chartTitle);
+          }
+        }
+
+        if (!hasGraphXml) {
+          setChartLoadError('计划图表生成失败，请稍后重试');
+          setIsChartLoading(false);
         }
       } catch (err) {
         console.error('Charts API error:', err);
@@ -814,18 +835,7 @@ export function GraphPage() {
         throw new Error(getFailureMessage(response, '图表修改失败，请稍后重试'));
       }
 
-      let chart: GeneratedChart | null = null;
-
-      try {
-        chart = await loadPersistedSessionChart(normalizedSessionId, {
-          staleXml: graphXml ?? '',
-          allowStale: false,
-        });
-      } catch (error) {
-        console.warn('Stable updated chart load failed, falling back to update response:', error);
-      }
-
-      chart = chart ?? normalizeGeneratedChart(getChartContent(response));
+      const chart = normalizeGeneratedChart(getChartContent(response));
 
       if (!chart) {
         throw new Error('图表数据格式异常');
@@ -862,7 +872,6 @@ export function GraphPage() {
     activeSessionTitle,
     addMessage,
     cacheAndRenderSessionChart,
-    graphXml,
     isAiUpdating,
     isScheduleGenerating,
     setSatisfactionState,
@@ -870,11 +879,10 @@ export function GraphPage() {
 
   const handleGenerateSchedule = useCallback(async () => {
     const normalizedSessionId = activeSessionId?.trim() ?? '';
-    const latestXml = graphXml?.trim() ?? '';
 
     if (isScheduleGenerating) return;
 
-    if (!normalizedSessionId || !latestXml) {
+    if (!normalizedSessionId) {
       addMessage({
         role: 'assistant',
         content: '当前还没有可用于生成日程表的图表，请先生成或选择一个图表。',
@@ -886,32 +894,21 @@ export function GraphPage() {
     setChartLoadError(null);
 
     try {
-      const response = await generateSchedule({
-        sessionId: normalizedSessionId,
-      });
-
-      // creatSchedule接口只返回 code:200, data:"success"，直接跳转tasks页面
-      if (response.success === true && response.data === 'success') {
+      // 检查 localStorage 中是否已有日程数据（图表生成时已保存）
+      const existingData = localStorage.getItem(PLAN_DATA_STORAGE_KEY);
+      if (existingData) {
+        console.log('【GraphPage】使用已保存的日程数据');
         setSatisfactionState('satisfied');
         localStorage.removeItem(CONSULT_CHART_STORAGE_KEY);
         navigate('/tasks');
         return;
       }
 
-      if (isRecord(response) && response.success === false) {
-        throw new Error(getFailureMessage(response, '日程表生成失败，请稍后重试'));
-      }
+      // 如果没有已保存的数据，调用后端 createSchedule 接口
+      const response = await createSchedule(normalizedSessionId);
 
-      const scheduleData = extractScheduleArray(response);
-
-      if (!scheduleData) {
-        throw new Error('日程表数据格式异常');
-      }
-
-      localStorage.setItem(PLAN_DATA_STORAGE_KEY, JSON.stringify(scheduleData));
-
-      if (activeSessionTitle) {
-        localStorage.setItem(PLAN_TITLE_STORAGE_KEY, activeSessionTitle);
+      if (response.success === false) {
+        throw new Error(response.error || '日程表生成失败，请稍后重试');
       }
 
       setSatisfactionState('satisfied');
@@ -933,9 +930,7 @@ export function GraphPage() {
     }
   }, [
     activeSessionId,
-    activeSessionTitle,
     addMessage,
-    graphXml,
     isScheduleGenerating,
     navigate,
     setSatisfactionState,

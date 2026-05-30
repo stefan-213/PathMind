@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import ReactMarkdown from 'react-markdown';
 import { Header } from '../../../components/layout';
+import { scheduleChat } from '../../../api/tasks';
 import type { Schedule, SubSchedule } from '../../../types/api';
 import './TaskDetailPage.scss';
 
@@ -173,7 +174,8 @@ const readLocalSchedules = (): Schedule[] => {
   }
 };
 
-const generateReply = (taskTitle: string, message: string) => {
+/** 本地降级回复 */
+const generateLocalReply = (taskTitle: string, message: string) => {
   const lower = message.toLowerCase();
 
   if (message.includes('拆解') || message.includes('步骤') || lower.includes('step')) {
@@ -204,7 +206,7 @@ const generateReply = (taskTitle: string, message: string) => {
 
 1. 写出你对任务目标的 3 句话理解。
 2. 找到一个最小示例并运行或推演。
-3. 总结“输入、处理、输出”分别是什么。
+3. 总结"输入、处理、输出"分别是什么。
 4. 写下一个还没搞懂的问题，下一轮重点解决。`;
   }
 
@@ -234,7 +236,24 @@ export function TaskDetailPage() {
   const taskParam = searchParams.get('task') || '';
   const taskIdParam = searchParams.get('taskId');
   const scheduleIdParam = searchParams.get('schedule');
+  const sessionIdParam = searchParams.get('sessionId');
   const messagesInnerRef = useRef<HTMLDivElement>(null);
+
+  // 从 URL 参数或 localStorage 获取 sessionId
+  const sessionId = useMemo(() => {
+    if (sessionIdParam) return sessionIdParam;
+    // 尝试从 Copilot 会话中获取
+    const consultData = localStorage.getItem('pathmind_consult_chart');
+    if (consultData) {
+      try {
+        const parsed = JSON.parse(consultData);
+        return parsed.sessionId || null;
+      } catch {
+        // ignore
+      }
+    }
+    return null;
+  }, [sessionIdParam]);
 
   const schedules = useMemo(() => readLocalSchedules(), []);
   const currentSchedule = useMemo(() => {
@@ -274,6 +293,9 @@ export function TaskDetailPage() {
     scrollToBottom();
   }, [messages, scrollToBottom]);
 
+  /**
+   * 发送消息 - 优先调用后端 API，失败时降级到本地回复
+   */
   const sendMessage = useCallback(async (message: string) => {
     const text = message.trim();
     if (!text || isTyping) return;
@@ -285,18 +307,39 @@ export function TaskDetailPage() {
     ]);
     setIsTyping(true);
 
-    await new Promise(resolve => setTimeout(resolve, 500));
+    try {
+      // 优先调用后端 scheduleChat API
+      if (sessionId && currentTask?.id) {
+        const response = await scheduleChat(sessionId, text, String(currentTask.id));
+        if (response.success && response.data?.content) {
+          // 清理 think 标签
+          const content = response.data.content
+            .replace(/<think>[\s\S]*?<\/think>/g, '')
+            .trim();
+          setMessages(prev => [
+            ...prev,
+            { role: 'assistant', content, timestamp: Date.now() },
+          ]);
+          setIsTyping(false);
+          return;
+        }
+      }
+    } catch (error) {
+      console.warn('调用后端 API 失败，使用本地回复:', error);
+    }
 
+    // 降级: 使用本地回复
+    await new Promise(resolve => setTimeout(resolve, 500));
     setMessages(prev => [
       ...prev,
       {
         role: 'assistant',
-        content: generateReply(taskTitle, text),
+        content: generateLocalReply(taskTitle, text),
         timestamp: Date.now(),
       },
     ]);
     setIsTyping(false);
-  }, [isTyping, taskTitle]);
+  }, [isTyping, taskTitle, sessionId, currentTask]);
 
   const handleQuickOption = (option: string) => {
     void sendMessage(option);
