@@ -43,6 +43,7 @@ interface Session {
 
 // ---------- 常量 ----------
 const AGENT_ID = '100003';
+const TRANSCRIPT_AGENT_ID = '100003';
 
 // ---------- 工具函数 ----------
 function generateId(): string {
@@ -940,7 +941,7 @@ export function ConsultPage() {
 
     loadingHistorySessionIdsRef.current.add(sessionId);
     try {
-      const res = await getChatHistory({ sessionId });
+      const res = await getChatHistory({ sessionId, agentId: TRANSCRIPT_AGENT_ID });
       // 恢复 consult 数据
       const savedConsult = sessionStorage.getItem(`pathmind_consult_data_${sessionId}`);
       const consultData = savedConsult ? JSON.parse(savedConsult) : {};

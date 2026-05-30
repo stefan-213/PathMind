@@ -6,6 +6,7 @@ import { get, post } from './axios';
 import type {
   Agent
 } from '../types/api';
+const DEFAULT_TRANSCRIPT_AGENT_ID = '100003';
 
 // ==================== 智能体相关 ====================
 
@@ -65,7 +66,13 @@ export const consultation = (data: {
 /** 获取会话记录 */
 export const getChatHistory = (data: {
   sessionId: string;
+  agentId?: string;
 }) => {
+  const requestData = {
+    sessionId: data.sessionId,
+    agentId: data.agentId ?? DEFAULT_TRANSCRIPT_AGENT_ID,
+  };
+
   return post<{
     code: string;
     info: string;
@@ -74,5 +81,5 @@ export const getChatHistory = (data: {
       role: 'user' | 'model';
       content: string;
     }[];
-  }>('/api/agent/transcript', data);
+  }>('/api/agent/transcript', requestData);
 };
