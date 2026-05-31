@@ -83,3 +83,25 @@ export const getChatHistory = (data: {
     }[];
   }>('/api/agent/transcript', requestData);
 };
+
+/** 生成图表计划 */
+export const generatePlanByOption = (data: {
+  agentId: string;
+  sessionId: string;
+  message?: string;
+}) => {
+  return post<{
+    content: string;
+    sessionId?: string;
+  }>('/api/agent/charts', data);
+};
+
+/** 获取会话的图表 XML */
+export const getXmlGroupBySession = (sessionId: string) => {
+  return post<{
+    content?: string;
+    centent?: string;
+    xml?: string;
+    sessionId?: string;
+  }>('/api/agent/getXml', { sessionId });
+};

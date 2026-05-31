@@ -438,7 +438,6 @@ export function GraphPage() {
   // AI 生成图表 XML 数据
   // const graphXml = mockGraphXml;
   const [graphXml, setGraphXml] = useState<string | null>(null);
-  const [graphRenderKey, setGraphRenderKey] = useState(0);
   const [graphEmptyMessage, setGraphEmptyMessage] = useState(DEFAULT_GRAPH_EMPTY_MESSAGE);
   const [isChartLoading, setIsChartLoading] = useState(() =>
     Boolean(localStorage.getItem(CONSULT_CHART_STORAGE_KEY))
@@ -477,7 +476,6 @@ export function GraphPage() {
       [sessionId]: chart,
     }));
     setGraphXml(chart.xml);
-    setGraphRenderKey((current) => current + 1);
     setGraphEmptyMessage(DEFAULT_GRAPH_EMPTY_MESSAGE);
     setChartLoadError(null);
     setSelectedNode(null);
@@ -489,7 +487,6 @@ export function GraphPage() {
     if (!cachedChart) return false;
 
     setGraphXml(cachedChart.xml);
-    setGraphRenderKey((current) => current + 1);
     setGraphEmptyMessage(DEFAULT_GRAPH_EMPTY_MESSAGE);
     setSelectedNode(null);
     setChartLoadError(null);
@@ -735,6 +732,8 @@ export function GraphPage() {
             throw new Error('图表生成失败');
           }
 
+          // group 路径成功后清除 consult chart key，避免刷新时重复触发生成
+          localStorage.removeItem(CONSULT_CHART_STORAGE_KEY);
           return;
         }
 
@@ -770,7 +769,6 @@ export function GraphPage() {
             }
             hasGraphXml = true;
             setGraphXml(normalizedXml.xml);
-            setGraphRenderKey((current) => current + 1);
             setGraphEmptyMessage(DEFAULT_GRAPH_EMPTY_MESSAGE);
             setIsChartLoading(false);
           } else {
@@ -797,8 +795,9 @@ export function GraphPage() {
         console.error('Charts API error:', err);
         setChartLoadError('计划图表加载失败，请稍后重试');
         setIsChartLoading(false);
+        // 失败时不清除 consult_chart 数据，以便重试
       } finally {
-        localStorage.removeItem(CONSULT_CHART_STORAGE_KEY);
+        // 只在图表成功生成后清除（成功路径已单独 removeItem）
       }
     };
 
@@ -1028,9 +1027,9 @@ export function GraphPage() {
               </button>
             )} */}
 
-            {/* 图表渲染 */}
+            {/* 图表渲染 — 仅在 sessionId 变化时重挂载，避免 graphRenderKey 频繁触发 iframe 重建导致首次渲染失败 */}
             <GraphCanvas
-              key={`${activeSessionId ?? 'graph-canvas'}-${graphRenderKey}`}
+              key={activeSessionId ?? 'graph-canvas'}
               xml={graphXml}
               emptyMessage={graphEmptyMessage}
             />

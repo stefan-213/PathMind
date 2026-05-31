@@ -147,6 +147,7 @@ export interface Schedule {
   id: number;
   scheduleId: string;
   userId: string;
+  scheduleName?: string;
   title: string;
   time: string;
   content: string;

@@ -279,15 +279,10 @@ const normalizePlanData = (planData: unknown): Schedule[] => {
     .filter((schedule): schedule is Schedule => Boolean(schedule));
 };
 
-const saveLocalSchedules = (schedules: Schedule[]) => {
-  localStorage.setItem(PLAN_DATA_STORAGE_KEY, JSON.stringify(schedules));
-};
-
 export function TasksPage() {
   const navigate = useNavigate();
   const {
     schedules,
-    isLoading: isStoreLoading,
     fetchSchedules,
     setSchedules,
     setCurrentSchedule,
@@ -386,15 +381,13 @@ export function TasksPage() {
     };
   }, []);
 
-  // 页面加载时先从 localStorage 读取数据
-  useEffect(() => {
-    void loadSchedules(); // 无 sessionId，走 localStorage 降级
-  }, [loadSchedules]);
-
-  // 当 activeSessionId 变化时，尝试从后端加载
+  // 统一加载逻辑：优先使用 activeSessionId 从后端加载，否则降级到 localStorage
+  // 避免两个 useEffect 并发调用 loadSchedules 产生竞态条件
   useEffect(() => {
     if (activeSessionId) {
       void loadSchedules(activeSessionId);
+    } else {
+      void loadSchedules();
     }
   }, [activeSessionId, loadSchedules]);
 
@@ -436,9 +429,7 @@ export function TasksPage() {
     }
 
     setIsTaskLoading(true);
-    setTimeout(() => {
-      navigate(`/task-detail?${params.toString()}`);
-    }, 300);
+    navigate(`/task-detail?${params.toString()}`);
   };
 
   const handleClearAll = () => {
@@ -584,6 +575,7 @@ export function TasksPage() {
                             type="checkbox"
                             checked={task.status === 1}
                             disabled={task.taskId === undefined}
+                            aria-label={`标记「${task.taskTitle}」为${task.status === 1 ? '未完成' : '已完成'}`}
                             onChange={() => {
                               if (task.taskId !== undefined) {
                                 toggleTask(task.scheduleId, task.taskId);

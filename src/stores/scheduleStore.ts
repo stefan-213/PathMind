@@ -56,6 +56,11 @@ export const useScheduleStore = create<ScheduleStore>((set, get) => ({
         isLoading: false,
       });
       localStorage.setItem('pathmind_plan_data', JSON.stringify(backendSchedules));
+      // 用后端返回的 scheduleName 更新标题（修复 option_1 等占位符问题）
+      const scheduleName = backendSchedules[0]?.scheduleName?.trim();
+      if (scheduleName) {
+        localStorage.setItem('pathmind_plan_title', scheduleName);
+      }
       return;
     }
 

@@ -839,7 +839,11 @@ export function ConsultPage() {
       currentStep: 'RESULT',
       quickOptions: [],
     });
-    openGraphFromConsultData({ optionId });
+    openGraphFromConsultData({
+      optionId,
+      goal: currentSession.consultationGoal,
+      base: currentSession.consultationBase,
+    });
   }, [
     currentSession,
     isWaitingForAI,

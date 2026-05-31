@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import ReactMarkdown from 'react-markdown';
 import { Header } from '../../../components/layout';
-import { scheduleChat } from '../../../api/tasks';
+import { scheduleChat, getScheduleList, convertDTOToSchedule } from '../../../api/tasks';
 import type { Schedule, SubSchedule } from '../../../types/api';
 import './TaskDetailPage.scss';
 
@@ -256,9 +256,32 @@ export function TaskDetailPage() {
   }, [sessionIdParam]);
 
   const schedules = useMemo(() => readLocalSchedules(), []);
+
+  // 当有 sessionId 时，尝试从后端获取数据覆盖 localStorage 的数据
+  const [backendSchedules, setBackendSchedules] = useState<Schedule[]>([]);
+  useEffect(() => {
+    if (!sessionId) return;
+    let isMounted = true;
+    const fetchBackend = async () => {
+      try {
+        const response = await getScheduleList(sessionId);
+        const dtoList = response.data || [];
+        if (dtoList.length > 0 && isMounted) {
+          setBackendSchedules(dtoList.map(convertDTOToSchedule));
+        }
+      } catch {
+        // 降级到 localStorage 数据
+      }
+    };
+    void fetchBackend();
+    return () => { isMounted = false; };
+  }, [sessionId]);
+
+  // 合并后端数据和本地数据，优先后端
+  const mergedSchedules = backendSchedules.length > 0 ? backendSchedules : schedules;
   const currentSchedule = useMemo(() => {
-    return schedules.find(schedule => schedule.scheduleId === scheduleIdParam) || schedules[0] || null;
-  }, [scheduleIdParam, schedules]);
+    return mergedSchedules.find(schedule => schedule.scheduleId === scheduleIdParam) || mergedSchedules[0] || null;
+  }, [scheduleIdParam, mergedSchedules]);
 
   const currentTask = useMemo(() => {
     const taskId = taskIdParam ? Number(taskIdParam) : NaN;

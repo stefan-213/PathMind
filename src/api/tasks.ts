@@ -2,7 +2,7 @@
  * 学习任务 API 服务
  * 对接后端 /api/agent/* 接口
  */
-import { get, post } from './axios';
+import { post } from './axios';
 import type { Schedule, ScheduleDTO } from '../types/api';
 
 /**
@@ -41,13 +41,14 @@ export const convertDTOToSchedule = (dto: ScheduleDTO): Schedule => {
     id: dto.id || 0,
     scheduleId: String(dto.id || ''),
     userId: dto.userId || '',
+    scheduleName: dto.scheduleName || '',
     title: dto.title || dto.scheduleName || '',
     time: dto.time || '',
     content: dto.content || '',
     status: dto.status === 'completed' || dto.status === '1' ? 1 : 0,
     subScheduleList: (dto.subSchedules || []).map((sub, index) => ({
       id: sub.id || index,
-      parentId: dto.id || 0,
+      parentId: sub.scheduleId || dto.id || 0,
       day: sub.step || `第${index + 1}天`,
       task: sub.task || '',
       taskGoal: sub.focus || '',
