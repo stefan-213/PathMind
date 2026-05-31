@@ -170,7 +170,12 @@ export const useAuthStore = create<AuthState>()(
       changePassword: async (oldPassword: string, newPassword: string) => {
         set({ isLoading: true, error: null });
         try {
-          await authApi.changePassword(oldPassword, newPassword);
+          const result = await authApi.changePassword(oldPassword, newPassword);
+          if (!result.success) {
+            const message = result.error || '修改密码失败';
+            set({ error: message, isLoading: false });
+            throw new Error(message);
+          }
           set({ isLoading: false });
         } catch (err) {
           const message = err instanceof Error ? err.message : '修改密码失败';

@@ -5,6 +5,7 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuthStore } from '../../stores/authStore';
+import { changePassword as changePasswordApi } from '../../api/auth';
 import { useProfileStore, useProfileLoading } from '../../stores/profileStore';
 import { Header, Footer } from '../../components/layout';
 import { Card, Badge, Spin } from '../../components/common';
@@ -21,7 +22,7 @@ const isValidEmail = (email: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)
 
 // ==================== 组件 ====================
 export function ProfilePage() {
-  const { user, updateUser, changePassword } = useAuthStore();
+  const { user, updateUser } = useAuthStore();
   const profileLoading = useProfileLoading();
   const {
     plans,
@@ -173,7 +174,11 @@ export function ProfilePage() {
     }
 
     try {
-      await changePassword(passwordForm.oldPassword, passwordForm.newPassword);
+      const result = await changePasswordApi(passwordForm.oldPassword, passwordForm.newPassword);
+      if (!result.success) {
+        setPasswordError(result.error || '修改密码失败');
+        return;
+      }
       handleClosePasswordModal();
       showToast('success', '密码修改成功！');
     } catch (err) {

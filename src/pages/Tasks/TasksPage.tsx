@@ -136,7 +136,7 @@ const createStageViewModel = (schedule: Schedule, stageIndex: number): StageView
   const stageTitle = getStageTitle(schedule, stageIndex);
 
   return {
-    id: schedule.scheduleId,
+    id: `${schedule.scheduleId}-${stageIndex}`,
     title: stageTitle,
     tasks: schedule.subScheduleList.map((task, taskIndex) => ({
       id: task.id ?? `${schedule.scheduleId}-${taskIndex}`,

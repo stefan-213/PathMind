@@ -52,7 +52,7 @@ export function GraphCanvas({ xml, emptyMessage = DEFAULT_EMPTY_MESSAGE }: Graph
         xml,
         autosave: false,
       });
-      iframe.contentWindow.postMessage(loadMsg, '*');
+      iframe.contentWindow.postMessage(loadMsg, drawIoBaseUrl);
     };
 
     // 等待 iframe 加载 draw.io 后发送 XML（多重延迟确保可靠性）
