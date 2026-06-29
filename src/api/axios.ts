@@ -193,4 +193,36 @@ export const del = async <T = unknown>(
   return res.data;
 };
 
+/**
+ * 可取消请求的封装
+ */
+export interface CancellableRequest<T> {
+  promise: Promise<ApiResponse<T>>;
+  cancel: (reason?: string) => void;
+}
+
+export const cancellableGet = <T = unknown>(
+  url: string,
+  params?: AxiosRequestConfig['params'],
+  config?: AxiosRequestConfig,
+): CancellableRequest<T> => {
+  const controller = new AbortController();
+  return {
+    promise: axiosInstance.get<ApiResponse<T>>(url, { ...config, params, signal: controller.signal }).then(res => res.data),
+    cancel: (reason?: string) => controller.abort(reason),
+  };
+};
+
+export const cancellablePost = <T = unknown>(
+  url: string,
+  data?: unknown,
+  config?: AxiosRequestConfig,
+): CancellableRequest<T> => {
+  const controller = new AbortController();
+  return {
+    promise: axiosInstance.post<ApiResponse<T>>(url, data, { ...config, signal: controller.signal }).then(res => res.data),
+    cancel: (reason?: string) => controller.abort(reason),
+  };
+};
+
 export default axiosInstance;
