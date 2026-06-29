@@ -10,6 +10,7 @@ import { Header } from '../../components/layout/Header';
 import { conversationApi, deleteChatSession, getChatSessions } from '../../api/useApi';
 import { getChatHistory } from '../../api/conversation';
 import type { PlanComparisonResponse, PlanOption } from '../../types/api';
+import { useSessionStore } from '../../stores/sessionStore';
 import './ConsultPage.scss';
 
 // ---------- 类型定义 ----------
@@ -805,6 +806,17 @@ export function ConsultPage() {
 
   const openGraphFromConsultData = useCallback((payload: OpenGraphPayload) => {
     if (!currentSession?.agentId || !currentSession?.sessionId) return;
+
+    // 写入 sessionStore，Graph/Tasks 直接读取
+    useSessionStore.getState().setCurrentSession(
+      currentSession.sessionId,
+      currentSession.agentId,
+      payload.optionId
+        ? { optionId: payload.optionId }
+        : payload.goal && payload.base
+          ? { goal: payload.goal, base: payload.base }
+          : undefined
+    );
 
     const sessionData = {
       agentId: currentSession.agentId,
