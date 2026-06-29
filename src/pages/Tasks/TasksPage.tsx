@@ -6,7 +6,8 @@ import { getChatSessions } from '../../api/useApi';
 import { useScheduleStore } from '../../stores/scheduleStore';
 import { useSessionStore } from '../../stores/sessionStore';
 import { normalizeCopilotSessionMap, type CopilotSessionResource } from '../../utils';
-import { AGENT_IDS, STORAGE_KEYS } from '../../constants';
+import { AGENT_IDS } from '../../constants';
+import { pathmindStorage } from '../../utils/storage';
 import type { Schedule, SubSchedule } from '../../types/api';
 import './TasksPage.scss';
 
@@ -291,7 +292,7 @@ export function TasksPage() {
   const [isTaskLoading, setIsTaskLoading] = useState(false);
   const [collapsedStageIds, setCollapsedStageIds] = useState<Set<string>>(() => new Set());
   const [planTitle, setPlanTitle] = useState(() =>
-    localStorage.getItem(STORAGE_KEYS.PLAN_TITLE)?.trim() || ''
+    pathmindStorage.plan.loadTitle()?.trim() || ''
   );
   const [sessions, setSessions] = useState<CopilotSessionResource[]>([]);
   const [activeSessionId, setActiveSessionId] = useState<string | null>(null);
@@ -308,23 +309,17 @@ export function TasksPage() {
     if (sessionId) {
       // 从后端获取
       await fetchSchedules(sessionId);
-      setPlanTitle(localStorage.getItem(STORAGE_KEYS.PLAN_TITLE)?.trim() || '');
+      setPlanTitle(pathmindStorage.plan.loadTitle()?.trim() || '');
     } else {
       // 降级: 从 localStorage 读取
       try {
-        const planDataStr = localStorage.getItem(STORAGE_KEYS.PLAN_DATA);
-        if (!planDataStr) {
+        const localSchedules = pathmindStorage.plan.load();
+        if (!localSchedules || localSchedules.length === 0) {
           setPlanTitle('');
           clearSchedules();
           return;
         }
-        const localSchedules = normalizePlanData(JSON.parse(planDataStr));
-        if (localSchedules.length === 0) {
-          setPlanTitle('');
-          clearSchedules();
-          return;
-        }
-        setPlanTitle(localStorage.getItem(STORAGE_KEYS.PLAN_TITLE)?.trim() || '');
+        setPlanTitle(pathmindStorage.plan.loadTitle()?.trim() || '');
         setSchedules(localSchedules);
         setCurrentSchedule(localSchedules[0]);
       } catch (err) {
@@ -436,8 +431,7 @@ export function TasksPage() {
 
   const handleClearAll = () => {
     if (confirm('确定要删除这个日程表吗？')) {
-      localStorage.removeItem(STORAGE_KEYS.PLAN_DATA);
-      localStorage.removeItem(STORAGE_KEYS.PLAN_TITLE);
+      pathmindStorage.plan.clear();
       setPlanTitle('');
       clearSchedules();
     }

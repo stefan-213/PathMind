@@ -1,4 +1,47 @@
 import type { UserProfile, Task, UserProgress } from '../types/copilot';
+import { STORAGE_KEYS as PATHMIND_KEYS } from '../constants';
+
+// ============================================================
+// PathMind Storage（Consult/Graph/Tasks 页面用）
+// ============================================================
+import type { Schedule } from '../types/api';
+
+export interface ConsultChartData {
+  agentId: string;
+  sessionId: string;
+  optionId?: string;
+  consultationMsg?: {
+    goal: string;
+    base: string;
+  };
+}
+
+export const pathmindStorage = {
+  consult: {
+    save: (data: ConsultChartData): void =>
+      localStorage.setItem(PATHMIND_KEYS.CONSULT_CHART, JSON.stringify(data)),
+    load: (): ConsultChartData | null => {
+      const raw = localStorage.getItem(PATHMIND_KEYS.CONSULT_CHART);
+      return raw ? JSON.parse(raw) : null;
+    },
+    clear: (): void => localStorage.removeItem(PATHMIND_KEYS.CONSULT_CHART),
+  },
+  plan: {
+    save: (schedules: Schedule[]): void =>
+      localStorage.setItem(PATHMIND_KEYS.PLAN_DATA, JSON.stringify(schedules)),
+    load: (): Schedule[] => {
+      const raw = localStorage.getItem(PATHMIND_KEYS.PLAN_DATA);
+      return raw ? JSON.parse(raw) : [];
+    },
+    saveTitle: (title: string): void =>
+      localStorage.setItem(PATHMIND_KEYS.PLAN_TITLE, title),
+    loadTitle: (): string => localStorage.getItem(PATHMIND_KEYS.PLAN_TITLE) || '',
+    clear: (): void => {
+      localStorage.removeItem(PATHMIND_KEYS.PLAN_DATA);
+      localStorage.removeItem(PATHMIND_KEYS.PLAN_TITLE);
+    },
+  },
+};
 
 const STORAGE_KEYS = {
   USER_GOAL: 'zaplink_user_goal',

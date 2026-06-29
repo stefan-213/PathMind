@@ -9,6 +9,7 @@ import { ResourceSidebar, Spin, type ResourceSidebarItem } from '../../component
 import { GraphCanvas } from './GraphCanvas';
 import { AISidePanel } from './AISidePanel';
 import type { GraphNode } from '../../types/graph';
+import type { Schedule } from '../../types/api';
 import { charts, updataGroup } from '../../api/graph';
 import { createSchedule } from '../../api/tasks';
 import { generatePlanByOption, getXmlGroupBySession } from '../../api/conversation';
@@ -17,7 +18,8 @@ import { useChatStore } from '../../stores/chatStore';
 import { useSessionStore } from '../../stores/sessionStore';
 import { normalizeDrawioXml } from '../../utils/drawioXml';
 import { normalizeCopilotSessionMap, type CopilotSessionResource } from '../../utils';
-import { AGENT_IDS, STORAGE_KEYS } from '../../constants';
+import { AGENT_IDS } from '../../constants';
+import { pathmindStorage } from '../../utils/storage';
 // import { conversationApi } from '../../api/useApi';
 // import { mockGraphXml } from '../../api/mock';
 import './GraphPage.scss';
@@ -438,7 +440,7 @@ export function GraphPage() {
   const [graphXml, setGraphXml] = useState<string | null>(null);
   const [graphEmptyMessage, setGraphEmptyMessage] = useState(DEFAULT_GRAPH_EMPTY_MESSAGE);
   const [isChartLoading, setIsChartLoading] = useState(() =>
-    Boolean(localStorage.getItem(STORAGE_KEYS.CONSULT_CHART))
+    Boolean(pathmindStorage.consult.load())
   );
   const [chartLoadingText, setChartLoadingText] = useState('正在生成计划图表...');
   const [chartLoadError, setChartLoadError] = useState<string | null>(null);
@@ -456,12 +458,12 @@ export function GraphPage() {
   const syncPlanStorage = useCallback((title: string, chart: GeneratedChart | null) => {
     // 只在 chart 有 data 时更新 localStorage，不删除已有数据
     if (Array.isArray(chart?.data) && chart.data.length > 0) {
-      localStorage.setItem(STORAGE_KEYS.PLAN_DATA, JSON.stringify(chart.data));
+      pathmindStorage.plan.save(chart.data as Schedule[]);
     }
 
     const normalizedTitle = title.trim();
     if (normalizedTitle) {
-      localStorage.setItem(STORAGE_KEYS.PLAN_TITLE, normalizedTitle);
+      pathmindStorage.plan.saveTitle(normalizedTitle);
     }
   }, []);
 
@@ -744,7 +746,7 @@ export function GraphPage() {
             }
 
             if (Array.isArray(contentObj?.data)) {
-              localStorage.setItem(STORAGE_KEYS.PLAN_DATA, JSON.stringify(contentObj.data));
+              pathmindStorage.plan.save(contentObj.data as Schedule[]);
             }
 
             // 清理 sessionStore
@@ -784,8 +786,8 @@ export function GraphPage() {
     }
 
     // 降级：从 localStorage 读取
-    const chartDataStr = localStorage.getItem(STORAGE_KEYS.CONSULT_CHART);
-    if (!chartDataStr || hasRequestedChartRef.current) return;
+    const chartData = pathmindStorage.consult.load();
+    if (!chartData || hasRequestedChartRef.current) return;
     hasRequestedChartRef.current = true;
 
     const loadGeneratedChart = async () => {
@@ -795,7 +797,6 @@ export function GraphPage() {
       setGraphEmptyMessage(DEFAULT_GRAPH_EMPTY_MESSAGE);
 
       try {
-        const chartData = JSON.parse(chartDataStr);
         console.log('【GraphPage】chartData:', chartData);
         const chartTitle = getChartTitle(chartData);
         const chartSessionId = getChartSessionId(chartData);
@@ -824,15 +825,15 @@ export function GraphPage() {
           }
 
           // group 路径成功后清除 consult chart key，避免刷新时重复触发生成
-          localStorage.removeItem(STORAGE_KEYS.CONSULT_CHART);
+          pathmindStorage.consult.clear();
           return;
         }
 
         if (chartTitle) {
-          localStorage.setItem(STORAGE_KEYS.PLAN_TITLE, chartTitle);
+          pathmindStorage.plan.saveTitle(chartTitle);
         }
 
-        localStorage.removeItem(STORAGE_KEYS.CONSULT_CHART);
+        pathmindStorage.consult.clear();
 
         const res = await charts({
           consultationMsg: chartRequestData.consultationMsg,
@@ -872,9 +873,9 @@ export function GraphPage() {
         // 提取 data 数据，传递给 task 页面
         if (Array.isArray(contentObj?.data)) {
           console.log('【GraphPage】成功获取 data，长度:', contentObj.data.length);
-          localStorage.setItem(STORAGE_KEYS.PLAN_DATA, JSON.stringify(contentObj.data));
+          pathmindStorage.plan.save(contentObj.data as Schedule[]);
           if (chartTitle) {
-            localStorage.setItem(STORAGE_KEYS.PLAN_TITLE, chartTitle);
+            pathmindStorage.plan.saveTitle(chartTitle);
           }
         }
 
@@ -982,11 +983,11 @@ export function GraphPage() {
 
     try {
       // 检查 localStorage 中是否已有日程数据（图表生成时已保存）
-      const existingData = localStorage.getItem(STORAGE_KEYS.PLAN_DATA);
+      const existingData = pathmindStorage.plan.load();
       if (existingData) {
         console.log('【GraphPage】使用已保存的日程数据');
         setSatisfactionState('satisfied');
-        localStorage.removeItem(STORAGE_KEYS.CONSULT_CHART);
+        pathmindStorage.consult.clear();
         navigate('/tasks');
         return;
       }
@@ -999,7 +1000,7 @@ export function GraphPage() {
       }
 
       setSatisfactionState('satisfied');
-      localStorage.removeItem(STORAGE_KEYS.CONSULT_CHART);
+      pathmindStorage.consult.clear();
       navigate('/tasks');
     } catch (error) {
       console.error('Generate schedule failed:', error);
@@ -1048,7 +1049,7 @@ export function GraphPage() {
   useEffect(() => {
     if (hasAutoLoadedInitialSessionRef.current) return;
     if (!activeSessionId || graphXml || isChartLoading) return;
-    if (localStorage.getItem(STORAGE_KEYS.CONSULT_CHART)) return;
+    if (pathmindStorage.consult.load()) return;
 
     hasAutoLoadedInitialSessionRef.current = true;
     handleSelectGraphSession(activeSessionId);

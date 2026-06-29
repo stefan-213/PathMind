@@ -3,7 +3,7 @@ import { Link, useSearchParams } from 'react-router-dom';
 import ReactMarkdown from 'react-markdown';
 import { Header } from '../../../components/layout';
 import { scheduleChat, getScheduleList, convertDTOToSchedule } from '../../../api/tasks';
-import { STORAGE_KEYS } from '../../../constants';
+import { pathmindStorage } from '../../../utils/storage';
 import type { Schedule, SubSchedule } from '../../../types/api';
 import './TaskDetailPage.scss';
 
@@ -130,7 +130,7 @@ const normalizeTask = (
 };
 
 const readLocalSchedules = (): Schedule[] => {
-  const planDataStr = localStorage.getItem(STORAGE_KEYS.PLAN_DATA);
+  const planDataStr = localStorage.getItem('pathmind_plan_data');
   if (!planDataStr) return [];
 
   try {
@@ -242,14 +242,9 @@ export function TaskDetailPage() {
   const sessionId = useMemo(() => {
     if (sessionIdParam) return sessionIdParam;
     // 尝试从 Copilot 会话中获取
-    const consultData = localStorage.getItem(STORAGE_KEYS.CONSULT_CHART);
+    const consultData = pathmindStorage.consult.load();
     if (consultData) {
-      try {
-        const parsed = JSON.parse(consultData);
-        return parsed.sessionId || null;
-      } catch {
-        // ignore
-      }
+      return consultData.sessionId || null;
     }
     return null;
   }, [sessionIdParam]);
