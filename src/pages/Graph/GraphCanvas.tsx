@@ -55,16 +55,46 @@ export function GraphCanvas({ xml, emptyMessage = DEFAULT_EMPTY_MESSAGE }: Graph
       iframe.contentWindow.postMessage(loadMsg, drawIoBaseUrl);
     };
 
-    // 等待 iframe 加载 draw.io 后发送 XML（多重延迟确保可靠性）
-    const t1 = setTimeout(sendXmlToIframe, 2000);
-    const t2 = setTimeout(sendXmlToIframe, 5000);
-    const t3 = setTimeout(sendXmlToIframe, 8000);
-    return () => {
-      clearTimeout(t1);
-      clearTimeout(t2);
-      clearTimeout(t3);
+    const iframe = document.querySelector('.graph-canvas iframe') as HTMLIFrameElement;
+    if (!iframe) return;
+
+    let sent = false;
+    const trySend = () => {
+      if (sent) return;
+      // 检查 iframe 是否已加载完毕
+      if (iframe.contentDocument?.readyState === 'complete') {
+        sent = true;
+        sendXmlToIframe();
+        return;
+      }
     };
-  }, [xml, drawioKey]);
+
+    // 兜底：如果 iframe 已完成加载，直接发送
+    trySend();
+
+    // 监听 iframe load 事件
+    const handleLoad = () => {
+      if (!sent) {
+        sent = true;
+        // 短暂延迟确保 diagrams.net 完全就绪
+        setTimeout(sendXmlToIframe, 100);
+      }
+    };
+    iframe.addEventListener('load', handleLoad);
+
+    // 兜底超时（3 秒），防止 load 事件未触发
+    const fallback = setTimeout(() => {
+      if (!sent) {
+        sent = true;
+        sendXmlToIframe();
+      }
+    }, 3000);
+
+    return () => {
+      iframe.removeEventListener('load', handleLoad);
+      clearTimeout(fallback);
+    };
+  }, [xml, drawioKey, drawIoBaseUrl]);
 
   return (
     <div className="graph-canvas">

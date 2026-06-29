@@ -3,7 +3,7 @@
    使用真实 API 接口
    流程: /api/agent/list -> /api/agent/createSession -> /api/agent/consultation
 ============================================ */
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback, memo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Badge, Button, ResourceSidebar, type ResourceSidebarItem } from '../../components/common';
 import { Header } from '../../components/layout/Header';
@@ -376,7 +376,7 @@ function PlanComparisonList({ items }: { items: string[] }) {
   );
 }
 
-function PlanComparisonMessage({ data, disabled, onSelectOption }: PlanComparisonMessageProps) {
+const PlanComparisonMessage = memo(function PlanComparisonMessage({ data, disabled, onSelectOption }: PlanComparisonMessageProps) {
   const recommendedOption = data.options.find(
     (option) => option.id === data.recommended.option_id
   );
@@ -478,9 +478,9 @@ function PlanComparisonMessage({ data, disabled, onSelectOption }: PlanCompariso
       </div>
     </div>
   );
-}
+});
 
-function MessageItem({
+const MessageItem = memo(function MessageItem({
   message,
   onOptionSelect,
   onPlanOptionSelect,
@@ -597,7 +597,7 @@ function MessageItem({
       </div>
     </div>
   );
-}
+});
 
 // ---------- 子组件：快捷选项 ----------
 interface QuickOptionsProps {
@@ -606,7 +606,7 @@ interface QuickOptionsProps {
   disabled: boolean;
 }
 
-function QuickOptions({ options, onSelect, disabled }: QuickOptionsProps) {
+const QuickOptions = memo(function QuickOptions({ options, onSelect, disabled }: QuickOptionsProps) {
   if (options.length === 0) return null;
   return (
     <div className="quick-options">
@@ -625,7 +625,7 @@ function QuickOptions({ options, onSelect, disabled }: QuickOptionsProps) {
       ))}
     </div>
   );
-}
+});
 
 // ---------- 主页面组件 ----------
 export function ConsultPage() {
