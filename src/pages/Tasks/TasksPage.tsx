@@ -4,6 +4,7 @@ import { Header, Footer } from '../../components/layout';
 import { Card, Badge, EmptyState, ResourceSidebar, Spin, type ResourceSidebarItem } from '../../components/common';
 import { getChatSessions } from '../../api/useApi';
 import { useScheduleStore } from '../../stores/scheduleStore';
+import { useSessionStore } from '../../stores/sessionStore';
 import { normalizeCopilotSessionMap, type CopilotSessionResource } from '../../utils';
 import type { Schedule, SubSchedule } from '../../types/api';
 import './TasksPage.scss';
@@ -296,6 +297,7 @@ export function TasksPage() {
   );
   const [sessions, setSessions] = useState<CopilotSessionResource[]>([]);
   const [activeSessionId, setActiveSessionId] = useState<string | null>(null);
+  const { currentSessionId: storeSessionId } = useSessionStore();
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [isSessionListLoading, setIsSessionListLoading] = useState(false);
   const [sessionListError, setSessionListError] = useState<string | null>(null);
@@ -384,12 +386,14 @@ export function TasksPage() {
   // 统一加载逻辑：优先使用 activeSessionId 从后端加载，否则降级到 localStorage
   // 避免两个 useEffect 并发调用 loadSchedules 产生竞态条件
   useEffect(() => {
-    if (activeSessionId) {
-      void loadSchedules(activeSessionId);
+    // 优先从 sessionStore 读取 sessionId
+    const effectiveSessionId = storeSessionId || activeSessionId;
+    if (effectiveSessionId) {
+      void loadSchedules(effectiveSessionId);
     } else {
       void loadSchedules();
     }
-  }, [activeSessionId, loadSchedules]);
+  }, [storeSessionId, activeSessionId, loadSchedules]);
 
   const scheduleSections = schedules.filter(schedule => schedule.subScheduleList.length > 0);
   const allTasks = scheduleSections.reduce<SubSchedule[]>(

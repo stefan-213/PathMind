@@ -31,11 +31,11 @@ export const useSessionStore = create<SessionState>((set) => ({
   currentAgentId: '100003',
   consultContext: null,
 
-  setCurrentSession: (sessionId, agentId = '100003', context = null) =>
+  setCurrentSession: (sessionId, agentId = '100003', context = undefined) =>
     set({
       currentSessionId: sessionId,
       currentAgentId: agentId,
-      consultContext: context,
+      consultContext: context ?? null,
     }),
 
   clearCurrentSession: () =>
