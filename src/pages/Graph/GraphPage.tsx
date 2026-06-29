@@ -14,6 +14,7 @@ import { createSchedule } from '../../api/tasks';
 import { generatePlanByOption, getXmlGroupBySession } from '../../api/conversation';
 import { getChatSessions } from '../../api/useApi';
 import { useChatStore } from '../../stores/chatStore';
+import { useSessionStore } from '../../stores/sessionStore';
 import { normalizeDrawioXml } from '../../utils/drawioXml';
 import { normalizeCopilotSessionMap, type CopilotSessionResource } from '../../utils';
 // import { conversationApi } from '../../api/useApi';
@@ -448,6 +449,7 @@ export function GraphPage() {
   const [isScheduleGenerating, setIsScheduleGenerating] = useState(false);
   const [sessions, setSessions] = useState<CopilotSessionResource[]>([]);
   const [activeSessionId, setActiveSessionId] = useState<string | null>(null);
+  const { currentSessionId: storeSessionId, consultContext: storeContext } = useSessionStore();
   const [sessionCharts, setSessionCharts] = useState<SessionChartCache>({});
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [isAiPanelCollapsed, setIsAiPanelCollapsed] = useState(false);
@@ -692,8 +694,100 @@ export function GraphPage() {
 
   // 检查是否有咨询方案数据，如果有则调用 charts API
   useEffect(() => {
+    // 优先从 sessionStore 读取
+    if (storeContext && !hasRequestedChartRef.current) {
+      hasRequestedChartRef.current = true;
+
+      const loadFromStoreContext = async () => {
+        setIsChartLoading(true);
+        setChartLoadingText('正在生成计划图表...');
+        setChartLoadError(null);
+        setGraphEmptyMessage(DEFAULT_GRAPH_EMPTY_MESSAGE);
+
+        try {
+          const chartRequestData = storeContext.optionId
+            ? { type: 'option', optionId: storeContext.optionId }
+            : storeContext.goal && storeContext.base
+              ? { type: 'consultation', consultationMsg: { goal: storeContext.goal, base: storeContext.base } }
+              : null;
+
+          if (!chartRequestData) {
+            throw new Error('consultContext 数据格式异常');
+          }
+
+          if (storeSessionId) {
+            setActiveSessionId(storeSessionId);
+          }
+
+          if (chartRequestData.type === 'consultation') {
+            const res = await charts({
+              consultationMsg: chartRequestData.consultationMsg,
+              agentId: '100004',
+              sessionId: storeSessionId || undefined,
+            });
+
+            const contentData = getChartContent(res);
+            const contentObj = parseChartContent(contentData);
+
+            if (typeof contentObj?.xml === 'string') {
+              const normalizedXml = normalizeDrawioXml(contentObj.xml);
+              if (normalizedXml.ok) {
+                setGraphXml(normalizedXml.xml);
+                setGraphEmptyMessage(DEFAULT_GRAPH_EMPTY_MESSAGE);
+                setIsChartLoading(false);
+              } else {
+                setChartLoadError('计划图表解析失败，请稍后重试');
+                setIsChartLoading(false);
+                return;
+              }
+            } else {
+              setChartLoadError('计划图表生成失败，请稍后重试');
+              setIsChartLoading(false);
+              return;
+            }
+
+            if (Array.isArray(contentObj?.data)) {
+              localStorage.setItem(PLAN_DATA_STORAGE_KEY, JSON.stringify(contentObj.data));
+            }
+
+            // 清理 sessionStore
+            useSessionStore.getState().clearCurrentSession();
+          } else if (chartRequestData.type === 'option') {
+            if (!storeSessionId) {
+              setChartLoadError('会话 ID 缺失，无法加载图表');
+              setIsChartLoading(false);
+              return;
+            }
+            const result = await fetchAndRenderGroupChart({
+              agentId: COPILOT_AGENT_ID,
+              sessionId: storeSessionId,
+              title: '',
+              message: '',
+              loadingText: '正在生成计划图表...',
+            });
+
+            if (!result) {
+              throw new Error('图表生成失败');
+            }
+
+            useSessionStore.getState().clearCurrentSession();
+          }
+        } catch (err) {
+          console.error('Charts API error (store):', err);
+          const message = storeContext.optionId
+            ? '计划图表加载失败，请稍后重试'
+            : '计划图表加载失败，请稍后重试';
+          setChartLoadError(message);
+          setIsChartLoading(false);
+        }
+      };
+
+      loadFromStoreContext();
+      return; // 跳过 localStorage 逻辑
+    }
+
+    // 降级：从 localStorage 读取
     const chartDataStr = localStorage.getItem(CONSULT_CHART_STORAGE_KEY);
-    console.log('【GraphPage】charts useEffect, chartDataStr:', chartDataStr ? '有数据' : '无数据');
     if (!chartDataStr || hasRequestedChartRef.current) return;
     hasRequestedChartRef.current = true;
 
@@ -795,14 +889,11 @@ export function GraphPage() {
         console.error('Charts API error:', err);
         setChartLoadError('计划图表加载失败，请稍后重试');
         setIsChartLoading(false);
-        // 失败时不清除 consult_chart 数据，以便重试
-      } finally {
-        // 只在图表成功生成后清除（成功路径已单独 removeItem）
       }
     };
 
     loadGeneratedChart();
-  }, [fetchAndRenderGroupChart]);
+  }, [fetchAndRenderGroupChart, storeSessionId, storeContext]);
 
   const activeSessionTitle =
     sessions.find((session) => session.sessionId === activeSessionId)?.title ?? '';
