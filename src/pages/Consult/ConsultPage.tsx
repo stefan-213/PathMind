@@ -11,6 +11,7 @@ import { conversationApi, deleteChatSession, getChatSessions } from '../../api/u
 import { getChatHistory } from '../../api/conversation';
 import type { PlanComparisonResponse, PlanOption } from '../../types/api';
 import { useSessionStore } from '../../stores/sessionStore';
+import { AGENT_IDS, STORAGE_KEYS } from '../../constants';
 import './ConsultPage.scss';
 
 // ---------- 类型定义 ----------
@@ -43,8 +44,8 @@ interface Session {
 }
 
 // ---------- 常量 ----------
-const AGENT_ID = '100003';
-const TRANSCRIPT_AGENT_ID = '100003';
+const AGENT_ID = AGENT_IDS.COPILOT;
+const TRANSCRIPT_AGENT_ID = AGENT_IDS.COPILOT;
 
 // ---------- 工具函数 ----------
 function generateId(): string {
@@ -830,7 +831,7 @@ export function ConsultPage() {
         : undefined,
     };
 
-    localStorage.setItem('pathmind_consult_chart', JSON.stringify(sessionData));
+    localStorage.setItem(STORAGE_KEYS.CONSULT_CHART, JSON.stringify(sessionData));
     navigate('/graph');
   }, [currentSession, navigate]);
 

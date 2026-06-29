@@ -3,6 +3,7 @@
  * 用于 ConsultPage 向 Graph/Tasks 传递当前会话上下文
  */
 import { create } from 'zustand';
+import { AGENT_IDS } from '../constants';
 
 export interface ConsultContext {
   optionId?: string;
@@ -28,10 +29,10 @@ interface SessionState {
 
 export const useSessionStore = create<SessionState>((set) => ({
   currentSessionId: null,
-  currentAgentId: '100003',
+  currentAgentId: AGENT_IDS.COPILOT,
   consultContext: null,
 
-  setCurrentSession: (sessionId, agentId = '100003', context = undefined) =>
+  setCurrentSession: (sessionId, agentId = AGENT_IDS.COPILOT, context = undefined) =>
     set({
       currentSessionId: sessionId,
       currentAgentId: agentId,
@@ -41,7 +42,7 @@ export const useSessionStore = create<SessionState>((set) => ({
   clearCurrentSession: () =>
     set({
       currentSessionId: null,
-      currentAgentId: '100003', // reset to default
+      currentAgentId: AGENT_IDS.COPILOT,
       consultContext: null,
     }),
 }));

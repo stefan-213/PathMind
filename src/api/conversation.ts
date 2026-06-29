@@ -3,10 +3,10 @@
  * 统一管理会话和对话
  */
 import { get, post } from './axios';
-import type {
-  Agent
-} from '../types/api';
-const DEFAULT_TRANSCRIPT_AGENT_ID = '100003';
+import type { Agent } from '../types/api';
+import { AGENT_IDS } from '../constants';
+
+const DEFAULT_TRANSCRIPT_AGENT_ID = AGENT_IDS.COPILOT;
 
 // ==================== 智能体相关 ====================
 

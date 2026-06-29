@@ -2,6 +2,7 @@
 import { create } from 'zustand';
 import type { Schedule } from '../types/api';
 import { getScheduleList, convertDTOToSchedule } from '../api/tasks';
+import { STORAGE_KEYS } from '../constants';
 
 interface ScheduleStore {
   schedules: Schedule[];
@@ -55,18 +56,18 @@ export const useScheduleStore = create<ScheduleStore>((set, get) => ({
         currentSchedule: backendSchedules[0] || null,
         isLoading: false,
       });
-      localStorage.setItem('pathmind_plan_data', JSON.stringify(backendSchedules));
+      localStorage.setItem(STORAGE_KEYS.PLAN_DATA, JSON.stringify(backendSchedules));
       // 用后端返回的 scheduleName 更新标题（修复 option_1 等占位符问题）
       const scheduleName = backendSchedules[0]?.scheduleName?.trim();
       if (scheduleName) {
-        localStorage.setItem('pathmind_plan_title', scheduleName);
+        localStorage.setItem(STORAGE_KEYS.PLAN_TITLE, scheduleName);
       }
       return;
     }
 
     // 后端无数据，从 localStorage 读取
     try {
-      const localData = localStorage.getItem('pathmind_plan_data');
+      const localData = localStorage.getItem(STORAGE_KEYS.PLAN_DATA);
       if (localData) {
         const parsed = JSON.parse(localData);
         if (Array.isArray(parsed) && parsed.length > 0) {
@@ -125,6 +126,6 @@ export const useScheduleStore = create<ScheduleStore>((set, get) => ({
     set({ schedules: updatedSchedules, currentSchedule: updatedCurrent });
 
     // 同步到 localStorage
-    localStorage.setItem('pathmind_plan_data', JSON.stringify(updatedSchedules));
+    localStorage.setItem(STORAGE_KEYS.PLAN_DATA, JSON.stringify(updatedSchedules));
   },
 }));

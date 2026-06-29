@@ -51,9 +51,6 @@ export const useAuthStore = create<AuthState>()(
             token = token.substring(7);
           }
 
-          // 保存 token 到 localStorage
-          localStorage.setItem('token', token);
-
           // 获取完整用户信息
           const userResponse = await authApi.getCurrentUser();
           const user = userResponse.data;
@@ -84,7 +81,6 @@ export const useAuthStore = create<AuthState>()(
             throw new Error(response.error || '注册失败');
           }
 
-          localStorage.removeItem('token');
           set({
             user: null,
             token: null,
@@ -105,7 +101,6 @@ export const useAuthStore = create<AuthState>()(
         } catch {
           // 忽略登出错误
         } finally {
-          localStorage.removeItem('token');
           set({
             user: null,
             token: null,
@@ -116,7 +111,8 @@ export const useAuthStore = create<AuthState>()(
       },
 
       checkAuth: async () => {
-        const token = localStorage.getItem('token');
+        // 只从 zustand persist 读取 token，不读 localStorage
+        const { token } = get();
         if (!token) {
           set({ isAuthenticated: false, user: null });
           return;
@@ -134,12 +130,10 @@ export const useAuthStore = create<AuthState>()(
 
           set({
             user,
-            token,
             isAuthenticated: true,
             isLoading: false
           });
         } catch {
-          localStorage.removeItem('token');
           set({
             user: null,
             token: null,

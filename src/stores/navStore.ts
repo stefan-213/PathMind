@@ -1,9 +1,9 @@
 /**
- * 导航状态 Store - 使用 Zustand
+ * 导航状态 Store
  */
 import { create } from 'zustand';
-
-const STORAGE_KEY = 'pathmind-nav-expanded';
+import { persist } from 'zustand/middleware';
+import { STORAGE_KEYS } from '../constants';
 
 interface NavState {
   isNavExpanded: boolean;
@@ -11,35 +11,17 @@ interface NavState {
   toggleNav: () => void;
 }
 
-// 从 localStorage 读取初始值
-const getInitialState = () => {
-  if (typeof window === 'undefined') return false;
-  try {
-    return localStorage.getItem(STORAGE_KEY) === 'true';
-  } catch {
-    return false;
-  }
-};
+export const useNavStore = create<NavState>()(
+  persist(
+    (set) => ({
+      isNavExpanded: false,
 
-export const useNavStore = create<NavState>()((set) => ({
-  isNavExpanded: getInitialState(),
+      setNavExpanded: (expanded) => set({ isNavExpanded: expanded }),
 
-  setNavExpanded: (expanded) => {
-    try {
-      localStorage.setItem(STORAGE_KEY, String(expanded));
-    } catch {
-      // ignore
+      toggleNav: () => set((state) => ({ isNavExpanded: !state.isNavExpanded })),
+    }),
+    {
+      name: STORAGE_KEYS.NAV_EXPANDED,
     }
-    set({ isNavExpanded: expanded });
-  },
-
-  toggleNav: () => {
-    try {
-      const newValue = !useNavStore.getState().isNavExpanded;
-      localStorage.setItem(STORAGE_KEY, String(newValue));
-      set({ isNavExpanded: newValue });
-    } catch {
-      // ignore
-    }
-  },
-}));
+  )
+);

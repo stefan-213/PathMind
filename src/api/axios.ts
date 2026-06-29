@@ -4,6 +4,7 @@
 import axios from 'axios';
 import type { AxiosInstance, AxiosRequestConfig, AxiosResponse, InternalAxiosRequestConfig } from 'axios';
 import type { ApiResponse } from '../types/api';
+import { useAuthStore } from '../stores/authStore';
 
 const normalizeBaseUrl = (baseUrl?: string) => {
   const trimmedBaseUrl = baseUrl?.trim() ?? '';
@@ -75,9 +76,9 @@ axiosInstance.interceptors.request.use(
     // 检查是否在白名单中
     const isWhitelisted = NO_AUTH_WHITELIST.some(path => config.url?.includes(path));
 
-    // 从 localStorage 获取 token（非白名单接口才添加）
+    // 从 zustand store 获取 token（非白名单接口才添加）
     if (!isWhitelisted) {
-      const token = localStorage.getItem('token');
+      const token = useAuthStore.getState().token;
       if (token && config.headers) {
         config.headers.Authorization = `Bearer ${token}`;
       }
@@ -120,8 +121,8 @@ axiosInstance.interceptors.response.use(
       // 处理 HTTP 错误码
       switch (response.status) {
         case 401:
-          // 未授权，清除 token 并跳转到登录页
-          localStorage.removeItem('token');
+          // 未授权，清除 zustand store 中的 token 并跳转到登录页
+          useAuthStore.getState().logout();
           window.location.href = '/login';
           break;
         case 403:
@@ -148,44 +149,48 @@ axiosInstance.interceptors.response.use(
 /**
  * 封装 GET 请求
  */
-export const get = <T = unknown>(
+export const get = async <T = unknown>(
   url: string,
   params?: AxiosRequestConfig['params'],
   config?: AxiosRequestConfig
 ): Promise<ApiResponse<T>> => {
-  return axiosInstance.get<ApiResponse<T>>(url, { ...config, params }).then(res => res.data);
+  const res = await axiosInstance.get<ApiResponse<T>>(url, { ...config, params });
+  return res.data;
 };
 
 /**
  * 封装 POST 请求
  */
-export const post = <T = unknown>(
+export const post = async <T = unknown>(
   url: string,
   data?: unknown,
   config?: AxiosRequestConfig
 ): Promise<ApiResponse<T>> => {
-  return axiosInstance.post<ApiResponse<T>>(url, data, config).then(res => res.data);
+  const res = await axiosInstance.post<ApiResponse<T>>(url, data, config);
+  return res.data;
 };
 
 /**
  * 封装 PUT 请求
  */
-export const put = <T = unknown>(
+export const put = async <T = unknown>(
   url: string,
   data?: unknown,
   config?: AxiosRequestConfig
 ): Promise<ApiResponse<T>> => {
-  return axiosInstance.put<ApiResponse<T>>(url, data, config).then(res => res.data);
+  const res = await axiosInstance.put<ApiResponse<T>>(url, data, config);
+  return res.data;
 };
 
 /**
  * 封装 DELETE 请求
  */
-export const del = <T = unknown>(
+export const del = async <T = unknown>(
   url: string,
   config?: AxiosRequestConfig
 ): Promise<ApiResponse<T>> => {
-  return axiosInstance.delete<ApiResponse<T>>(url, config).then(res => res.data);
+  const res = await axiosInstance.delete<ApiResponse<T>>(url, config);
+  return res.data;
 };
 
 export default axiosInstance;

@@ -6,6 +6,7 @@ import { getChatSessions } from '../../api/useApi';
 import { useScheduleStore } from '../../stores/scheduleStore';
 import { useSessionStore } from '../../stores/sessionStore';
 import { normalizeCopilotSessionMap, type CopilotSessionResource } from '../../utils';
+import { AGENT_IDS, STORAGE_KEYS } from '../../constants';
 import type { Schedule, SubSchedule } from '../../types/api';
 import './TasksPage.scss';
 
@@ -34,9 +35,6 @@ interface StageViewModel {
   tasks: StageTaskViewModel[];
 }
 
-const PLAN_DATA_STORAGE_KEY = 'pathmind_plan_data';
-const PLAN_TITLE_STORAGE_KEY = 'pathmind_plan_title';
-const COPILOT_AGENT_ID = '100003';
 const TIME_PREFIX_PATTERN = /^(第\d+(?:-\d+)?周(?:\s*[，,、]?\s*第\d+(?:-\d+)?天)?|第\d+(?:-\d+)?天|Day\s*\d+(?:-\d+)?)\s*[-—－:：]\s*(.+)$/i;
 const WEEK_PATTERN = /第\d+(?:-\d+)?周/;
 const DAY_PATTERN = /第\d+(?:-\d+)?天/;
@@ -293,7 +291,7 @@ export function TasksPage() {
   const [isTaskLoading, setIsTaskLoading] = useState(false);
   const [collapsedStageIds, setCollapsedStageIds] = useState<Set<string>>(() => new Set());
   const [planTitle, setPlanTitle] = useState(() =>
-    localStorage.getItem(PLAN_TITLE_STORAGE_KEY)?.trim() || ''
+    localStorage.getItem(STORAGE_KEYS.PLAN_TITLE)?.trim() || ''
   );
   const [sessions, setSessions] = useState<CopilotSessionResource[]>([]);
   const [activeSessionId, setActiveSessionId] = useState<string | null>(null);
@@ -310,11 +308,11 @@ export function TasksPage() {
     if (sessionId) {
       // 从后端获取
       await fetchSchedules(sessionId);
-      setPlanTitle(localStorage.getItem(PLAN_TITLE_STORAGE_KEY)?.trim() || '');
+      setPlanTitle(localStorage.getItem(STORAGE_KEYS.PLAN_TITLE)?.trim() || '');
     } else {
       // 降级: 从 localStorage 读取
       try {
-        const planDataStr = localStorage.getItem(PLAN_DATA_STORAGE_KEY);
+        const planDataStr = localStorage.getItem(STORAGE_KEYS.PLAN_DATA);
         if (!planDataStr) {
           setPlanTitle('');
           clearSchedules();
@@ -326,7 +324,7 @@ export function TasksPage() {
           clearSchedules();
           return;
         }
-        setPlanTitle(localStorage.getItem(PLAN_TITLE_STORAGE_KEY)?.trim() || '');
+        setPlanTitle(localStorage.getItem(STORAGE_KEYS.PLAN_TITLE)?.trim() || '');
         setSchedules(localSchedules);
         setCurrentSchedule(localSchedules[0]);
       } catch (err) {
@@ -345,7 +343,7 @@ export function TasksPage() {
       setSessionListError(null);
 
       try {
-        const response = await getChatSessions(COPILOT_AGENT_ID);
+        const response = await getChatSessions(AGENT_IDS.COPILOT);
         if (response.success === false) {
           throw new Error(response.error || '会话列表加载失败');
         }
@@ -438,8 +436,8 @@ export function TasksPage() {
 
   const handleClearAll = () => {
     if (confirm('确定要删除这个日程表吗？')) {
-      localStorage.removeItem(PLAN_DATA_STORAGE_KEY);
-      localStorage.removeItem(PLAN_TITLE_STORAGE_KEY);
+      localStorage.removeItem(STORAGE_KEYS.PLAN_DATA);
+      localStorage.removeItem(STORAGE_KEYS.PLAN_TITLE);
       setPlanTitle('');
       clearSchedules();
     }

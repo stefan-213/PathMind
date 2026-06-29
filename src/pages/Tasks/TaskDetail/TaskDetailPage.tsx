@@ -3,6 +3,7 @@ import { Link, useSearchParams } from 'react-router-dom';
 import ReactMarkdown from 'react-markdown';
 import { Header } from '../../../components/layout';
 import { scheduleChat, getScheduleList, convertDTOToSchedule } from '../../../api/tasks';
+import { STORAGE_KEYS } from '../../../constants';
 import type { Schedule, SubSchedule } from '../../../types/api';
 import './TaskDetailPage.scss';
 
@@ -13,8 +14,6 @@ type Message = {
 };
 
 type PlanRecord = Record<string, unknown>;
-
-const PLAN_DATA_STORAGE_KEY = 'pathmind_plan_data';
 
 const QUICK_OPTIONS = [
   '帮我拆解这个任务的学习步骤',
@@ -131,7 +130,7 @@ const normalizeTask = (
 };
 
 const readLocalSchedules = (): Schedule[] => {
-  const planDataStr = localStorage.getItem(PLAN_DATA_STORAGE_KEY);
+  const planDataStr = localStorage.getItem(STORAGE_KEYS.PLAN_DATA);
   if (!planDataStr) return [];
 
   try {
@@ -243,7 +242,7 @@ export function TaskDetailPage() {
   const sessionId = useMemo(() => {
     if (sessionIdParam) return sessionIdParam;
     // 尝试从 Copilot 会话中获取
-    const consultData = localStorage.getItem('pathmind_consult_chart');
+    const consultData = localStorage.getItem(STORAGE_KEYS.CONSULT_CHART);
     if (consultData) {
       try {
         const parsed = JSON.parse(consultData);

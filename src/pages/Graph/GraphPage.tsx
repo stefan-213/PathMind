@@ -17,14 +17,11 @@ import { useChatStore } from '../../stores/chatStore';
 import { useSessionStore } from '../../stores/sessionStore';
 import { normalizeDrawioXml } from '../../utils/drawioXml';
 import { normalizeCopilotSessionMap, type CopilotSessionResource } from '../../utils';
+import { AGENT_IDS, STORAGE_KEYS } from '../../constants';
 // import { conversationApi } from '../../api/useApi';
 // import { mockGraphXml } from '../../api/mock';
 import './GraphPage.scss';
 
-const CONSULT_CHART_STORAGE_KEY = 'pathmind_consult_chart';
-const PLAN_DATA_STORAGE_KEY = 'pathmind_plan_data';
-const PLAN_TITLE_STORAGE_KEY = 'pathmind_plan_title';
-const COPILOT_AGENT_ID = '100003';
 const DEFAULT_GRAPH_EMPTY_MESSAGE = '在Copilot页面输入需求，让 AI 为你生成计划图表';
 const MISSING_FINAL_GRAPH_MESSAGE = '最终方案图表未生成，请回Copilot页面继续完成对话';
 
@@ -441,7 +438,7 @@ export function GraphPage() {
   const [graphXml, setGraphXml] = useState<string | null>(null);
   const [graphEmptyMessage, setGraphEmptyMessage] = useState(DEFAULT_GRAPH_EMPTY_MESSAGE);
   const [isChartLoading, setIsChartLoading] = useState(() =>
-    Boolean(localStorage.getItem(CONSULT_CHART_STORAGE_KEY))
+    Boolean(localStorage.getItem(STORAGE_KEYS.CONSULT_CHART))
   );
   const [chartLoadingText, setChartLoadingText] = useState('正在生成计划图表...');
   const [chartLoadError, setChartLoadError] = useState<string | null>(null);
@@ -459,12 +456,12 @@ export function GraphPage() {
   const syncPlanStorage = useCallback((title: string, chart: GeneratedChart | null) => {
     // 只在 chart 有 data 时更新 localStorage，不删除已有数据
     if (Array.isArray(chart?.data) && chart.data.length > 0) {
-      localStorage.setItem(PLAN_DATA_STORAGE_KEY, JSON.stringify(chart.data));
+      localStorage.setItem(STORAGE_KEYS.PLAN_DATA, JSON.stringify(chart.data));
     }
 
     const normalizedTitle = title.trim();
     if (normalizedTitle) {
-      localStorage.setItem(PLAN_TITLE_STORAGE_KEY, normalizedTitle);
+      localStorage.setItem(STORAGE_KEYS.PLAN_TITLE, normalizedTitle);
     }
   }, []);
 
@@ -500,7 +497,7 @@ export function GraphPage() {
     sessionId,
     title,
     message = '',
-    agentId = COPILOT_AGENT_ID,
+    agentId = AGENT_IDS.COPILOT,
     loadingText,
   }: FetchGroupChartParams) => {
     const normalizedSessionId = sessionId.trim();
@@ -522,7 +519,7 @@ export function GraphPage() {
     try {
       // 优先使用 getXmlGroupBySession 获取图表记录
       // group 接口仅在第一次创建 xml 图表并获取数据时使用
-      const shouldLoadExistingChart = agentId === COPILOT_AGENT_ID && !message;
+      const shouldLoadExistingChart = agentId === AGENT_IDS.COPILOT && !message;
       const response = shouldLoadExistingChart
         ? await getXmlGroupBySession(normalizedSessionId)
         : await generatePlanByOption({
@@ -654,7 +651,7 @@ export function GraphPage() {
       setSessionListError(null);
 
       try {
-        const response = await getChatSessions(COPILOT_AGENT_ID);
+        const response = await getChatSessions(AGENT_IDS.COPILOT);
         if (response.success === false) {
           throw new Error(response.error || '会话列表加载失败');
         }
@@ -722,7 +719,7 @@ export function GraphPage() {
           if (chartRequestData.type === 'consultation') {
             const res = await charts({
               consultationMsg: chartRequestData.consultationMsg,
-              agentId: '100004',
+              agentId: AGENT_IDS.GRAPH_GENERATOR,
               sessionId: storeSessionId || undefined,
             });
 
@@ -747,7 +744,7 @@ export function GraphPage() {
             }
 
             if (Array.isArray(contentObj?.data)) {
-              localStorage.setItem(PLAN_DATA_STORAGE_KEY, JSON.stringify(contentObj.data));
+              localStorage.setItem(STORAGE_KEYS.PLAN_DATA, JSON.stringify(contentObj.data));
             }
 
             // 清理 sessionStore
@@ -759,7 +756,7 @@ export function GraphPage() {
               return;
             }
             const result = await fetchAndRenderGroupChart({
-              agentId: COPILOT_AGENT_ID,
+              agentId: AGENT_IDS.COPILOT,
               sessionId: storeSessionId,
               title: '',
               message: '',
@@ -787,7 +784,7 @@ export function GraphPage() {
     }
 
     // 降级：从 localStorage 读取
-    const chartDataStr = localStorage.getItem(CONSULT_CHART_STORAGE_KEY);
+    const chartDataStr = localStorage.getItem(STORAGE_KEYS.CONSULT_CHART);
     if (!chartDataStr || hasRequestedChartRef.current) return;
     hasRequestedChartRef.current = true;
 
@@ -815,7 +812,7 @@ export function GraphPage() {
 
         if (chartRequestData.type === 'group') {
           const result = await fetchAndRenderGroupChart({
-            agentId: chartAgentId || COPILOT_AGENT_ID,
+            agentId: chartAgentId || AGENT_IDS.COPILOT,
             sessionId: chartSessionId,
             title: chartTitle,
             message: chartRequestData.message,
@@ -827,19 +824,19 @@ export function GraphPage() {
           }
 
           // group 路径成功后清除 consult chart key，避免刷新时重复触发生成
-          localStorage.removeItem(CONSULT_CHART_STORAGE_KEY);
+          localStorage.removeItem(STORAGE_KEYS.CONSULT_CHART);
           return;
         }
 
         if (chartTitle) {
-          localStorage.setItem(PLAN_TITLE_STORAGE_KEY, chartTitle);
+          localStorage.setItem(STORAGE_KEYS.PLAN_TITLE, chartTitle);
         }
 
-        localStorage.removeItem(CONSULT_CHART_STORAGE_KEY);
+        localStorage.removeItem(STORAGE_KEYS.CONSULT_CHART);
 
         const res = await charts({
           consultationMsg: chartRequestData.consultationMsg,
-          agentId: '100004',
+          agentId: AGENT_IDS.GRAPH_GENERATOR,
           sessionId: chartSessionId,
         });
 
@@ -875,9 +872,9 @@ export function GraphPage() {
         // 提取 data 数据，传递给 task 页面
         if (Array.isArray(contentObj?.data)) {
           console.log('【GraphPage】成功获取 data，长度:', contentObj.data.length);
-          localStorage.setItem(PLAN_DATA_STORAGE_KEY, JSON.stringify(contentObj.data));
+          localStorage.setItem(STORAGE_KEYS.PLAN_DATA, JSON.stringify(contentObj.data));
           if (chartTitle) {
-            localStorage.setItem(PLAN_TITLE_STORAGE_KEY, chartTitle);
+            localStorage.setItem(STORAGE_KEYS.PLAN_TITLE, chartTitle);
           }
         }
 
@@ -985,11 +982,11 @@ export function GraphPage() {
 
     try {
       // 检查 localStorage 中是否已有日程数据（图表生成时已保存）
-      const existingData = localStorage.getItem(PLAN_DATA_STORAGE_KEY);
+      const existingData = localStorage.getItem(STORAGE_KEYS.PLAN_DATA);
       if (existingData) {
         console.log('【GraphPage】使用已保存的日程数据');
         setSatisfactionState('satisfied');
-        localStorage.removeItem(CONSULT_CHART_STORAGE_KEY);
+        localStorage.removeItem(STORAGE_KEYS.CONSULT_CHART);
         navigate('/tasks');
         return;
       }
@@ -1002,7 +999,7 @@ export function GraphPage() {
       }
 
       setSatisfactionState('satisfied');
-      localStorage.removeItem(CONSULT_CHART_STORAGE_KEY);
+      localStorage.removeItem(STORAGE_KEYS.CONSULT_CHART);
       navigate('/tasks');
     } catch (error) {
       console.error('Generate schedule failed:', error);
@@ -1051,7 +1048,7 @@ export function GraphPage() {
   useEffect(() => {
     if (hasAutoLoadedInitialSessionRef.current) return;
     if (!activeSessionId || graphXml || isChartLoading) return;
-    if (localStorage.getItem(CONSULT_CHART_STORAGE_KEY)) return;
+    if (localStorage.getItem(STORAGE_KEYS.CONSULT_CHART)) return;
 
     hasAutoLoadedInitialSessionRef.current = true;
     handleSelectGraphSession(activeSessionId);
