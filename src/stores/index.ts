@@ -4,3 +4,4 @@
 export { useAuthStore } from './authStore';
 export { useTasksStore } from './tasksStore';
 export { useProfileStore } from './profileStore';
+export { useSessionStore } from './sessionStore';
