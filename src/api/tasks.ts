@@ -60,5 +60,7 @@ export const convertDTOToSchedule = (dto: ScheduleDTO): Schedule => {
 };
 
 // 兼容旧接口导出
+// STATUS: UNUSED — createSchedule 的别名，请确认后删除
 export const createTask = createSchedule;
+// STATUS: UNUSED — getScheduleList 的别名，请确认后删除
 export const getScheduleContent = getScheduleList;

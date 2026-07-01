@@ -1,3 +1,6 @@
+// ============================================================
+// UI 类型（通用组件类型）
+// ============================================================
 export interface IconProps {
   className?: string;
   role?: 'presentation' | 'img';
@@ -27,3 +30,10 @@ export interface CardProps {
   description: string;
   links: LinkItem[];
 }
+
+// ============================================================
+// 统一导出所有类型模块
+// ============================================================
+export * from './api';
+export * from './graph';
+export * from './copilot';

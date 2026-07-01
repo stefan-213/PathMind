@@ -1,259 +1,209 @@
-# PathMind - AI 技术选型与学习路径规划平台
+# PathMind
 
-## 项目简介
+PathMind 是一个面向开发者和学习者的 AI 技术选型与学习路径规划平台。用户可以通过 Copilot 描述目标，获得技术方案对比、学习路线图、任务日程，并在知识图谱、任务中心和个人中心中持续跟踪学习进度。
 
-PathMind 是一个帮助开发者进行**技术选型和学习路径规划**的 AI 工具。通过对话形式了解用户需求，生成定制化的技术方案和学习计划。
+## 项目概览
 
----
-
-## 路由结构
-
-| 路径        | 页面         | 说明       | 权限                     |
-| ----------- | ------------ | ---------- | ------------------------ |
-| `/`         | HomePage     | 首页       | 公开                     |
-| `/login`    | LoginPage    | 登录       | 公开（已登录重定向首页） |
-| `/register` | RegisterPage | 注册       | 公开（已登录重定向首页） |
-| `/consult`  | ConsultPage  | AI Copilot | 需要登录                 |
-| `/graph`    | GraphPage    | 知识图表   | 需要登录                 |
-| `/tasks`    | TasksPage    | 任务中心   | 需要登录                 |
-| `/profile`  | ProfilePage  | 个人中心   | 需要登录                 |
-
----
-
-### 1. 首页 (HomePage)
-
-**功能描述**：展示产品核心价值，引导用户开始使用
-
-- 产品定位 banner（"帮你实现目标的 AI 工具"）
-- 简单三步骤展示
-- 六大功能卡片展示
-- 常见问题 FAQ 折叠面板
-- 最终 CTA 引导转化
-- 产品截图展示
-
-**相关文件**：[HomePage.tsx](src/pages/Home/HomePage.tsx)
-
----
-
-### 2. AI Copilot (ConsultPage)
-
-**功能描述**：多轮对话式 AI 顾问，生成专属技术路线图和执行计划
-
-#### 2.1 真实 API 对接
-
-- 调用 `/api/agent/list` -> `/api/agent/createSession` -> `/api/agent/consultation`
-- 支持会话持久化（服务器端会话管理）
-
-#### 2.2 对话式问卷流程
-
-- 多轮对话收集用户信息（目标、经验、时间、规模）
-- 快捷选项标签快速选择
-- AI 思考过程可展开查看
-- Enter 发送，Shift+Enter 换行
-
-#### 2.3 多会话管理
-
-- 侧边栏展示历史对话列表
-- 支持新建、切换、删除会话
-- 会话数据服务器持久化
-
-#### 2.4 方案生成与交互
-
-- 根据用户画像动态生成技术栈建议
-- 生成学习路线图数据
-- 支持查看知识图表、重新生成方案
-- 方案数据自动传递到 GraphPage
-
-**相关文件**：
-
-- [ConsultPage.tsx](src/pages/Consult/ConsultPage.tsx)
-- [conversation.ts](src/api/conversation.ts)
-- [useApi.ts](src/api/useApi.ts)
-
----
-
-### 3. 知识图表 (GraphPage)
-
-**功能描述**：可视化技术节点关系，支持 AI 生成图表
-
-#### 3.1 图表展示
-
-- 集成 draw.io / mxGraph 图表渲染
-- 支持拖拽、缩放操作
-- 通过 `mockGraphXml` 提供默认图谱
-
-#### 3.2 AI 图谱助手
-
-- AISidePanel 侧边对话面板
-- 支持通过对话生成自定义图表
-- 可输入需求，AI 返回图表数据
-
-#### 3.3 节点详情
-
-- 点击节点显示详情面板
-- 显示节点名称、分类、描述、标签
-- 提供"开始学习"快捷入口
-
-**相关文件**：
-
-- [GraphPage.tsx](src/pages/Graph/GraphPage.tsx)
-- [GraphCanvas.tsx](src/pages/Graph/GraphCanvas.tsx)
-- [AISidePanel.tsx](src/pages/Graph/AISidePanel.tsx)
-- [mock.ts](src/api/mock.ts)
-
----
-
-### 4. 任务中心 (TasksPage)
-
-**功能描述**：展示和管理学习任务进度
-
-- 进度百分比显示
-- 当前学习目标展示
-- 按阶段分组的任务列表
-- 任务勾选完成状态
-- 重新开始功能（清除数据）
-- 查看知识图表入口
-
-**相关文件**：
-
-- [TasksPage.tsx](src/pages/Tasks/TasksPage.tsx)
-- [storage.ts](src/utils/storage.ts)
-
----
-
-### 5. 用户认证 (Auth)
-
-**功能描述**：用户注册和登录
-
-#### 5.1 登录页面 (LoginPage)
-
-- 用户名/密码登录
-- 记住我功能
-- 密码显示/隐藏切换
-- 表单验证
-
-#### 5.2 注册页面 (RegisterPage)
-
-- 用户名、邮箱、密码、手机号（选填）
-- 密码强度实时检测
-- 确认密码校验
-- 用户协议同意勾选
-- 表单完整验证
-
-#### 5.3 状态管理
-
-- 使用 Zustand authStore 管理认证状态
-- 持久化存储（localStorage）
-- 受保护路由自动重定向
-
-**相关文件**：
-
-- [LoginPage.tsx](src/pages/Auth/LoginPage.tsx)
-- [RegisterPage.tsx](src/pages/Auth/RegisterPage.tsx)
-- [authStore.ts](src/stores/authStore.ts)
-- [auth.ts](src/api/auth.ts)
-
----
-
-### 6. 个人中心 (ProfilePage)
-
-**功能描述**：用户个人信息和学习数据管理
-
-- 用户信息展示与编辑（头像、用户名、邮箱、手机号）
-- 安全设置（修改密码弹窗）
-- 学习统计数据（完成任务数、总任务数、完成进度）
-- 任务记录查看
-- 快速跳转到制定计划
-
-**相关文件**：
-
-- [ProfilePage.tsx](src/pages/Profile/ProfilePage.tsx)
-
----
+- AI Copilot: 多轮对话收集目标、经验、时间和规模信息，生成方案对比与图谱入口。
+- 知识图谱: 基于 draw.io XML 渲染学习路线图，支持历史会话图谱切换、AI 修改图谱和生成任务日程。
+- 任务中心: 展示按阶段拆分的学习任务，支持勾选完成、折叠阶段和进入任务详情。
+- 任务详情: 围绕单个任务提供学习助手，优先调用后端日程对话接口，失败时使用本地兜底回复。
+- 知识库: 管理知识库和文档，支持创建、重命名、删除、上传文件和拖拽上传。
+- 个人中心: 展示账户信息、学习统计、进行中的计划、成就和历史目标。
+- 认证系统: 登录、注册、退出、路由保护和 token 持久化。
 
 ## 技术栈
 
-| 分类      | 技术                            |
-| --------- | ------------------------------- |
-| 前端框架  | React 19.2 + React Router DOM 7 |
-| 构建工具  | Vite 8 + React Compiler         |
-| 类型系统  | TypeScript（严格模式）          |
-| 状态管理  | Zustand 5（持久化）             |
-| HTTP 请求 | Axios                           |
-| 图表渲染  | mxGraph / draw.io               |
-| 样式      | SCSS + 设计变量                 |
+| 分类 | 技术 |
+| --- | --- |
+| 构建工具 | Vite 8 |
+| 前端框架 | React 19 |
+| 路由 | React Router DOM 7 |
+| 类型系统 | TypeScript 5 严格模式 |
+| 样式 | Sass / SCSS |
+| 状态管理 | Zustand 5 |
+| HTTP 请求 | Axios |
+| 图谱渲染 | mxGraph / draw.io XML |
+| 内容渲染 | react-markdown |
 
-### 主要依赖
+## 快速开始
 
-```json
-{
-  "react": "^19.2.4",
-  "react-dom": "^19.2.4",
-  "react-router-dom": "^7.13.1",
-  "zustand": "^5.0.0",
-  "axios": "^1.13.6",
-  "d3": "^7.9.0",
-  "mxgraph": "^4.2.2",
-  "react-drawio": "^1.0.7",
-  "react-markdown": "^10.1.0"
-}
+```bash
+npm install
+npm run dev
 ```
 
----
+默认开发服务器由 Vite 启动。后端接口地址通过环境变量配置：
 
-## 开发命令
+```bash
+VITE_API_BASE_URL=http://localhost:8080
+```
+
+如果不设置 `VITE_API_BASE_URL`，Axios 会使用相对路径请求接口。
+
+## 常用命令
 
 ```bash
 npm run dev      # 启动开发服务器
-npm run build    # TypeScript 检查 + 生产构建
+npm run build    # TypeScript 构建检查并打包生产资源
 npm run lint     # ESLint 检查
-npm run preview  # 预览生产环境
+npm run preview  # 预览生产构建
 ```
 
----
+## 路由说明
+
+| 路径 | 页面 | 说明 | 权限 |
+| --- | --- | --- | --- |
+| `/` | HomePage | 产品首页 | 公开 |
+| `/login` | LoginPage | 登录 | 公开，已登录会重定向 |
+| `/register` | RegisterPage | 注册 | 公开，已登录会重定向 |
+| `/consult` | ConsultPage | AI Copilot 对话规划 | 需登录 |
+| `/graph` | GraphPage | 知识图谱与路线图 | 需登录 |
+| `/tasks` | TasksPage | 学习任务中心 | 需登录 |
+| `/task-detail` | TaskDetailPage | 单个任务学习助手 | 需登录 |
+| `/knowledge-base` | KnowledgeBasePage | 知识库与文档管理 | 需登录 |
+| `/profile` | ProfilePage | 个人中心 | 需登录 |
+
+路由定义位于 `src/routes/routes.tsx`，公共路由和受保护路由由 `src/components/ProtectedRoute.tsx` 处理。
 
 ## 项目结构
 
-```
+```text
 src/
-├── api/                 # API 服务层
-│   ├── axios.ts         # Axios 实例和拦截器
-│   ├── auth.ts          # 认证 API
-│   ├── conversation.ts  # 对话 API
-│   ├── graph.ts         # 图表 API
-│   ├── tasks.ts         # 任务 API
-│   └── useApi.ts        # API 统一导出
-├── components/          # 公共组件
-│   ├── common/          # 通用组件（Button, Card, Input...）
-│   ├── layout/          # 布局组件（Header, Footer）
-│   └── ProtectedRoute.tsx # 路由保护组件
-├── pages/               # 页面组件
-│   ├── Auth/            # 登录/注册
-│   ├── Consult/         # AI Copilot
-│   ├── Graph/           # 知识图表
-│   ├── Home/            # 首页
-│   ├── Profile/         # 个人中心
-│   └── Tasks/           # 任务中心
-├── routes/              # 路由配置
-│   ├── routes.tsx       # 路由定义
-│   └── RootLayout.tsx   # 根布局
-├── stores/              # Zustand 状态管理
-│   ├── authStore.ts     # 认证状态
-│   ├── chatStore.ts     # AI 对话状态
-│   └── tasksStore.ts    # 任务状态
-├── styles/              # 全局样式
-│   ├── _variables.scss  # 设计变量
-│   ├── _mixins.scss     # 样式混入
-│   └── global.scss      # 全局样式
-├── types/               # TypeScript 类型定义
-│   ├── api.ts           # API 类型
-│   ├── copilot.ts       # Copilot 类型
-│   └── graph.ts         # 图表类型
-└── utils/               # 工具函数
-    └── storage.ts       # localStorage 封装
+  api/                 # API 请求封装
+    axios.ts           # Axios 实例、拦截器、通用 get/post/put/delete
+    auth.ts            # 登录、注册、退出和用户信息接口
+    conversation.ts    # Copilot 会话、历史记录和图谱生成接口
+    graph.ts           # 图谱生成、保存和 AI 修改接口
+    knowledgeBase.ts   # 知识库和文档接口
+    profile.ts         # 个人中心接口
+    tasks.ts           # 日程任务接口
+    useApi.ts          # API 模块统一导出
+  components/
+    common/            # Button、Card、Badge、Input、Textarea、EmptyState、Spin、ResourceSidebar
+    layout/            # Header、Footer
+    ProtectedRoute.tsx # 路由权限控制
+    ScrollToTop.tsx    # 路由切换滚动复位
+  pages/
+    Auth/              # 登录和注册
+    Consult/           # AI Copilot
+    Graph/             # 知识图谱和 AI 图谱侧栏
+    Home/              # 首页
+    KnowledgeBase/     # 知识库管理
+    Profile/           # 个人中心
+    Tasks/             # 任务中心和任务详情
+  routes/              # 路由入口和根布局
+  stores/              # Zustand stores
+  styles/              # 变量、mixin、动画和全局样式
+  types/               # API、图谱、Copilot 等类型
+  utils/               # localStorage、ID、draw.io XML 和会话数据工具
 ```
+
+## 数据流
+
+1. `App.tsx` 启动时调用 `useAuthStore.checkAuth()`，根据本地 token 拉取当前用户。
+2. 登录成功后，`authStore` 保存 token 到 `localStorage`，Axios 非白名单请求会自动带上 `Authorization`。
+3. Copilot 页面通过 `/api/agent/getSessionList`、`/api/agent/createSession`、`/api/agent/goal` 管理会话和方案对话。
+4. Copilot 选中方案后写入 `pathmind_consult_chart`，Graph 页面读取该数据并调用图谱接口生成 draw.io XML。
+5. Graph 页面会把图谱返回的日程数据同步到 `pathmind_plan_data` 和 `pathmind_plan_title`。
+6. Tasks 页面优先按当前会话从后端加载日程，后端无数据时回退到 `localStorage`。
+7. TaskDetail 页面优先调用 `/api/agent/scheduleChat`，失败后使用本地规则生成学习建议。
+
+## API 约定
+
+Axios 封装位于 `src/api/axios.ts`：
+
+- `VITE_API_BASE_URL` 会自动标准化，支持相对路径、绝对路径和 host 字符串。
+- 后端 `{ code, info, data }` 会被转换为前端统一的 `{ success, data, error }`。
+- `401` 会清理 token 并跳转到 `/login`。
+- 请求期间会通过 body cursor 提供全局等待反馈。
+
+主要接口模块：
+
+- `auth.ts`: `/api/auth/login`、`/api/auth/register`、`/api/user/info`、`/api/user/quitLogin`
+- `conversation.ts`: `/api/agent/list`、`/api/agent/createSession`、`/api/agent/getSessionList`、`/api/agent/goal`、`/api/agent/charts`
+- `graph.ts`: `/api/agent/charts`、`/api/agent/saveXmlFile`、`/api/agent/updataGroup`
+- `tasks.ts`: `/api/agent/createSchedule`、`/api/agent/getSchedule`、`/api/agent/scheduleChat`
+- `knowledgeBase.ts`: `/api/knowledge/base/*`、`/api/knowledge/document/*`
+- `profile.ts`: `/api/profile/plans`、`/api/profile/achievements`、`/api/profile/stats`
+
+## 状态管理
+
+| Store | 作用 |
+| --- | --- |
+| `authStore` | 用户、token、登录态、认证 loading/error，使用 Zustand persist |
+| `chatStore` | 图谱 AI 面板消息、当前 session、满意度状态 |
+| `graphStore` | 通用图谱数据和 loading 状态 |
+| `scheduleStore` | 日程任务列表、当前日程、任务完成状态和本地回退 |
+| `profileStore` | 计划、成就、统计数据和拆分 loading 状态 |
+| `navStore` | 右侧悬浮导航展开状态，持久化到 `localStorage` |
+
+## 通用组件
+
+新增 UI 前优先复用 `src/components/common`：
+
+- `Button`: 支持 `primary`、`secondary`、`primary-blue`、`text`、`cta-white` 变体。
+- `Card`: 支持 `default`、`bordered`、`elevated` 变体和多种 padding。
+- `Badge`: 支持默认、主色、强调色、成功、警告、错误状态。
+- `Input` / `Textarea`: 支持 label、error 和常用原生属性。
+- `EmptyState`: 统一空状态展示，可传入 action。
+- `Spin`: 小、中、大三种 loading。
+- `ResourceSidebar`: 可折叠资源侧栏，用于 Copilot、Graph、Tasks 和 KnowledgeBase。
+
+## 样式约定
+
+项目使用 SCSS 和全局设计令牌，核心风格是浅色现代 SaaS、卡片化、轻阴影、主蓝色和强调橙色。
+
+常用设计令牌在 `src/styles/_variables.scss` 和 `src/index.scss` 中维护：
+
+- 主色: `$primary-blue`、`$blue-hover`
+- 强调色: `$accent-orange`、`$orange-hover`
+- 文本: `$text-title`、`$text-body`、`$text-caption`
+- 背景: `$bg-white`、`$bg-soft`
+- 边框和阴影: `$border-light`、`$shadow-card`、`$shadow-hover`
+- 圆角和间距: `$radius-card`、`$radius-xl`、`$space-xs` 到 `$space-3xl`
+
+页面样式放在页面同目录 `.scss` 文件中，组件样式放在组件同目录 `.scss` 文件中。需要变量或 mixin 时使用 Sass module：
+
+```scss
+@use "../../styles/variables" as *;
+@use "../../styles/mixins" as *;
+```
+
+## 本地存储键
+
+| Key | 用途 |
+| --- | --- |
+| `token` | 登录 token |
+| `auth-storage` | Zustand persist 的认证状态 |
+| `pathmind-nav-expanded` | 悬浮导航展开状态 |
+| `pathmind_consult_chart` | Copilot 跳转 Graph 的图谱生成参数 |
+| `pathmind_plan_data` | Graph 生成的任务日程本地回退数据 |
+| `pathmind_plan_title` | 当前学习计划标题 |
+| `pathmind_consult_data_{sessionId}` | Copilot 会话的补充上下文 |
+
+## 开发约定
+
+- 组件使用 `.tsx`，样式使用 `.scss`。
+- 类型定义优先放在 `src/types`，API 调用放在 `src/api`，通用工具放在 `src/utils`。
+- 不确定的外部数据使用 `unknown`，并通过类型保护收窄。
+- 新增页面按 `src/pages/Feature/FeaturePage.tsx`、`FeaturePage.scss`、`index.ts` 组织，并在 `src/routes/routes.tsx` 注册。
+- 新增通用组件按 `src/components/common/ComponentName/` 组织，并在 `src/components/common/index.ts` 导出。
+- 不引入 Tailwind、CSS Modules、styled-components、Less、新 UI 框架、新图标库或新状态管理库，除非有明确需求。
+
+## 验证建议
+
+修改代码后建议运行：
+
+```bash
+npm run lint
+npm run build
+```
+
+当前 `package.json` 未提供 `type-check` 或 `test` 脚本，构建命令已包含 TypeScript 构建检查。
 
 ---
 
-_文档版本：1.3_
-_最后更新：2026-04-27_
+文档版本: 1.4
+
+最后更新: 2026-06-04

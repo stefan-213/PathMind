@@ -2,7 +2,7 @@
  * PathMind API 类型定义
  */
 
-// ==================== 通用类型 ====================
+// ==================== Auth 相关 ====================
 
 export interface User {
   id: string;
@@ -34,13 +34,14 @@ export interface AuthResponse {
 }
 
 // ==================== 学习目标相关 ====================
-
+// STATUS: UNUSED — 未找到任何调用点
 export interface QuestionAnswer {
   questionId: string;
   question: string;
   selectedOption: string;
 }
 
+// STATUS: UNUSED — 未找到任何调用点
 export interface UserGoal {
   id: string;
   userId: string;
@@ -52,6 +53,7 @@ export interface UserGoal {
   updatedAt: string;
 }
 
+// STATUS: UNUSED — 未找到任何调用点
 export interface CreateGoalRequest {
   goal: string;
 }
@@ -83,6 +85,7 @@ export interface UserProgress {
   streak: number;
 }
 
+// STATUS: UNUSED — 未找到任何调用点
 export interface CreateTasksRequest {
   goalId: string;
   schedule: {
@@ -134,6 +137,7 @@ export interface SubSchedule {
 }
 
 /** 日程表项（创建时用） */
+// STATUS: UNUSED — 未找到任何调用点
 export interface ScheduleItem {
   title: string;
   time: string;
@@ -161,6 +165,7 @@ export interface CreateScheduleRequest {
 }
 
 /** 更新日程表请求 */
+// STATUS: UNUSED — 未找到任何调用点
 export interface UpdateScheduleRequest {
   id: number;
   scheduleId: string;
@@ -173,6 +178,7 @@ export interface UpdateScheduleRequest {
 }
 
 /** 更新子任务请求 */
+// STATUS: UNUSED — 未找到任何调用点
 export interface UpdateSubTaskRequest {
   id: number;
   parentId: number;
@@ -185,7 +191,7 @@ export interface UpdateSubTaskRequest {
 }
 
 // ==================== 技术节点相关 ====================
-
+// STATUS: UNUSED — 未找到任何调用点
 export interface Technology {
   id: string;
   name: string;
@@ -201,6 +207,7 @@ export interface Technology {
   level: 0 | 1 | 2;
 }
 
+// STATUS: UNUSED — 未找到任何调用点
 export interface TechnologyRelation {
   id: string;
   sourceId: string;
@@ -226,11 +233,13 @@ export interface ComparisonItem {
   b: string;
 }
 
+// STATUS: UNUSED — 未找到任何调用点
 export interface ProposalScheduleItem {
   week: string;
   items: string[];
 }
 
+// STATUS: UNUSED — 未找到任何调用点
 export interface GeneratedProposal {
   title: string;
   description: string;
@@ -247,6 +256,7 @@ export interface AIChatMessage {
   createdAt: string;
 }
 
+// STATUS: UNUSED — 未找到任何调用点
 export interface AIChatRequest {
   agentId: string;
   sessionId: string;
@@ -265,6 +275,7 @@ export interface PlanOption {
   difficulty: string;
 }
 
+// STATUS: UNUSED — 未找到任何调用点
 export interface RecommendedPlanOption {
   option_id: string;
   reason: string;
@@ -293,7 +304,7 @@ export interface GeneratePlanByOptionResponse {
 }
 
 // ==================== 收藏与历史 ====================
-
+// STATUS: UNUSED — 未找到任何调用点
 export interface Favorite {
   id: string;
   userId: string;
@@ -302,6 +313,7 @@ export interface Favorite {
   createdAt: string;
 }
 
+// STATUS: UNUSED — 未找到任何调用点
 export interface BrowseHistory {
   id: string;
   userId: string;
@@ -327,6 +339,7 @@ export interface PaginatedResponse<T> {
   totalPages: number;
 }
 
+// STATUS: UNUSED — 未找到任何调用点
 export interface ApiError {
   code: string;
   message: string;
@@ -376,7 +389,7 @@ export interface UpdateKnowledgeBaseRequest {
 }
 
 // ==================== Copilot相关 ====================
-
+// STATUS: UNUSED — 未找到任何调用点
 /** 咨询会话用户画像 */
 export interface ConsultUserProfile {
   goal: string;
@@ -386,6 +399,7 @@ export interface ConsultUserProfile {
 }
 
 /** 咨询消息 */
+// STATUS: UNUSED — 未找到任何调用点
 export interface ConsultMessage {
   role: 'user' | 'assistant';
   content: string;
@@ -394,12 +408,14 @@ export interface ConsultMessage {
 }
 
 /** 计划详情 */
+// STATUS: UNUSED — 未找到任何调用点
 export interface PlanDetail {
   week: string;       // 例如："第1周"、"第2周"
   items: string[];    // 例如：["Day1-2: Python基础", "Day3-4: LangChain入门"]
 }
 
 /** 咨询会话 */
+// STATUS: UNUSED — 未找到任何调用点
 export interface ConsultSession {
   id: string;
   title: string;
@@ -412,6 +428,7 @@ export interface ConsultSession {
 }
 
 /** 咨询请求 */
+// STATUS: UNUSED — 未找到任何调用点
 export interface ConsultRequest {
   sessionId: string;
   message: string;
@@ -420,6 +437,7 @@ export interface ConsultRequest {
 }
 
 /** 咨询响应 */
+// STATUS: UNUSED — 未找到任何调用点
 export interface ConsultResponse {
   message: string;
   isHtml: boolean;

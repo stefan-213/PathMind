@@ -1,4 +1,4 @@
-import type { UserProfile, Task, UserProgress } from '../types/copilot';
+import type { UserProfile, Task, LocalUserProgress as UserProgress } from '../types/copilot';
 import { STORAGE_KEYS as PATHMIND_KEYS } from '../constants';
 
 // ============================================================

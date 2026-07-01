@@ -632,6 +632,7 @@
     text-align: center;
     padding: 40px;
     color: var(--text-tertiary);
+    
 
     i {
       font-size: 2rem;
@@ -650,7 +651,8 @@
       transition: all 0.2s;
 
       &:hover {
-        background: var(--primary-hover);
+        background: var(--blue-hover);
+        // color: var(--text-tertiary);
       }
     }
   }

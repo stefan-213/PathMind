@@ -36,44 +36,11 @@ interface StageViewModel {
   tasks: StageTaskViewModel[];
 }
 
-const TIME_PREFIX_PATTERN = /^(第\d+(?:-\d+)?周(?:\s*[，,、]?\s*第\d+(?:-\d+)?天)?|第\d+(?:-\d+)?天|Day\s*\d+(?:-\d+)?)\s*[-—－:：]\s*(.+)$/i;
 const WEEK_PATTERN = /第\d+(?:-\d+)?周/;
 const DAY_PATTERN = /第\d+(?:-\d+)?天/;
 
 const isRecord = (value: unknown): value is PlanDataRecord =>
   typeof value === 'object' && value !== null && !Array.isArray(value);
-
-const getText = (value: unknown, fallback = '') => {
-  if (typeof value === 'string') return value;
-  if (typeof value === 'number') return String(value);
-  return fallback;
-};
-
-const getNumber = (value: unknown, fallback: number) => {
-  if (typeof value === 'number' && Number.isFinite(value)) return value;
-  if (typeof value === 'string') {
-    const parsed = Number(value);
-    if (Number.isFinite(parsed)) return parsed;
-  }
-  return fallback;
-};
-
-const getStatus = (value: unknown) => {
-  if (value === 1 || value === '1' || value === true || value === 'completed') return 1;
-  return 0;
-};
-
-const getOptionalText = (value: unknown): string | null => {
-  if (value === undefined || value === null) return null;
-  const text = getText(value);
-  return text || null;
-};
-
-const normalizeTimePrefix = (value: string) => {
-  const compactValue = value.replace(/\s*[，,、]\s*/g, '，').trim();
-  const dayMatch = compactValue.match(/^Day\s*(\d+(?:-\d+)?)$/i);
-  return dayMatch ? `第${dayMatch[1]}天` : compactValue;
-};
 
 const getTimePartLabel = (value: unknown, unit: '周' | '天'): string | undefined => {
   if (typeof value === 'number' && Number.isFinite(value)) {
@@ -150,133 +117,6 @@ const createStageViewModel = (schedule: Schedule, stageIndex: number): StageView
       completedAt: task.completedAt,
     })),
   };
-};
-
-const splitTasks = (value: unknown) => {
-  if (typeof value !== 'string') return [];
-  return value
-    .replace(/\r\n?/g, '\n')
-    .replace(/(第\d+(?:-\d+)?[天周])\s*\n\s*(?!第\d+(?:-\d+)?[天周])([^\n]+)/g, '$1-$2')
-    .replace(/(第\d+(?:-\d+)?周)\s*[，,、]\s*(第\d+(?:-\d+)?天)/g, '$1、$2')
-    .replace(/[，,；;]\s*(?=第\d+(?:-\d+)?[天周](?:\s*[-—－:：])?)/g, '\n')
-    .split(/[；;\n]+/)
-    .map(task => task.trim())
-    .filter(Boolean);
-};
-
-const parseTaskText = (value: string, taskIndex: number) => {
-  const text = value.trim();
-  const match = text.match(TIME_PREFIX_PATTERN);
-
-  if (match) {
-    return {
-      day: normalizeTimePrefix(match[1]),
-      task: match[2].trim(),
-    };
-  }
-
-  return {
-    day: `第${taskIndex + 1}天`,
-    task: text,
-  };
-};
-
-const expandTaskInputs = (inputs: unknown[]) =>
-  inputs.flatMap(input => {
-    if (typeof input === 'string') return splitTasks(input);
-
-    if (isRecord(input)) {
-      const taskText = getText(input.task ?? input.title ?? input.name);
-      const splitItems = splitTasks(taskText);
-      if (splitItems.length > 1) {
-        return splitItems.map(task => ({
-          ...input,
-          id: undefined,
-          day: undefined,
-          task,
-          status: 0,
-          completedAt: null,
-        }));
-      }
-    }
-
-    return [input];
-  });
-
-const getTaskInputs = (record: PlanDataRecord) => {
-  if (Array.isArray(record.subScheduleList)) return expandTaskInputs(record.subScheduleList);
-  if (Array.isArray(record.tasks)) return expandTaskInputs(record.tasks);
-  if (Array.isArray(record.details)) return expandTaskInputs(record.details);
-  return splitTasks(record.details);
-};
-
-const normalizeSubSchedule = (
-  taskInput: unknown,
-  taskIndex: number,
-  parentId: number,
-  fallbackGoal: string,
-): SubSchedule | null => {
-  const fallbackId = parentId * 1000 + taskIndex + 1;
-
-  if (typeof taskInput === 'string') {
-    const { day, task } = parseTaskText(taskInput, taskIndex);
-    if (!task) return null;
-    return {
-      id: fallbackId,
-      parentId,
-      day,
-      task,
-      taskGoal: fallbackGoal,
-      description: null,
-      status: 0,
-      completedAt: null,
-    };
-  }
-
-  if (!isRecord(taskInput)) return null;
-
-  const task = getText(taskInput.task ?? taskInput.title ?? taskInput.name).trim();
-  if (!task) return null;
-  const parsedTask = parseTaskText(task, taskIndex);
-
-  return {
-    id: getNumber(taskInput.id, fallbackId),
-    parentId: getNumber(taskInput.parentId, parentId),
-    day: getText(taskInput.day, parsedTask.day),
-    task: parsedTask.task,
-    taskGoal: getText(taskInput.taskGoal ?? taskInput.goal ?? taskInput.week, fallbackGoal),
-    description: getOptionalText(taskInput.description),
-    status: getStatus(taskInput.status),
-    completedAt: getOptionalText(taskInput.completedAt),
-  };
-};
-
-const normalizePlanData = (planData: unknown): Schedule[] => {
-  if (!Array.isArray(planData)) return [];
-
-  return planData
-    .map((item, scheduleIndex) => {
-      if (!isRecord(item)) return null;
-
-      const id = getNumber(item.id, scheduleIndex + 1);
-      const title = getText(item.title, `学习计划 ${scheduleIndex + 1}`);
-      const taskInputs = getTaskInputs(item);
-      const subScheduleList = taskInputs
-        .map((taskInput, taskIndex) => normalizeSubSchedule(taskInput, taskIndex, id, title))
-        .filter((task): task is SubSchedule => Boolean(task));
-
-      return {
-        id,
-        scheduleId: getText(item.scheduleId, `local-schedule-${scheduleIndex + 1}`),
-        userId: getText(item.userId, 'local'),
-        title,
-        time: getText(item.time),
-        content: getText(item.content),
-        status: getStatus(item.status),
-        subScheduleList,
-      };
-    })
-    .filter((schedule): schedule is Schedule => Boolean(schedule));
 };
 
 export function TasksPage() {

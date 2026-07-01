@@ -10,6 +10,7 @@ const DEFAULT_TRANSCRIPT_AGENT_ID = AGENT_IDS.COPILOT;
 
 // ==================== 智能体相关 ====================
 
+// STATUS: UNUSED — 未找到任何调用点，请确认后删除
 /** 获取智能体列表 */
 export const getAgents = () => {
   return get<{
