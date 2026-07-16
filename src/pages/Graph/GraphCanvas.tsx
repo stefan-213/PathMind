@@ -52,7 +52,7 @@ export function GraphCanvas({ xml, emptyMessage = DEFAULT_EMPTY_MESSAGE }: Graph
         xml,
         autosave: false,
       });
-      iframe.contentWindow.postMessage(loadMsg, drawIoBaseUrl);
+      iframe.contentWindow.postMessage(loadMsg, '*');
     };
 
     const iframe = document.querySelector('.graph-canvas iframe') as HTMLIFrameElement;

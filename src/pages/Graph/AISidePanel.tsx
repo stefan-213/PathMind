@@ -116,7 +116,7 @@ export function AISidePanel({
             {messages.length === 0 && (
               <div className="empty-state">
                 <i className="fas fa-lightbulb"></i>
-                <p>在Copilot页面输入需求，让 AI 为你生成计划图表"</p>
+                <p>在Copilot页面输入需求，让 AI 为你生成计划图表</p>
                 <p>AI 会分析你的需求，自动调整图表</p>
               </div>
             )}
@@ -137,10 +137,9 @@ export function AISidePanel({
                       <i className="fas fa-chart-pie"></i> 已生成图表
                     </div>
                   )}
-                  {/* 满意度按钮 - 仅在最后一条 AI 消息且状态为 waiting 时显示 */}
+                  {/* 满意度按钮 - 仅在最后一条 AI 消息时显示 */}
                   {msg.role === 'assistant' &&
-                    msg === messages[messages.length - 1] &&
-                    satisfactionState === 'waiting' && (
+                    msg === messages[messages.length - 1] && (
                       <div className="satisfaction-buttons">
                         <button
                           className="btn-satisfy"

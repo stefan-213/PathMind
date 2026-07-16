@@ -317,8 +317,6 @@ const loadChart = async (
 export function GraphPage() {
   const navigate = useNavigate();
   const addMessage = useChatStore((state) => state.addMessage);
-  const setSatisfactionState = useChatStore((state) => state.setSatisfactionState);
-
   // 选中节点（节点详情面板）
   const [selectedNode, setSelectedNode] = useState<GraphNode | null>(null);
   const pageRef = useRef<HTMLDivElement>(null);
@@ -517,13 +515,13 @@ export function GraphPage() {
           throw new Error(getFailureMessage(response, '图表修改失败，请稍后重试'));
         }
 
-        const chart = normalizeGeneratedChart(getChartContent(response));
+        // 调用 getXml 获取服务端最新图表数据
+        const xmlResponse = await getXml(normalizedSessionId);
+        const chart = normalizeGeneratedChart(getChartContent(xmlResponse));
         if (!chart) throw new Error('图表数据格式异常');
 
         const title = sessions.find((s) => s.sessionId === normalizedSessionId)?.title ?? normalizedSessionId;
         cacheAndRenderSessionChart(normalizedSessionId, title, chart);
-        setActiveSessionId(normalizedSessionId);
-        setSatisfactionState('waiting');
         addMessage({
           role: 'assistant',
           content: '已按照您的需求修改，请查看，如果不满意请继续提出修改意见。',
@@ -538,7 +536,7 @@ export function GraphPage() {
         setIsAiUpdating(false);
       }
     },
-    [activeSessionId, addMessage, cacheAndRenderSessionChart, isAiUpdating, isScheduleGenerating, sessions, setSatisfactionState],
+    [activeSessionId, addMessage, cacheAndRenderSessionChart, isAiUpdating, isScheduleGenerating, sessions],
   );
 
   // ---------------------------------------------
@@ -572,19 +570,17 @@ export function GraphPage() {
           throw new Error(response.error || '日程表生成失败，请稍后重试');
         }
 
-        setSatisfactionState('satisfied');
         pathmindStorage.consult.clear();
         navigate('/tasks');
       } catch (error) {
         console.error('Generate schedule failed:', error);
         const messageText = error instanceof Error && error.message ? error.message : '日程表生成失败，请稍后重试';
-        setSatisfactionState('waiting');
         addMessage({ role: 'assistant', content: messageText });
       } finally {
         setIsScheduleGenerating(false);
       }
     },
-    [activeSessionId, addMessage, isScheduleGenerating, navigate, setSatisfactionState],
+    [activeSessionId, addMessage, isScheduleGenerating, navigate],
   );
 
   // ---------------------------------------------
