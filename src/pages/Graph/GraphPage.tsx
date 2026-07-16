@@ -690,6 +690,7 @@ export function GraphPage() {
 
           <AISidePanel
             hasInitialGraph={Boolean(graphXml)}
+            sessionId={activeSessionId}
             isLoading={isAiUpdating}
             isScheduleGenerating={isScheduleGenerating}
             isCollapsed={isAiPanelCollapsed}

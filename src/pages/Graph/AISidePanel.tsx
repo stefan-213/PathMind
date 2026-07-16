@@ -9,6 +9,8 @@ import './AISidePanel.scss';
 interface AISidePanelProps {
   /** 是否有初始图表（进入页面时已有） */
   hasInitialGraph?: boolean;
+  /** 当前会话 ID（切换时重置初始化状态） */
+  sessionId?: string | null;
   /** 发送消息回调（由父组件处理 API 调用） */
   onSendMessage?: (message: string) => void | Promise<void>;
   /** 加载状态 */
@@ -25,6 +27,7 @@ interface AISidePanelProps {
 
 export function AISidePanel({
   hasInitialGraph,
+  sessionId,
   onSendMessage,
   isLoading,
   isScheduleGenerating = false,
@@ -32,7 +35,7 @@ export function AISidePanel({
   onToggleCollapse,
   onSatisfied,
 }: AISidePanelProps) {
-  const { messages, addMessage, satisfactionState, setSatisfactionState } = useChatStore();
+  const { messages, addMessage, setSatisfactionState } = useChatStore();
   const [input, setInput] = useState('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const hasInitializedRef = useRef(false);
@@ -41,6 +44,11 @@ export function AISidePanel({
     isCollapsed ? 'ai-side-panel--collapsed' : '',
   ].filter(Boolean).join(' ');
   const toggleTitle = isCollapsed ? '展开 AI 助手' : '收起 AI 助手';
+
+  // 会话切换时重置初始化状态
+  useEffect(() => {
+    hasInitializedRef.current = false;
+  }, [sessionId]);
 
   // 自动滚动到最新消息
   useEffect(() => {
@@ -58,7 +66,7 @@ export function AISidePanel({
       setSatisfactionState('waiting');
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [hasInitialGraph]);
+  }, [hasInitialGraph, sessionId]);
 
   const handleSend = () => {
     if (!input.trim() || isLoading || isScheduleGenerating) return;
@@ -150,16 +158,6 @@ export function AISidePanel({
                         </button>
                       </div>
                     )}
-                  {/* 计划表跳转按钮 - 仅在满意后显示 */}
-                  {/* {msg.role === 'assistant' &&
-                    msg === messages[messages.length - 1] &&
-                    satisfactionState === 'satisfied' && (
-                      <div className="plan-link">
-                        <a href={`/tasks?sessionId=${sessionId}`} className="btn-to-plan">
-                          <i className="fas fa-tasks"></i> 查看计划表
-                        </a>
-                      </div>
-                    )} */}
                   <div className="message-time">
                     {new Date(msg.timestamp).toLocaleTimeString()}
                   </div>
