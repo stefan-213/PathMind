@@ -98,8 +98,8 @@ export interface CreateTasksRequest {
 
 /** 后端返回的日程子任务 DTO */
 export interface SubScheduleDTO {
-  id?: number;
-  scheduleId?: number;
+  id?: string;
+  scheduleId?: string;
   step?: string;
   task?: string;
   focus?: string;
@@ -110,7 +110,7 @@ export interface SubScheduleDTO {
 
 /** 后端返回的日程表 DTO */
 export interface ScheduleDTO {
-  id?: number;
+  id?: string;
   scheduleName?: string;
   userId?: string;
   sessionId?: string;
@@ -126,8 +126,8 @@ export interface ScheduleDTO {
 
 /** 日程子任务 */
 export interface SubSchedule {
-  id?: number;
-  parentId?: number;
+  id?: string;
+  parentId?: string;
   day: string;
   task: string;
   taskGoal: string;
@@ -148,7 +148,7 @@ export interface ScheduleItem {
 
 /** 日程表（完整结构） */
 export interface Schedule {
-  id: number;
+  id?: string;
   scheduleId: string;
   userId: string;
   scheduleName?: string;

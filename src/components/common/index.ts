@@ -6,6 +6,7 @@ export { Input } from './Input';
 export { Textarea } from './Textarea';
 export { EmptyState } from './EmptyState';
 export { Spin } from './Spin';
+export { CelebrationModal } from './CelebrationModal';
 export {
   ResourceSidebar,
   type ResourceSidebarAction,

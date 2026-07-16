@@ -58,6 +58,18 @@ $consult-on-primary: #ffffff;
   flex-direction: column;
   height: 100vh;
   background: $consult-background;
+  position: relative;
+}
+
+// ---------- 生成图表 Loading ----------
+.consult-loading-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba($consult-background, 0.85);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
 }
 
 // ---------- 主内容容器（侧边栏+聊天） ----------

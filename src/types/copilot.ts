@@ -1,22 +1,93 @@
 // ============================================================
 // Copilot / 会话类型
 // ============================================================
-// 注意：PathNode、ComparisonItem 与 api.ts 重复，已迁移至 api.ts，本文件 re-export 保持向后兼容
+import type { PlanComparisonResponse } from './api';
 
-// STATUS: UNUSED — 未找到任何调用点
+// ============================================================
+// 会话数据模型
+// ============================================================
+
+/** 会话消息 */
+export interface Message {
+  role: 'user' | 'assistant';
+  content: string;
+  isHtml?: boolean;
+  timestamp: number;
+}
+
+/** Copilot 会话 */
+export interface Session {
+  id: string;
+  title: string;
+  createdAt: string;
+  messages: Message[];
+  finalXml: string;
+  planDetails: { week: string; items: string[] }[];
+  agentId?: string;
+  sessionId?: string;
+  quickOptions: string[];
+}
+
+/** 打开图表的载荷 */
+export interface OpenGraphPayload {
+  optionId?: string;
+}
+
+/** AI 回复结构 */
+export interface AIReply {
+  thinking: string;
+  question: string;
+  options: string[];
+  rawContent: string;
+  planComparison?: PlanComparisonResponse;
+  extraText?: string;
+}
+
+/** JSON 解析后的 AI 回复类型（用于判断渲染格式） */
+export type ParsedJSONResponse =
+  | { type: 'plan-options'; planComparison: PlanComparisonResponse }
+  | { type: 'question'; question: string; options: string[] }
+  | { type: 'unknown' }
+  | null;
+
+// ============================================================
+// 组件 Props 类型
+// ============================================================
+
+/** 消息项 Props */
+export interface MessageItemProps {
+  message: Message;
+  onOptionSelect?: (option: string) => void;
+  onPlanOptionSelect?: (optionId: string, optionIndex: number) => void;
+  optionsDisabled?: boolean;
+}
+
+/** 方案对比消息 Props */
+export interface PlanComparisonMessageProps {
+  data: PlanComparisonResponse;
+  disabled: boolean;
+  onSelectOption?: (optionId: string, optionIndex: number) => void;
+}
+
+/** 快捷选项 Props */
+export interface QuickOptionsProps {
+  options: string[];
+  onSelect: (option: string) => void;
+  disabled: boolean;
+}
+
+// ============================================================
+// 旧版类型（兼容用）
+// ============================================================
 export interface QuestionOption {
   text: string;
   icon: string;
 }
 
-// STATUS: UNUSED — 未找到任何调用点
 export interface Question {
   question: string;
   options: QuestionOption[];
 }
-
-// 注意：ResultData 已移除（未发现任何使用点，为死代码）
-// 如需使用，请从 api.ts 引入 PathNode + ComparisonItem 后自行组合
 
 export interface UserProfile {
   goal: string;
@@ -25,8 +96,6 @@ export interface UserProfile {
   createdAt: string;
 }
 
-// 注意：此 Task 类型与 api.ts 的 UserTask 不同（用途/结构均不同）
-// api.ts.UserTask 用于后端任务系统，此处 Task 用于本地任务状态管理
 export interface Task {
   id: string;
   week: string;
@@ -37,16 +106,11 @@ export interface Task {
   completedAt?: string;
 }
 
-// 注意：此 LocalUserProgress 与 api.ts.UserProgress 不同（api.ts 版本有 id/userId/goalId/streak 等字段）
-// 此处为简化版，仅用于本地进度统计
 export interface LocalUserProgress {
   completedTasks: number;
   totalTasks: number;
   percentage: number;
 }
 
-// ============================================================
-// 向后兼容 re-export（避免直接 import from ./api 破坏现有代码）
-// ============================================================
-export type { PathNode, ComparisonItem } from './api';
 
+export type { PathNode, ComparisonItem, PlanComparisonResponse, PlanOption } from './api';

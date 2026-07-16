@@ -1,33 +1,25 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Header, Footer } from '../../components/layout';
-import { Card, Badge, EmptyState, ResourceSidebar, Spin, type ResourceSidebarItem } from '../../components/common';
-import { getChatSessions } from '../../api/useApi';
+import { Card, Badge, EmptyState, ResourceSidebar, Spin, CelebrationModal, type ResourceSidebarItem } from '../../components/common';
+import { getChatList } from '../../api/conversation';
+import { getAchievements } from '../../api/profile';
+import { deleteSchedule } from '../../api/tasks';
 import { useScheduleStore } from '../../stores/scheduleStore';
 import { useSessionStore } from '../../stores/sessionStore';
 import { normalizeCopilotSessionMap, type CopilotSessionResource } from '../../utils';
 import { AGENT_IDS } from '../../constants';
 import { pathmindStorage } from '../../utils/storage';
-import type { Schedule, SubSchedule } from '../../types/api';
+import type { Schedule, SubSchedule, Achievement } from '../../types/api';
 import './TasksPage.scss';
-
-type PlanDataRecord = Record<string, unknown>;
-
-interface TaskTimeMeta {
-  weekLabel?: string;
-  dayLabel?: string;
-}
 
 interface StageTaskViewModel {
   id: number | string;
   scheduleId: string;
   taskId?: number;
-  stageIndex: number;
-  stageTitle: string;
   timeText: string;
   taskTitle: string;
   status: number;
-  completedAt?: string | null;
 }
 
 interface StageViewModel {
@@ -36,85 +28,24 @@ interface StageViewModel {
   tasks: StageTaskViewModel[];
 }
 
-const WEEK_PATTERN = /第\d+(?:-\d+)?周/;
-const DAY_PATTERN = /第\d+(?:-\d+)?天/;
-
-const isRecord = (value: unknown): value is PlanDataRecord =>
-  typeof value === 'object' && value !== null && !Array.isArray(value);
-
-const getTimePartLabel = (value: unknown, unit: '周' | '天'): string | undefined => {
-  if (typeof value === 'number' && Number.isFinite(value)) {
-    return `第${value}${unit}`;
-  }
-
-  if (typeof value !== 'string') return undefined;
-
-  const text = value.trim();
-  if (!text) return undefined;
-
-  const pattern = unit === '周' ? WEEK_PATTERN : DAY_PATTERN;
-  const match = text.match(pattern);
-  if (match) return match[0];
-
-  const numericMatch = text.match(/^\d+(?:-\d+)?$/);
-  if (numericMatch) return `第${text}${unit}`;
-
-  if (unit === '天') {
-    const dayMatch = text.match(/Day\s*(\d+(?:-\d+)?)/i);
-    if (dayMatch) return `第${dayMatch[1]}天`;
-  }
-
-  return undefined;
-};
-
-const formatTaskTimeText = ({ weekLabel, dayLabel }: TaskTimeMeta) => {
-  if (weekLabel && dayLabel) return `${weekLabel}，${dayLabel}`;
-  if (weekLabel) return weekLabel;
-  if (dayLabel) return dayLabel;
-  return '未标注时间';
-};
-
-const getUnknownField = (value: unknown, key: string) => (
-  isRecord(value) ? value[key] : undefined
-);
-
-const getTaskTimeText = (task: SubSchedule) => {
-  const weekLabel =
-    getTimePartLabel(getUnknownField(task, 'week'), '周') ||
-    getTimePartLabel(task.taskGoal, '周') ||
-    getTimePartLabel(task.day, '周') ||
-    getTimePartLabel(task.task, '周');
-  const dayLabel =
-    getTimePartLabel(task.day, '天') ||
-    getTimePartLabel(task.task, '天');
-
-  return formatTaskTimeText({ weekLabel, dayLabel });
-};
-
-const stripStagePrefix = (value: string) =>
-  value.replace(/^阶段\s*\d+\s*[·.．、:：\-—－]?\s*/, '').trim();
-
-const getStageTitle = (schedule: Schedule, stageIndex: number) => {
-  const title = stripStagePrefix(schedule.title) || '未命名阶段';
-  return `阶段${stageIndex + 1}·${title}`;
-};
-
 const createStageViewModel = (schedule: Schedule, stageIndex: number): StageViewModel => {
-  const stageTitle = getStageTitle(schedule, stageIndex);
+  const stageTitle = `阶段${stageIndex + 1}·${schedule.title || '未命名阶段'}`;
+
+  // 对 tasks 去重，防止相同 task.id 重复渲染导致 key 冲突
+  const uniqueTasks = schedule.subScheduleList.filter(
+    (task, index, arr) => arr.findIndex(t => t.id === task.id) === index,
+  );
 
   return {
     id: `${schedule.scheduleId}-${stageIndex}`,
     title: stageTitle,
-    tasks: schedule.subScheduleList.map((task, taskIndex) => ({
-      id: task.id ?? `${schedule.scheduleId}-${taskIndex}`,
+    tasks: uniqueTasks.map((task, taskIndex) => ({
+      id: `${schedule.scheduleId}-${task.id ?? taskIndex}`,
       scheduleId: schedule.scheduleId,
       taskId: task.id,
-      stageIndex,
-      stageTitle,
-      timeText: getTaskTimeText(task),
+      timeText: task.day || '未标注时间',
       taskTitle: task.task || '未命名任务',
       status: task.status,
-      completedAt: task.completedAt,
     })),
   };
 };
@@ -124,8 +55,6 @@ export function TasksPage() {
   const {
     schedules,
     fetchSchedules,
-    setSchedules,
-    setCurrentSchedule,
     clearSchedules,
     toggleTask: storeToggleTask,
   } = useScheduleStore();
@@ -140,34 +69,35 @@ export function TasksPage() {
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [isSessionListLoading, setIsSessionListLoading] = useState(false);
   const [sessionListError, setSessionListError] = useState<string | null>(null);
+  const [hasAttemptedLoadSchedules, setHasAttemptedLoadSchedules] = useState(false);
+  const [showCelebration, setShowCelebration] = useState(false);
+  const [newAchievements, setNewAchievements] = useState<Achievement[]>([]);
 
   /**
    * 从后端加载日程数据
-   * 优先使用 sessionId 从后端获取，失败时降级到 localStorage
+   * 每次从接口获取最新数据
    */
   const loadSchedules = useCallback(async (sessionId?: string) => {
-    if (sessionId) {
-      // 从后端获取
-      await fetchSchedules(sessionId);
-      setPlanTitle(pathmindStorage.plan.loadTitle()?.trim() || '');
-    } else {
-      // 降级: 从 localStorage 读取
-      try {
-        const localSchedules = pathmindStorage.plan.load();
-        if (!localSchedules || localSchedules.length === 0) {
-          setPlanTitle('');
-          clearSchedules();
-          return;
-        }
-        setPlanTitle(pathmindStorage.plan.loadTitle()?.trim() || '');
-        setSchedules(localSchedules);
-        setCurrentSchedule(localSchedules[0]);
-      } catch (err) {
-        console.error('读取本地任务数据失败:', err);
-        clearSchedules();
-      }
+    if (!sessionId) {
+      clearSchedules();
+      setPlanTitle('');
+      setHasAttemptedLoadSchedules(true);
+      return;
     }
-  }, [fetchSchedules, clearSchedules, setCurrentSchedule, setSchedules]);
+
+    setHasAttemptedLoadSchedules(false);
+    try {
+      await fetchSchedules(sessionId);
+      const title = pathmindStorage.plan.loadTitle(sessionId)?.trim() || '';
+      setPlanTitle(title);
+    } catch (err) {
+      console.error('加载日程数据失败:', err);
+      clearSchedules();
+      setPlanTitle('');
+    } finally {
+      setHasAttemptedLoadSchedules(true);
+    }
+  }, [fetchSchedules, clearSchedules]);
 
   // 加载会话列表
   useEffect(() => {
@@ -178,7 +108,7 @@ export function TasksPage() {
       setSessionListError(null);
 
       try {
-        const response = await getChatSessions(AGENT_IDS.COPILOT);
+        const response = await getChatList(AGENT_IDS.COPILOT);
         if (response.success === false) {
           throw new Error(response.error || '会话列表加载失败');
         }
@@ -234,8 +164,20 @@ export function TasksPage() {
     [],
   );
 
-  const toggleTask = (scheduleId: string, taskId: number) => {
-    storeToggleTask(scheduleId, taskId);
+  const toggleTask = async (scheduleId: string, taskId: number) => {
+    await storeToggleTask(scheduleId, taskId);
+
+    // 检查是否所有任务都已完成
+    const { schedules } = useScheduleStore.getState();
+    const allTasks = schedules.flatMap(s => s.subScheduleList);
+    const allCompleted = allTasks.length > 0 && allTasks.every(t => t.status === 1);
+    if (allCompleted) {
+      // 获取最新成就
+      const res = await getAchievements();
+      const unlocked = res.data?.filter(a => a.unlocked) ?? [];
+      setNewAchievements(unlocked);
+      setShowCelebration(true);
+    }
   };
 
   const handleToggleStage = (stageId: string) => {
@@ -269,9 +211,12 @@ export function TasksPage() {
     navigate(`/task-detail?${params.toString()}`);
   };
 
-  const handleClearAll = () => {
+  const handleClearAll = async () => {
     if (confirm('确定要删除这个日程表吗？')) {
-      pathmindStorage.plan.clear();
+      if (activeSessionId) {
+        await deleteSchedule(activeSessionId);
+      }
+      pathmindStorage.plan.clear(activeSessionId ?? undefined);
       setPlanTitle('');
       clearSchedules();
     }
@@ -282,9 +227,10 @@ export function TasksPage() {
   const percentage = totalCount > 0 ? Math.round((completedCount / totalCount) * 100) : 0;
   const totalGoalTitle = planTitle || 'AI 对话中的学习任务（总）';
   const graphGoal = planTitle || scheduleSections.map(schedule => schedule.title).join('、') || totalGoalTitle;
-  const stages = scheduleSections.map((schedule, stageIndex) =>
-    createStageViewModel(schedule, stageIndex)
-  );
+  const stages = scheduleSections.map((schedule, stageIndex) => {
+    // console.log('[stages] creating stage', stageIndex, 'with scheduleId:', schedule.scheduleId, 'tasks:', schedule.subScheduleList.map(t => t.id));
+    return createStageViewModel(schedule, stageIndex);
+  });
   const activeSessionTitle =
     sessions.find((session) => session.sessionId === activeSessionId)?.title ?? '';
   const sessionSidebarItems: ResourceSidebarItem[] = sessions.map((session) => ({
@@ -323,6 +269,9 @@ export function TasksPage() {
     />
   );
 
+  // 曾尝试加载但数据为空
+  const isEmptyAfterLoad = hasAttemptedLoadSchedules && scheduleSections.length === 0;
+
   if (scheduleSections.length === 0 || allTasks.length === 0) {
     return (
       <div className="tasks-page">
@@ -333,19 +282,35 @@ export function TasksPage() {
             <EmptyState
               icon={<i className="fas fa-clipboard-list"></i>}
               title="还没有任务"
-              description="先去AI Copilot制定你的学习计划吧"
+              description={isEmptyAfterLoad
+                ? '请到Graph页面继续完善计划，生成计划表'
+                : '先去AI Copilot制定你的学习计划吧'}
               action={
-                <Link to="/consult" className="btn btn-primary">
-                  制定计划
-                  <div className="arrow-right">
-                    <i className="fas fa-arrow-right"></i>
-                  </div>
-                </Link>
+                isEmptyAfterLoad ? (
+                  <Link to="/graph" className="btn btn-primary">
+                    去Graph页面
+                    <div className="arrow-right">
+                      <i className="fas fa-arrow-right"></i>
+                    </div>
+                  </Link>
+                ) : (
+                  <Link to="/consult" className="btn btn-primary">
+                    制定计划
+                    <div className="arrow-right">
+                      <i className="fas fa-arrow-right"></i>
+                    </div>
+                  </Link>
+                )
               }
             />
           </main>
         </div>
         <Footer />
+        <CelebrationModal
+          isOpen={showCelebration}
+          onClose={() => setShowCelebration(false)}
+          newAchievements={newAchievements}
+        />
       </div>
     );
   }
@@ -448,6 +413,11 @@ export function TasksPage() {
         </main>
       </div>
       {/* <Footer /> */}
+      <CelebrationModal
+        isOpen={showCelebration}
+        onClose={() => setShowCelebration(false)}
+        newAchievements={newAchievements}
+      />
     </div>
   );
 }

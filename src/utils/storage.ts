@@ -27,18 +27,37 @@ export const pathmindStorage = {
     clear: (): void => localStorage.removeItem(PATHMIND_KEYS.CONSULT_CHART),
   },
   plan: {
-    save: (schedules: Schedule[]): void =>
-      localStorage.setItem(PATHMIND_KEYS.PLAN_DATA, JSON.stringify(schedules)),
-    load: (): Schedule[] => {
-      const raw = localStorage.getItem(PATHMIND_KEYS.PLAN_DATA);
+    save: (schedules: Schedule[], sessionId?: string): void => {
+      if (sessionId) {
+        localStorage.setItem(`${PATHMIND_KEYS.PLAN_DATA}_${sessionId}`, JSON.stringify(schedules));
+      } else {
+        localStorage.setItem(PATHMIND_KEYS.PLAN_DATA, JSON.stringify(schedules));
+      }
+    },
+    load: (sessionId?: string): Schedule[] => {
+      const key = sessionId ? `${PATHMIND_KEYS.PLAN_DATA}_${sessionId}` : PATHMIND_KEYS.PLAN_DATA;
+      const raw = localStorage.getItem(key);
       return raw ? JSON.parse(raw) : [];
     },
-    saveTitle: (title: string): void =>
-      localStorage.setItem(PATHMIND_KEYS.PLAN_TITLE, title),
-    loadTitle: (): string => localStorage.getItem(PATHMIND_KEYS.PLAN_TITLE) || '',
-    clear: (): void => {
-      localStorage.removeItem(PATHMIND_KEYS.PLAN_DATA);
-      localStorage.removeItem(PATHMIND_KEYS.PLAN_TITLE);
+    saveTitle: (title: string, sessionId?: string): void => {
+      if (sessionId) {
+        localStorage.setItem(`${PATHMIND_KEYS.PLAN_TITLE}_${sessionId}`, title);
+      } else {
+        localStorage.setItem(PATHMIND_KEYS.PLAN_TITLE, title);
+      }
+    },
+    loadTitle: (sessionId?: string): string => {
+      const key = sessionId ? `${PATHMIND_KEYS.PLAN_TITLE}_${sessionId}` : PATHMIND_KEYS.PLAN_TITLE;
+      return localStorage.getItem(key) || '';
+    },
+    clear: (sessionId?: string): void => {
+      if (sessionId) {
+        localStorage.removeItem(`${PATHMIND_KEYS.PLAN_DATA}_${sessionId}`);
+        localStorage.removeItem(`${PATHMIND_KEYS.PLAN_TITLE}_${sessionId}`);
+      } else {
+        localStorage.removeItem(PATHMIND_KEYS.PLAN_DATA);
+        localStorage.removeItem(PATHMIND_KEYS.PLAN_TITLE);
+      }
     },
   },
 };

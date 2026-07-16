@@ -1,7 +1,7 @@
 // src/stores/scheduleStore.ts
 import { create } from 'zustand';
 import type { Schedule } from '../types/api';
-import { getScheduleList, convertDTOToSchedule } from '../api/tasks';
+import { getScheduleList, convertDTOToSchedule, updateSubScheduleStatus } from '../api/tasks';
 import { STORAGE_KEYS } from '../constants';
 
 interface ScheduleStore {
@@ -49,42 +49,20 @@ export const useScheduleStore = create<ScheduleStore>((set, get) => ({
       console.warn('从后端获取日程表失败:', err);
     }
 
-    // 后端有数据时使用后端数据并同步到 localStorage
-    if (backendSchedules.length > 0) {
-      set({
-        schedules: backendSchedules,
-        currentSchedule: backendSchedules[0] || null,
-        isLoading: false,
-      });
-      localStorage.setItem(STORAGE_KEYS.PLAN_DATA, JSON.stringify(backendSchedules));
-      // 用后端返回的 scheduleName 更新标题（修复 option_1 等占位符问题）
-      const scheduleName = backendSchedules[0]?.scheduleName?.trim();
-      if (scheduleName) {
-        localStorage.setItem(STORAGE_KEYS.PLAN_TITLE, scheduleName);
-      }
-      return;
+    // 使用后端数据并同步到 localStorage
+    set({
+      schedules: backendSchedules,
+      currentSchedule: backendSchedules[0] || null,
+      isLoading: false,
+    });
+    // 使用 sessionId 缀的 key 存储
+    localStorage.setItem(`${STORAGE_KEYS.PLAN_DATA}_${sessionId}`, JSON.stringify(backendSchedules));
+    // 用后端返回的 scheduleName 更新标题（修复 option_1 等占位符问题）
+    const scheduleName = backendSchedules[0]?.scheduleName?.trim();
+    if (scheduleName) {
+      localStorage.setItem(`${STORAGE_KEYS.PLAN_TITLE}_${sessionId}`, scheduleName);
     }
-
-    // 后端无数据，从 localStorage 读取
-    try {
-      const localData = localStorage.getItem(STORAGE_KEYS.PLAN_DATA);
-      if (localData) {
-        const parsed = JSON.parse(localData);
-        if (Array.isArray(parsed) && parsed.length > 0) {
-          set({
-            schedules: parsed,
-            currentSchedule: parsed[0] || null,
-            isLoading: false,
-          });
-          return;
-        }
-      }
-    } catch (localErr) {
-      console.error('读取本地数据失败:', localErr);
-    }
-
-    // 都没有数据
-    set({ schedules: [], currentSchedule: null, isLoading: false });
+    return;
   },
 
   setSchedules: (schedules) => set({ schedules }),
@@ -103,20 +81,37 @@ export const useScheduleStore = create<ScheduleStore>((set, get) => ({
   clearSchedules: () => set({ schedules: [], currentSchedule: null }),
 
   /**
-   * 切换任务状态 (本地状态，暂不调用后端)
+   * 切换任务状态
    */
-  toggleTask: (scheduleId: string, taskId: number) => {
+  toggleTask: async (scheduleId: string, taskId: number) => {
     const { schedules } = get();
-    const updatedSchedules = schedules.map(schedule => {
-      if (schedule.scheduleId !== scheduleId) return schedule;
+    // console.log('[toggleTask] called with:', { scheduleId, taskId });
+    // console.log('[toggleTask] available schedules:', schedules.map(s => ({ scheduleId: s.scheduleId, taskCount: s.subScheduleList.length })));
+    const schedule = schedules.find(s => s.scheduleId === scheduleId);
+    // if (!schedule) {
+    //   console.log('[toggleTask] schedule not found for scheduleId:', scheduleId);
+    //   return;
+    // }
+    const task = schedule.subScheduleList.find(t => t.id === taskId);
+    // if (!task) {
+    //   console.log('[toggleTask] task not found for taskId:', taskId, 'in schedule:', schedule.scheduleId);
+    //   return;
+    // }
+
+    // 计算新状态
+    const newStatus = task.status === 1 ? 'pending' : 'completed';
+
+    // 先乐观更新本地状态
+    const updatedSchedules = schedules.map(s => {
+      if (s.scheduleId !== scheduleId) return s;
       return {
-        ...schedule,
-        subScheduleList: schedule.subScheduleList.map(task => {
-          if (task.id !== taskId) return task;
+        ...s,
+        subScheduleList: s.subScheduleList.map(t => {
+          if (t.id !== taskId) return t;
           return {
-            ...task,
-            status: task.status === 1 ? 0 : 1,
-            completedAt: task.status === 1 ? null : new Date().toISOString(),
+            ...t,
+            status: t.status === 1 ? 0 : 1,
+            completedAt: t.status === 1 ? null : new Date().toISOString(),
           };
         }),
       };
@@ -127,5 +122,16 @@ export const useScheduleStore = create<ScheduleStore>((set, get) => ({
 
     // 同步到 localStorage
     localStorage.setItem(STORAGE_KEYS.PLAN_DATA, JSON.stringify(updatedSchedules));
+
+    // 调用后端 API
+    try {
+      // console.log('[toggleTask] calling API with:', { scheduleId: schedule.id, subScheduleId: taskId, status: newStatus });
+      await updateSubScheduleStatus(taskId, newStatus, schedule.id);
+    } catch (err) {
+      console.error('更新子日程状态失败:', err);
+      // 失败时回滚本地状态
+      set({ schedules, currentSchedule: schedule });
+      localStorage.setItem(STORAGE_KEYS.PLAN_DATA, JSON.stringify(schedules));
+    }
   },
 }));

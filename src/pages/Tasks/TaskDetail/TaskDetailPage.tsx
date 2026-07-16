@@ -389,9 +389,11 @@ export function TaskDetailPage() {
           </div>
 
           <div className="task-detail-timeline">
-            {(currentSchedule?.subScheduleList || []).map((task, index) => (
+            {(currentSchedule?.subScheduleList || []).filter(
+              (task, index, arr) => arr.findIndex(t => t.id === task.id) === index,
+            ).map((task, index) => (
               <button
-                key={task.id ?? `${task.task}-${index}`}
+                key={`${currentSchedule.scheduleId}-${task.id ?? index}`}
                 type="button"
                 className={`task-detail-timeline-item ${task.task === taskTitle ? 'active' : ''}`}
                 onClick={() => setInputText(`帮我拆解「${task.task}」这个任务`)}

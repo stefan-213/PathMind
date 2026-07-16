@@ -6,6 +6,14 @@ import { post } from './axios';
 import type { Schedule, ScheduleDTO } from '../types/api';
 
 /**
+ * 删除日程表
+ * 对应后端: POST /api/agent/delSchedule
+ */
+export const deleteSchedule = (sessionId: string) => {
+  return post<string>('/api/agent/delSchedule', { sessionId });
+};
+
+/**
  * 创建日程表
  * 对应后端: POST /api/agent/createSchedule
  */
@@ -19,6 +27,18 @@ export const createSchedule = (sessionId: string) => {
  */
 export const getScheduleList = (sessionId: string) => {
   return post<ScheduleDTO[]>('/api/agent/getSchedule', { sessionId });
+};
+
+/**
+ * 更新子日程状态
+ * 对应后端: POST /api/agent/updateSubScheduleStatus
+ */
+export const updateSubScheduleStatus = (subScheduleId: number, status: 'pending' | 'completed', scheduleId?: number) => {
+  return post('/api/agent/updateSubScheduleStatus', {
+    scheduleId,
+    subScheduleId,
+    status,
+  });
 };
 
 /**
@@ -38,7 +58,7 @@ export const scheduleChat = (sessionId: string, message: string, scheduleId: str
  */
 export const convertDTOToSchedule = (dto: ScheduleDTO): Schedule => {
   return {
-    id: dto.id || 0,
+    id: dto.id,
     scheduleId: String(dto.id || ''),
     userId: dto.userId || '',
     scheduleName: dto.scheduleName || '',
@@ -59,8 +79,8 @@ export const convertDTOToSchedule = (dto: ScheduleDTO): Schedule => {
   };
 };
 
-// 兼容旧接口导出
-// STATUS: UNUSED — createSchedule 的别名，请确认后删除
-export const createTask = createSchedule;
-// STATUS: UNUSED — getScheduleList 的别名，请确认后删除
-export const getScheduleContent = getScheduleList;
+// // 兼容旧接口导出
+// // STATUS: UNUSED — createSchedule 的别名，请确认后删除
+// export const createTask = createSchedule;
+// // STATUS: UNUSED — getScheduleList 的别名，请确认后删除
+// export const getScheduleContent = getScheduleList;

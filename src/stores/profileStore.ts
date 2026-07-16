@@ -4,7 +4,7 @@
  */
 import { create } from 'zustand';
 import type { Achievement, StudyStats, UserPlan } from '../types/api';
-import { profileApi } from '../api/useApi';
+import { getPlans, getAchievements, getStudyStats, deleteGoal } from '../api/profile';
 
 interface ProfileState {
   plans: UserPlan[];
@@ -40,7 +40,7 @@ export const useProfileStore = create<ProfileState>((set) => ({
   fetchPlans: async () => {
     set({ loadingPlans: true, error: null });
     try {
-      const response = await profileApi.getPlans();
+      const response = await getPlans();
       set({ plans: response.data ?? [], loadingPlans: false });
     } catch (err) {
       const message = err instanceof Error ? err.message : '获取计划列表失败';
@@ -51,7 +51,7 @@ export const useProfileStore = create<ProfileState>((set) => ({
   fetchAchievements: async () => {
     set({ loadingAchievements: true, error: null });
     try {
-      const response = await profileApi.getAchievements();
+      const response = await getAchievements();
       set({ achievements: response.data ?? [], loadingAchievements: false });
     } catch (err) {
       const message = err instanceof Error ? err.message : '获取成就列表失败';
@@ -62,7 +62,7 @@ export const useProfileStore = create<ProfileState>((set) => ({
   fetchStats: async () => {
     set({ loadingStats: true, error: null });
     try {
-      const response = await profileApi.getStudyStats();
+      const response = await getStudyStats();
       set({ stats: response.data ?? null, loadingStats: false });
     } catch (err) {
       const message = err instanceof Error ? err.message : '获取学习统计失败';
@@ -73,7 +73,7 @@ export const useProfileStore = create<ProfileState>((set) => ({
   deleteGoal: async (goalId: number) => {
     set({ error: null });
     try {
-      await profileApi.deleteGoal(goalId);
+      await deleteGoal(goalId);
       set((state) => ({
         plans: state.plans.filter((p) => p.id !== goalId),
       }));
