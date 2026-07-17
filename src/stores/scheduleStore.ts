@@ -19,7 +19,7 @@ interface ScheduleStore {
   addSchedule: (schedule: Schedule) => void;
   removeSchedule: (scheduleId: string) => void;
   clearSchedules: () => void;
-  toggleTask: (scheduleId: string, taskId: number) => void;
+  toggleTask: (scheduleId: string, taskId: string) => void;
 }
 
 export const useScheduleStore = create<ScheduleStore>((set, get) => ({
@@ -83,20 +83,14 @@ export const useScheduleStore = create<ScheduleStore>((set, get) => ({
   /**
    * 切换任务状态
    */
-  toggleTask: async (scheduleId: string, taskId: number) => {
+  toggleTask: async (scheduleId: string, taskId: string) => {
     const { schedules } = get();
     // console.log('[toggleTask] called with:', { scheduleId, taskId });
     // console.log('[toggleTask] available schedules:', schedules.map(s => ({ scheduleId: s.scheduleId, taskCount: s.subScheduleList.length })));
     const schedule = schedules.find(s => s.scheduleId === scheduleId);
-    // if (!schedule) {
-    //   console.log('[toggleTask] schedule not found for scheduleId:', scheduleId);
-    //   return;
-    // }
+    if (!schedule) return;
     const task = schedule.subScheduleList.find(t => t.id === taskId);
-    // if (!task) {
-    //   console.log('[toggleTask] task not found for taskId:', taskId, 'in schedule:', schedule.scheduleId);
-    //   return;
-    // }
+    if (!task) return;
 
     // 计算新状态
     const newStatus = task.status === 1 ? 'pending' : 'completed';

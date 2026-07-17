@@ -16,7 +16,7 @@ import './TasksPage.scss';
 interface StageTaskViewModel {
   id: number | string;
   scheduleId: string;
-  taskId?: number;
+  taskId?: string | number;
   timeText: string;
   taskTitle: string;
   status: number;
@@ -164,7 +164,7 @@ export function TasksPage() {
     [],
   );
 
-  const toggleTask = async (scheduleId: string, taskId: number) => {
+  const toggleTask = async (scheduleId: string, taskId: string) => {
     await storeToggleTask(scheduleId, taskId);
 
     // 检查是否所有任务都已完成
@@ -379,7 +379,7 @@ export function TasksPage() {
                             aria-label={`标记「${task.taskTitle}」为${task.status === 1 ? '未完成' : '已完成'}`}
                             onChange={() => {
                               if (task.taskId !== undefined) {
-                                toggleTask(task.scheduleId, task.taskId);
+                                toggleTask(task.scheduleId, String(task.taskId));
                               }
                             }}
                           />

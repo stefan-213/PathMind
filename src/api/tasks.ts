@@ -33,7 +33,7 @@ export const getScheduleList = (sessionId: string) => {
  * 更新子日程状态
  * 对应后端: POST /api/agent/updateSubScheduleStatus
  */
-export const updateSubScheduleStatus = (subScheduleId: number, status: 'pending' | 'completed', scheduleId?: number) => {
+export const updateSubScheduleStatus = (subScheduleId: string, status: 'pending' | 'completed', scheduleId?: string) => {
   return post('/api/agent/updateSubScheduleStatus', {
     scheduleId,
     subScheduleId,
@@ -67,8 +67,8 @@ export const convertDTOToSchedule = (dto: ScheduleDTO): Schedule => {
     content: dto.content || '',
     status: dto.status === 'completed' || dto.status === '1' ? 1 : 0,
     subScheduleList: (dto.subSchedules || []).map((sub, index) => ({
-      id: sub.id || index,
-      parentId: sub.scheduleId || dto.id || 0,
+      id: sub.id ?? String(index),
+      parentId: sub.scheduleId ?? String(dto.id ?? 0),
       day: sub.step || `第${index + 1}天`,
       task: sub.task || '',
       taskGoal: sub.focus || '',

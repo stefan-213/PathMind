@@ -1,13 +1,18 @@
+import { lazy } from 'react';
 import { Navigate, Route, createRoutesFromElements } from 'react-router-dom';
 import { ProtectedRoute, PublicRoute } from '../components/ProtectedRoute';
-import { HomePage } from '../pages/Home';
-import { TaskDetailPage, TasksPage } from '../pages/Tasks';
-import { GraphPage } from '../pages/Graph';
-import { ConsultPage } from '../pages/Consult';
-import { ProfilePage } from '../pages/Profile';
-import { KnowledgeBasePage } from '../pages/KnowledgeBase';
-import { LoginPage, RegisterPage } from '../pages/Auth';
 import { RootLayout } from './RootLayout';
+import { HomePage } from '../pages/Home';
+
+// 懒加载路由组件
+const LoginPage = lazy(() => import('../pages/Auth').then(m => ({ default: m.LoginPage })));
+const RegisterPage = lazy(() => import('../pages/Auth').then(m => ({ default: m.RegisterPage })));
+const TasksPage = lazy(() => import('../pages/Tasks').then(m => ({ default: m.TasksPage })));
+const TaskDetailPage = lazy(() => import('../pages/Tasks').then(m => ({ default: m.TaskDetailPage })));
+const GraphPage = lazy(() => import('../pages/Graph').then(m => ({ default: m.GraphPage })));
+const ConsultPage = lazy(() => import('../pages/Consult').then(m => ({ default: m.ConsultPage })));
+const KnowledgeBasePage = lazy(() => import('../pages/KnowledgeBase').then(m => ({ default: m.KnowledgeBasePage })));
+const ProfilePage = lazy(() => import('../pages/Profile').then(m => ({ default: m.ProfilePage })));
 
 export const routes = createRoutesFromElements(
   <Route element={<RootLayout />}>

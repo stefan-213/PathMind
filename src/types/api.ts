@@ -126,8 +126,8 @@ export interface ScheduleDTO {
 
 /** 日程子任务 */
 export interface SubSchedule {
-  id?: string;
-  parentId?: string;
+  id?: string | number;
+  parentId?: string | number;
   day: string;
   task: string;
   taskGoal: string;

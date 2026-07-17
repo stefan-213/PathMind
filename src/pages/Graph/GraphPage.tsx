@@ -5,7 +5,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Header } from '../../components/layout';
-import { ResourceSidebar, Spin, type ResourceSidebarItem } from '../../components/common';
+import { ResourceSidebar, type ResourceSidebarItem } from '../../components/common';
 import { GraphCanvas } from './GraphCanvas';
 import { AISidePanel } from './AISidePanel';
 import type { GraphNode } from '../../types/graph';

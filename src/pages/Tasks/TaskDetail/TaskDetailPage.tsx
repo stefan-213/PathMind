@@ -93,10 +93,10 @@ const expandTaskInputs = (inputs: unknown[]) =>
 const normalizeTask = (
   taskInput: unknown,
   taskIndex: number,
-  parentId: number,
+  parentId: string,
   fallbackGoal: string,
 ): SubSchedule | null => {
-  const fallbackId = parentId * 1000 + taskIndex + 1;
+  const fallbackId = `${parentId}-${taskIndex}`;
 
   if (typeof taskInput === 'string') {
     const { day, task } = parseTaskText(taskInput, taskIndex);
@@ -118,8 +118,8 @@ const normalizeTask = (
   const parsedTask = parseTaskText(task, taskIndex);
 
   return {
-    id: toNumber(taskInput.id, fallbackId),
-    parentId: toNumber(taskInput.parentId, parentId),
+    id: String(toNumber(taskInput.id, Number(fallbackId))),
+    parentId: String(toNumber(taskInput.parentId, Number(parentId))),
     day: toText(taskInput.day, parsedTask.day),
     task: parsedTask.task,
     taskGoal: toText(taskInput.taskGoal ?? taskInput.goal ?? taskInput.week, fallbackGoal),
@@ -141,7 +141,7 @@ const readLocalSchedules = (): Schedule[] => {
       .map((item, scheduleIndex) => {
         if (!isRecord(item)) return null;
 
-        const id = toNumber(item.id, scheduleIndex + 1);
+        const id = String(toNumber(item.id, scheduleIndex + 1));
         const title = toText(item.title, `学习计划 ${scheduleIndex + 1}`);
         const rawTasks = Array.isArray(item.subScheduleList)
           ? expandTaskInputs(item.subScheduleList)
@@ -166,7 +166,7 @@ const readLocalSchedules = (): Schedule[] => {
           subScheduleList,
         };
       })
-      .filter((schedule): schedule is Schedule => Boolean(schedule));
+      .filter(Boolean) as Schedule[];
   } catch (error) {
     console.error('读取任务详情本地数据失败:', error);
     return [];
