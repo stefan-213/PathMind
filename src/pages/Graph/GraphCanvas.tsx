@@ -2,9 +2,11 @@
  * 图表渲染组件
  * 使用 react-drawio 嵌入 draw.io
  */
-import { useMemo } from 'react';
-import { DrawIoEmbed } from 'react-drawio';
+import { Suspense, lazy, useMemo } from 'react';
+import { Skeleton } from '../../components/common';
 import './GraphCanvas.scss';
+
+const DrawIoEmbed = lazy(() => import('react-drawio').then(m => ({ default: m.DrawIoEmbed })));
 
 interface GraphCanvasProps {
   /** draw.io XML 数据 */
@@ -21,6 +23,16 @@ const getDrawIoBaseUrl = () => {
 
   return `${protocol}://embed.diagrams.net`;
 };
+
+function DrawIOSkeleton() {
+  return (
+    <div className="graph-canvas">
+      <div style={{ padding: '24px' }}>
+        <Skeleton height={400} borderRadius="12px" />
+      </div>
+    </div>
+  );
+}
 
 export function GraphCanvas({ xml, emptyMessage = DEFAULT_EMPTY_MESSAGE }: GraphCanvasProps) {
   const drawIoBaseUrl = getDrawIoBaseUrl();
@@ -39,23 +51,25 @@ export function GraphCanvas({ xml, emptyMessage = DEFAULT_EMPTY_MESSAGE }: Graph
   return (
     <div className="graph-canvas">
       {xml ? (
-        <DrawIoEmbed
-          key={drawioKey}
-          baseUrl={drawIoBaseUrl}
-          xml={xml}
-          urlParameters={{
-            ui: 'sketch',
-            spin: false,
-            libraries: false,
-            noSaveBtn: true,
-            noExitBtn: true,
-          }}
-          configuration={{
-            formatPanel: false,
-            shapePanel: false,
-            toolbar: false,
-          }}
-        />
+        <Suspense fallback={<DrawIOSkeleton />}>
+          <DrawIoEmbed
+            key={drawioKey}
+            baseUrl={drawIoBaseUrl}
+            xml={xml}
+            urlParameters={{
+              ui: 'sketch',
+              spin: false,
+              libraries: false,
+              noSaveBtn: true,
+              noExitBtn: true,
+            }}
+            configuration={{
+              formatPanel: false,
+              shapePanel: false,
+              toolbar: false,
+            }}
+          />
+        </Suspense>
       ) : (
         <div className="empty-graph">
           <i className="fas fa-project-diagram"></i>
