@@ -2,7 +2,7 @@
  * PathMind API 类型定义
  */
 
-// ==================== Auth 相关 ====================
+// ==================== Auth ====================
 
 export interface User {
   id: string;
@@ -33,32 +33,7 @@ export interface AuthResponse {
   token: string;
 }
 
-// ==================== 学习目标相关 ====================
-// STATUS: UNUSED — 未找到任何调用点
-export interface QuestionAnswer {
-  questionId: string;
-  question: string;
-  selectedOption: string;
-}
-
-// STATUS: UNUSED — 未找到任何调用点
-export interface UserGoal {
-  id: string;
-  userId: string;
-  goal: string;
-  recommendTitle: string;
-  answers: QuestionAnswer[];
-  status: 'active' | 'completed' | 'archived';
-  createdAt: string;
-  updatedAt: string;
-}
-
-// STATUS: UNUSED — 未找到任何调用点
-export interface CreateGoalRequest {
-  goal: string;
-}
-
-// ==================== 学习任务相关 ====================
+// ==================== Tasks / Schedule ====================
 
 export interface UserTask {
   id: string;
@@ -84,17 +59,6 @@ export interface UserProgress {
   lastActiveDate: string;
   streak: number;
 }
-
-// STATUS: UNUSED — 未找到任何调用点
-export interface CreateTasksRequest {
-  goalId: string;
-  schedule: {
-    week: string;
-    items: string[];
-  }[];
-}
-
-// ==================== 日程表相关（后端 DTO）====================
 
 /** 后端返回的日程子任务 DTO */
 export interface SubScheduleDTO {
@@ -122,8 +86,6 @@ export interface ScheduleDTO {
   subSchedules?: SubScheduleDTO[];
 }
 
-// ==================== 日程表相关（前端模型）====================
-
 /** 日程子任务 */
 export interface SubSchedule {
   id?: string | number;
@@ -134,16 +96,6 @@ export interface SubSchedule {
   description?: string | null;
   status: number;  // 0: pending, 1: completed
   completedAt?: string | null;
-}
-
-/** 日程表项（创建时用） */
-// STATUS: UNUSED — 未找到任何调用点
-export interface ScheduleItem {
-  title: string;
-  time: string;
-  content: string;
-  scheduleId?: string;
-  tasks: Omit<SubSchedule, 'id' | 'parentId'>[];
 }
 
 /** 日程表（完整结构） */
@@ -159,67 +111,17 @@ export interface Schedule {
   subScheduleList: SubSchedule[];
 }
 
-/** 创建日程表请求 */
-export interface CreateScheduleRequest {
-  data: ScheduleItem[];
-}
-
-/** 更新日程表请求 */
-// STATUS: UNUSED — 未找到任何调用点
-export interface UpdateScheduleRequest {
-  id: number;
-  scheduleId: string;
-  userId: string;
-  title: string;
-  time: string;
-  content: string;
-  status: number;
-  subScheduleList: SubSchedule[];
-}
-
-/** 更新子任务请求 */
-// STATUS: UNUSED — 未找到任何调用点
-export interface UpdateSubTaskRequest {
-  id: number;
-  parentId: number;
-  day: string;
-  task: string;
-  taskGoal: string;
-  description?: string | number | null;
-  status: number;
-  completedAt?: string | null;
-}
-
-// ==================== 技术节点相关 ====================
-// STATUS: UNUSED — 未找到任何调用点
-export interface Technology {
-  id: string;
-  name: string;
-  label: string;
-  englishName: string;
-  category: 'frontend' | 'backend' | 'ai' | 'devops' | 'basic';
-  icon: string;
-  difficulty: '简单' | '中等' | '高';
-  heat: string;
-  scene: string;
-  description: string;
-  tags: string[];
-  level: 0 | 1 | 2;
-}
-
-// STATUS: UNUSED — 未找到任何调用点
-export interface TechnologyRelation {
-  id: string;
-  sourceId: string;
-  targetId: string;
-  relationType: '依赖' | '进阶' | '替代' | '组合' | '工具';
-}
-
-// ==================== AI 生成相关 ====================
+// ==================== AI / Graph ====================
 
 export interface GenerateProposalRequest {
   goal: string;
   answers: QuestionAnswer[];
+}
+
+export interface QuestionAnswer {
+  questionId: string;
+  question: string;
+  selectedOption: string;
 }
 
 export interface PathNode {
@@ -233,34 +135,11 @@ export interface ComparisonItem {
   b: string;
 }
 
-// STATUS: UNUSED — 未找到任何调用点
-export interface ProposalScheduleItem {
-  week: string;
-  items: string[];
-}
-
-// STATUS: UNUSED — 未找到任何调用点
-export interface GeneratedProposal {
-  title: string;
-  description: string;
-  mainPath: string[];
-  branches: PathNode[];
-  comparison: ComparisonItem[];
-  schedule: ProposalScheduleItem[];
-}
-
 export interface AIChatMessage {
   id: string;
   role: 'user' | 'assistant';
   content: string;
   createdAt: string;
-}
-
-// STATUS: UNUSED — 未找到任何调用点
-export interface AIChatRequest {
-  agentId: string;
-  sessionId: string;
-  message: string;
 }
 
 export interface PlanOption {
@@ -275,7 +154,6 @@ export interface PlanOption {
   difficulty: string;
 }
 
-// STATUS: UNUSED — 未找到任何调用点
 export interface RecommendedPlanOption {
   option_id: string;
   reason: string;
@@ -303,59 +181,7 @@ export interface GeneratePlanByOptionResponse {
   base?: string;
 }
 
-// ==================== 收藏与历史 ====================
-// STATUS: UNUSED — 未找到任何调用点
-export interface Favorite {
-  id: string;
-  userId: string;
-  type: 'technology' | 'proposal';
-  targetId: string;
-  createdAt: string;
-}
-
-// STATUS: UNUSED — 未找到任何调用点
-export interface BrowseHistory {
-  id: string;
-  userId: string;
-  type: 'technology' | 'proposal' | 'goal';
-  targetId: string;
-  createdAt: string;
-}
-
-// ==================== 通用类型 ====================
-
-export interface ApiResponse<T> {
-  success: boolean;
-  data?: T;
-  error?: string;
-  message?: string;
-}
-
-export interface PaginatedResponse<T> {
-  items: T[];
-  total: number;
-  page: number;
-  pageSize: number;
-  totalPages: number;
-}
-
-// STATUS: UNUSED — 未找到任何调用点
-export interface ApiError {
-  code: string;
-  message: string;
-  details?: Record<string, string>;
-}
-
-// ==================== 智能体相关 ====================
-
-/** 智能体 */
-export interface Agent {
-  agentId: string;
-  agentName: string;
-  agentDesc: string;
-}
-
-// ==================== 知识库相关 ====================
+// ==================== Knowledge Base ====================
 
 /** 知识库文件（对应后端 KnowledgeDocumentResponseDTO） */
 export interface KnowledgeBaseFile {
@@ -388,66 +214,7 @@ export interface UpdateKnowledgeBaseRequest {
   description?: string;
 }
 
-// ==================== Copilot相关 ====================
-// STATUS: UNUSED — 未找到任何调用点
-/** 咨询会话用户画像 */
-export interface ConsultUserProfile {
-  goal: string;
-  experience: string;
-  timeframe: string;
-  scale: string;
-}
-
-/** 咨询消息 */
-// STATUS: UNUSED — 未找到任何调用点
-export interface ConsultMessage {
-  role: 'user' | 'assistant';
-  content: string;
-  isHtml?: boolean;
-  timestamp: number;
-}
-
-/** 计划详情 */
-// STATUS: UNUSED — 未找到任何调用点
-export interface PlanDetail {
-  week: string;       // 例如："第1周"、"第2周"
-  items: string[];    // 例如：["Day1-2: Python基础", "Day3-4: LangChain入门"]
-}
-
-/** 咨询会话 */
-// STATUS: UNUSED — 未找到任何调用点
-export interface ConsultSession {
-  id: string;
-  title: string;
-  createdAt: string;
-  messages: ConsultMessage[];
-  userProfile: ConsultUserProfile;
-  currentStep: 'ASK_GOAL' | 'ASK_EXPERIENCE' | 'ASK_TIMEFRAME' | 'ASK_SCALE' | 'RESULT';
-  finalXml: string;        // draw.io XML 格式图表
-  planDetails: PlanDetail[]; // 计划表详情
-}
-
-/** 咨询请求 */
-// STATUS: UNUSED — 未找到任何调用点
-export interface ConsultRequest {
-  sessionId: string;
-  message: string;
-  step: string;
-  profile: ConsultUserProfile;
-}
-
-/** 咨询响应 */
-// STATUS: UNUSED — 未找到任何调用点
-export interface ConsultResponse {
-  message: string;
-  isHtml: boolean;
-  nextStep: string;
-  updatedProfile: ConsultUserProfile;
-  finalXml?: string;        // draw.io XML 格式图表（RESULT 步骤时返回）
-  planDetails?: PlanDetail[]; // 计划表详情（RESULT 步骤时返回）
-}
-
-// ==================== 个人中心相关 ====================
+// ==================== Profile ====================
 
 /** 成就徽章 */
 export interface Achievement {
@@ -488,4 +255,30 @@ export interface StudyStats {
   studyDays: number;
   unlockedAchievements: number;
   totalGoals: number;
+}
+
+// ==================== Common ====================
+
+export interface ApiResponse<T> {
+  success: boolean;
+  data?: T;
+  error?: string;
+  message?: string;
+}
+
+export interface PaginatedResponse<T> {
+  items: T[];
+  total: number;
+  page: number;
+  pageSize: number;
+  totalPages: number;
+}
+
+// ==================== Agent ====================
+
+/** 智能体 */
+export interface Agent {
+  agentId: string;
+  agentName: string;
+  agentDesc: string;
 }
