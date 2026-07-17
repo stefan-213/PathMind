@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuthStore } from '../../stores/authStore';
+import { useFormValidation } from '../../hooks';
 import './Auth.scss';
 
 type RouteLocationState = {
@@ -14,40 +15,35 @@ export function LoginPage() {
   const location = useLocation();
   const { login, isLoading, error, clearError } = useAuthStore();
 
-  const [username, setUsername] = useState('');
-  const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
-  const [formErrors, setFormErrors] = useState<{ username?: string; password?: string }>({});
 
+  const rules = {
+    username: [
+      { test: (v: unknown) => !!v, message: '请输入用户名' },
+    ],
+    password: [
+      { test: (v: unknown) => !!v, message: '请输入密码' },
+      { test: (v: unknown) => String(v).length >= 6, message: '密码至少需要 6 位' },
+    ],
+  };
+
+  const { register, validate, touchAll } = useFormValidation({
+    rules,
+    initialValues: { username: '', password: '' },
+  });
 
   const from = (location.state as RouteLocationState | null)?.from?.pathname || '/';
-
-  const validate = () => {
-    const errors: { username?: string; password?: string } = {};
-
-    if (!username) {
-      errors.username = '请输入用户名';
-    }
-
-    if (!password) {
-      errors.password = '请输入密码';
-    } else if (password.length < 6) {
-      errors.password = '密码至少需要 6 位';
-    }
-
-    setFormErrors(errors);
-    return Object.keys(errors).length === 0;
-  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     clearError();
+    touchAll();
 
-    if (!validate()) return;
+    if (!await validate()) return;
 
     try {
-      await login(username, password);
+      await login(register('username').value, register('password').value);
       navigate(from, { replace: true });
     } catch {
       // 错误已在 store 中处理
@@ -88,13 +84,12 @@ export function LoginPage() {
                 <i className="fas fa-user input-icon"></i>
                 <input
                   type="text"
-                  className={`form-input ${formErrors.username ? 'error' : ''}`}
+                  className={`form-input ${register('username').error ? 'error' : ''}`}
                   placeholder="请输入用户名"
-                  value={username}
-                  onChange={(e) => setUsername(e.target.value)}
+                  {...register('username')}
                 />
               </div>
-              {formErrors.username && <span className="error-text">{formErrors.username}</span>}
+              {register('username').error && <span className="error-text">{register('username').error}</span>}
             </div>
 
             <div className="form-group">
@@ -103,17 +98,16 @@ export function LoginPage() {
                 <i className="fas fa-lock input-icon"></i>
                 <input
                   type={showPassword ? 'text' : 'password'}
-                  className={`form-input ${formErrors.password ? 'error' : ''}`}
+                  className={`form-input ${register('password').error ? 'error' : ''}`}
                   placeholder="请输入密码"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
+                  {...register('password')}
                 />
                 <i
                   className={`fas password-toggle ${showPassword ? 'fa-eye' : 'fa-eye-slash'}`}
                   onClick={() => setShowPassword(!showPassword)}
                 ></i>
               </div>
-              {formErrors.password && <span className="error-text">{formErrors.password}</span>}
+              {register('password').error && <span className="error-text">{register('password').error}</span>}
             </div>
 
             <div className="form-options">

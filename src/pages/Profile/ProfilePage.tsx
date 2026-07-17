@@ -2,13 +2,14 @@
  * 个人中心页面
  * 两栏布局：左侧基础信息+学习统计，右侧进行中的计划+成就+历史目标
  */
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuthStore } from '../../stores/authStore';
 import { changePassword as changePasswordApi } from '../../api/auth';
 import { useProfileStore, useProfileLoading } from '../../stores/profileStore';
 import { Header, Footer } from '../../components/layout';
 import { Card, Badge, Spin } from '../../components/common';
+import { useFormValidation, useToast } from '../../hooks';
 import type { Achievement, UserPlan } from '../../types/api';
 import './ProfilePage.scss';
 
@@ -19,6 +20,30 @@ type ModalState =
 
 /** 邮箱格式校验 */
 const isValidEmail = (email: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+
+// ==================== 验证规则 ====================
+const editRules = {
+  username: [
+    { test: (v: unknown) => !!String(v).trim(), message: '用户名不能为空' },
+  ],
+  email: [
+    { test: (v: unknown) => !!String(v).trim(), message: '邮箱不能为空' },
+    { test: (v: unknown) => isValidEmail(String(v)), message: '邮箱格式不正确' },
+  ],
+};
+
+const passwordRules = {
+  oldPassword: [
+    { test: (v: unknown) => !!v, message: '请输入当前密码' },
+  ],
+  newPassword: [
+    { test: (v: unknown) => !!v, message: '请输入新密码' },
+    { test: (v: unknown) => String(v).length >= 6, message: '新密码至少需要 6 位' },
+  ],
+  confirmPassword: [
+    { test: (v: unknown) => !!v, message: '请确认新密码' },
+  ],
+};
 
 // ==================== 组件 ====================
 export function ProfilePage() {
@@ -45,21 +70,36 @@ export function ProfilePage() {
 
   // 编辑资料
   const [isEditing, setIsEditing] = useState(false);
-  const [editForm, setEditForm] = useState({
-    username: user?.username ?? '',
-    email: user?.email ?? '',
-    phone: user?.phone || '',
+  const {
+    register: registerEdit,
+    validate: validateEdit,
+    touchAll: touchAllEdit,
+    reset: resetEdit,
+  } = useFormValidation({
+    rules: editRules,
+    initialValues: {
+      username: user?.username ?? '',
+      email: user?.email ?? '',
+    },
   });
-  const [formErrors, setFormErrors] = useState<Record<string, string>>({});
+  const [editPhone, setEditPhone] = useState(user?.phone || '');
 
   // 修改密码
   const [showPasswordModal, setShowPasswordModal] = useState(false);
-  const [passwordForm, setPasswordForm] = useState({
-    oldPassword: '',
-    newPassword: '',
-    confirmPassword: '',
+  const {
+    register: registerPassword,
+    validate: validatePassword,
+    touchAll: touchAllPassword,
+    reset: resetPassword,
+  } = useFormValidation({
+    rules: passwordRules,
+    initialValues: {
+      oldPassword: '',
+      newPassword: '',
+      confirmPassword: '',
+    },
   });
-  const [passwordError, setPasswordError] = useState('');
+  const [confirmPasswordError, setConfirmPasswordError] = useState('');
 
   // 计划数据
   const activePlans = useMemo(() => plans.filter((p) => p.status === 'active'), [plans]);
@@ -78,13 +118,8 @@ export function ProfilePage() {
   // 弹窗
   const [modal, setModal] = useState<ModalState>(null);
 
-  // 临时消息提示（替代 alert）
-  const [toast, setToast] = useState<{ type: 'success' | 'info' | 'error'; message: string } | null>(null);
-
-  const showToast = useCallback((type: 'success' | 'info' | 'error', message: string) => {
-    setToast({ type, message });
-    setTimeout(() => setToast(null), 3000);
-  }, []);
+  // 临时消息提示
+  const { toast, showToast } = useToast();
 
   // ESC 关闭弹窗
   useEffect(() => {
@@ -98,52 +133,29 @@ export function ProfilePage() {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, []);
 
-  const getCurrentUserForm = useCallback(
-    () => ({
-      username: user?.username ?? '',
-      email: user?.email ?? '',
-      phone: user?.phone || '',
-    }),
-    [user]
-  );
-
-  useEffect(() => {
-    setEditForm(getCurrentUserForm());
-  }, [user, getCurrentUserForm]);
-
   // 编辑资料
   const handleEdit = () => {
-    setEditForm(getCurrentUserForm());
-    setFormErrors({});
+    resetEdit();
+    setEditPhone(user?.phone || '');
     setIsEditing(true);
   };
 
   const handleCancel = () => {
-    setEditForm(getCurrentUserForm());
-    setFormErrors({});
+    resetEdit();
+    setEditPhone(user?.phone || '');
     setIsEditing(false);
   };
 
-  const validateEditForm = (): boolean => {
-    const errors: Record<string, string> = {};
-    if (!editForm.username.trim()) {
-      errors.username = '用户名不能为空';
-    }
-    if (!editForm.email.trim()) {
-      errors.email = '邮箱不能为空';
-    } else if (!isValidEmail(editForm.email)) {
-      errors.email = '邮箱格式不正确';
-    }
-    setFormErrors(errors);
-    return Object.keys(errors).length === 0;
-  };
-
   const handleSave = async () => {
-    if (!validateEditForm()) return;
+    touchAllEdit();
+    if (!await validateEdit()) return;
     try {
-      await updateUser(editForm);
+      await updateUser({
+        username: registerEdit('username').value,
+        email: registerEdit('email').value,
+        phone: user?.phone || '',
+      });
       setIsEditing(false);
-      setFormErrors({});
     } catch (err) {
       console.error('更新失败:', err);
     }
@@ -152,37 +164,35 @@ export function ProfilePage() {
   // 关闭修改密码弹窗并清除状态
   const handleClosePasswordModal = () => {
     setShowPasswordModal(false);
-    setPasswordError('');
-    setPasswordForm({ oldPassword: '', newPassword: '', confirmPassword: '' });
+    setConfirmPasswordError('');
+    resetPassword();
   };
 
   // 修改密码
   const handlePasswordChange = async () => {
-    setPasswordError('');
+    touchAllPassword();
 
-    if (!passwordForm.oldPassword) {
-      setPasswordError('请输入当前密码');
+    // 手动检查密码确认
+    if (registerPassword('newPassword').value !== registerPassword('confirmPassword').value) {
+      setConfirmPasswordError('两次输入的密码不一致');
       return;
     }
-    if (passwordForm.newPassword.length < 6) {
-      setPasswordError('新密码至少需要 6 位');
-      return;
-    }
-    if (passwordForm.newPassword !== passwordForm.confirmPassword) {
-      setPasswordError('两次输入的密码不一致');
-      return;
-    }
+
+    if (!await validatePassword()) return;
 
     try {
-      const result = await changePasswordApi(passwordForm.oldPassword, passwordForm.newPassword);
+      const result = await changePasswordApi(
+        registerPassword('oldPassword').value,
+        registerPassword('newPassword').value
+      );
       if (!result.success) {
-        setPasswordError(result.error || '修改密码失败');
+        setConfirmPasswordError(result.error || '修改密码失败');
         return;
       }
       handleClosePasswordModal();
-      showToast('success', '密码修改成功！');
+      showToast({ type: 'success', message: '密码修改成功！' });
     } catch (err) {
-      setPasswordError((err as Error).message || '修改密码失败');
+      setConfirmPasswordError((err as Error).message || '修改密码失败');
     }
   };
 
@@ -224,7 +234,7 @@ export function ProfilePage() {
 
   // 头像点击占位
   const handleAvatarClick = () => {
-    showToast('info', '头像上传功能开发中');
+    showToast({ type: 'info', message: '头像上传功能开发中' });
   };
 
   // 计算值
@@ -373,13 +383,10 @@ export function ProfilePage() {
                         <div className="info-label">用户名</div>
                         <input
                           type="text"
-                          value={editForm.username}
-                          onChange={(e) =>
-                            setEditForm({ ...editForm, username: e.target.value })
-                          }
+                          {...registerEdit('username')}
                         />
-                        {formErrors.username && (
-                          <div className="field-error">{formErrors.username}</div>
+                        {registerEdit('username').error && (
+                          <div className="field-error">{registerEdit('username').error}</div>
                         )}
                       </div>
                     </div>
@@ -391,13 +398,10 @@ export function ProfilePage() {
                         <div className="info-label">邮箱</div>
                         <input
                           type="email"
-                          value={editForm.email}
-                          onChange={(e) =>
-                            setEditForm({ ...editForm, email: e.target.value })
-                          }
+                          {...registerEdit('email')}
                         />
-                        {formErrors.email && (
-                          <div className="field-error">{formErrors.email}</div>
+                        {registerEdit('email').error && (
+                          <div className="field-error">{registerEdit('email').error}</div>
                         )}
                       </div>
                     </div>
@@ -409,10 +413,8 @@ export function ProfilePage() {
                         <div className="info-label">手机号</div>
                         <input
                           type="tel"
-                          value={editForm.phone}
-                          onChange={(e) =>
-                            setEditForm({ ...editForm, phone: e.target.value })
-                          }
+                          value={editPhone}
+                          onChange={(e) => setEditPhone(e.target.value)}
                           placeholder="未设置"
                         />
                       </div>
@@ -725,44 +727,38 @@ export function ProfilePage() {
                 <label>当前密码</label>
                 <input
                   type="password"
-                  className="form-input"
-                  value={passwordForm.oldPassword}
-                  onChange={(e) =>
-                    setPasswordForm({ ...passwordForm, oldPassword: e.target.value })
-                  }
+                  className={`form-input ${registerPassword('oldPassword').error ? 'error' : ''}`}
+                  {...registerPassword('oldPassword')}
                 />
+                {registerPassword('oldPassword').error && (
+                  <div className="field-error">{registerPassword('oldPassword').error}</div>
+                )}
               </div>
               <div className="form-group">
                 <label>新密码</label>
                 <input
                   type="password"
-                  className="form-input"
-                  value={passwordForm.newPassword}
-                  onChange={(e) =>
-                    setPasswordForm({ ...passwordForm, newPassword: e.target.value })
-                  }
+                  className={`form-input ${registerPassword('newPassword').error ? 'error' : ''}`}
+                  {...registerPassword('newPassword')}
                 />
+                {registerPassword('newPassword').error && (
+                  <div className="field-error">{registerPassword('newPassword').error}</div>
+                )}
               </div>
               <div className="form-group">
                 <label>确认新密码</label>
                 <input
                   type="password"
-                  className="form-input"
-                  value={passwordForm.confirmPassword}
-                  onChange={(e) =>
-                    setPasswordForm({ ...passwordForm, confirmPassword: e.target.value })
-                  }
+                  className={`form-input ${registerPassword('confirmPassword').error || confirmPasswordError ? 'error' : ''}`}
+                  {...registerPassword('confirmPassword')}
                 />
-                {passwordForm.newPassword && passwordForm.confirmPassword &&
-                  passwordForm.newPassword !== passwordForm.confirmPassword && (
-                    <div className="field-error">两次输入的密码不一致</div>
-                  )}
+                {registerPassword('confirmPassword').error && (
+                  <div className="field-error">{registerPassword('confirmPassword').error}</div>
+                )}
+                {confirmPasswordError && !registerPassword('confirmPassword').error && (
+                  <div className="field-error">{confirmPasswordError}</div>
+                )}
               </div>
-              {passwordError && (
-                <div className="form-error">
-                  <i className="fas fa-exclamation-circle"></i> {passwordError}
-                </div>
-              )}
             </div>
             <div className="modal-footer">
               <button className="btn btn-secondary" onClick={handleClosePasswordModal}>

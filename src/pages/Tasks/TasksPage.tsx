@@ -2,13 +2,11 @@ import { useCallback, useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Header, Footer } from '../../components/layout';
 import { Card, Badge, EmptyState, ResourceSidebar, Spin, CelebrationModal, type ResourceSidebarItem } from '../../components/common';
-import { getChatList } from '../../api/conversation';
 import { getAchievements } from '../../api/profile';
 import { deleteSchedule } from '../../api/tasks';
 import { useScheduleStore } from '../../stores/scheduleStore';
 import { useSessionStore } from '../../stores/sessionStore';
-import { normalizeCopilotSessionMap, type CopilotSessionResource } from '../../utils';
-import { AGENT_IDS } from '../../constants';
+import { useCopilotSessions } from '../../hooks';
 import { pathmindStorage } from '../../utils/storage';
 import type { Schedule, SubSchedule, Achievement } from '../../types/api';
 import './TasksPage.scss';
@@ -63,12 +61,18 @@ export function TasksPage() {
   const [planTitle, setPlanTitle] = useState(() =>
     pathmindStorage.plan.loadTitle()?.trim() || ''
   );
-  const [sessions, setSessions] = useState<CopilotSessionResource[]>([]);
-  const [activeSessionId, setActiveSessionId] = useState<string | null>(null);
+
+  // Copilot 会话列表
+  const {
+    sessions,
+    activeSessionId,
+    setActiveSessionId,
+    isLoading: isSessionListLoading,
+    error: sessionListError,
+  } = useCopilotSessions();
+
   const { currentSessionId: storeSessionId } = useSessionStore();
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
-  const [isSessionListLoading, setIsSessionListLoading] = useState(false);
-  const [sessionListError, setSessionListError] = useState<string | null>(null);
   const [hasAttemptedLoadSchedules, setHasAttemptedLoadSchedules] = useState(false);
   const [showCelebration, setShowCelebration] = useState(false);
   const [newAchievements, setNewAchievements] = useState<Achievement[]>([]);
@@ -98,53 +102,6 @@ export function TasksPage() {
       setHasAttemptedLoadSchedules(true);
     }
   }, [fetchSchedules, clearSchedules]);
-
-  // 加载会话列表
-  useEffect(() => {
-    let isMounted = true;
-
-    const loadCopilotSessions = async () => {
-      setIsSessionListLoading(true);
-      setSessionListError(null);
-
-      try {
-        const response = await getChatList(AGENT_IDS.COPILOT);
-        if (response.success === false) {
-          throw new Error(response.error || '会话列表加载失败');
-        }
-
-        const nextSessions = normalizeCopilotSessionMap(response.data);
-        if (!isMounted) return;
-
-        setSessions(nextSessions);
-        setActiveSessionId((currentSessionId) => {
-          if (
-            currentSessionId &&
-            nextSessions.some((session) => session.sessionId === currentSessionId)
-          ) {
-            return currentSessionId;
-          }
-
-          return nextSessions[0]?.sessionId ?? null;
-        });
-      } catch (error) {
-        console.error('Load copilot sessions failed:', error);
-        if (isMounted) {
-          setSessionListError('会话列表加载失败');
-        }
-      } finally {
-        if (isMounted) {
-          setIsSessionListLoading(false);
-        }
-      }
-    };
-
-    void loadCopilotSessions();
-
-    return () => {
-      isMounted = false;
-    };
-  }, []);
 
   // 统一加载逻辑：优先使用 activeSessionId 从后端加载，否则降级到 localStorage
   // 避免两个 useEffect 并发调用 loadSchedules 产生竞态条件

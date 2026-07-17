@@ -12,11 +12,10 @@ import type { GraphNode } from '../../types/graph';
 import type { Schedule } from '../../types/api';
 import { setXml, updataXml, getXml } from '../../api/graph';
 import { createSchedule } from '../../api/tasks';
-import { getChatList } from '../../api/conversation';
 import { useChatStore } from '../../stores/chatStore';
 import { useSessionStore } from '../../stores/sessionStore';
 import { normalizeDrawioXml } from '../../utils/drawioXml';
-import { normalizeCopilotSessionMap, type CopilotSessionResource } from '../../utils';
+import { useCopilotSessions } from '../../hooks';
 import { AGENT_IDS, STORAGE_KEYS } from '../../constants';
 import { pathmindStorage } from '../../utils/storage';
 import './GraphPage.scss';
@@ -336,13 +335,17 @@ export function GraphPage() {
   // 日程表生成状态
   const [isScheduleGenerating, setIsScheduleGenerating] = useState(false);
 
-  // 会话列表
-  const [sessions, setSessions] = useState<CopilotSessionResource[]>([]);
-  const [activeSessionId, setActiveSessionId] = useState<string | null>(null);
+  // Copilot 会话列表
+  const {
+    sessions,
+    activeSessionId,
+    setActiveSessionId,
+    isLoading: isSessionListLoading,
+    error: sessionListError,
+  } = useCopilotSessions();
+
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [isAiPanelCollapsed, setIsAiPanelCollapsed] = useState(false);
-  const [isSessionListLoading, setIsSessionListLoading] = useState(false);
-  const [sessionListError, setSessionListError] = useState<string | null>(null);
 
   // sessionStore 数据
   const { currentSessionId: storeSessionId, consultContext: storeContext } = useSessionStore();
@@ -413,42 +416,6 @@ export function GraphPage() {
       sessionStorage.removeItem(STORAGE_KEYS.GENERATING_PLAN);
     }
   }, [isChartLoading]);
-
-  // ---------------------------------------------
-  // 副作用：加载 Copilot 会话列表
-  // ---------------------------------------------
-  useEffect(() => {
-    let isMounted = true;
-
-    const loadCopilotSessions = async () => {
-      setIsSessionListLoading(true);
-      setSessionListError(null);
-
-      try {
-        const response = await getChatList(AGENT_IDS.COPILOT);
-        if (response.success === false) {
-          throw new Error(response.error || '会话列表加载失败');
-        }
-
-        const nextSessions = normalizeCopilotSessionMap(response.data);
-        if (!isMounted) return;
-
-        setSessions(nextSessions);
-        setActiveSessionId((current) => {
-          if (current && nextSessions.some((s) => s.sessionId === current)) return current;
-          return nextSessions[0]?.sessionId ?? null;
-        });
-      } catch (error) {
-        console.error('Load copilot sessions failed:', error);
-        if (isMounted) setSessionListError('会话列表加载失败');
-      } finally {
-        if (isMounted) setIsSessionListLoading(false);
-      }
-    };
-
-    void loadCopilotSessions();
-    return () => { isMounted = false; };
-  }, []);
 
   // ---------------------------------------------
   // 副作用：加载图表（优先从 sessionStore，降级从 localStorage）

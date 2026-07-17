@@ -485,11 +485,11 @@ const PlanComparisonMessage = memo(function PlanComparisonMessage({
               variant={isRecommended ? 'primary' : 'secondary'}
               disabled={disabled || !onSelectOption}
               onClick={() => {
-                // 找到被推荐方案的索引
-                const recommendedIndex = data.options.findIndex(
-                  (o) => o.id === data.recommended.option_id
+                // 找到用户点击的方案的索引
+                const clickedIndex = data.options.findIndex(
+                  (o) => o.id === option.id
                 );
-                onSelectOption?.(option.id, recommendedIndex);
+                onSelectOption?.(option.id, clickedIndex);
               }}
             >
               生成：{option.name}
