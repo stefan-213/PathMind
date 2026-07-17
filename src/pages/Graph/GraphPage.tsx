@@ -342,7 +342,7 @@ export function GraphPage() {
     setActiveSessionId,
     isLoading: isSessionListLoading,
     error: sessionListError,
-  } = useCopilotSessions();
+  } = useCopilotSessions({ syncWithStore: true });
 
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [isAiPanelCollapsed, setIsAiPanelCollapsed] = useState(false);

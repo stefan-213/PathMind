@@ -69,7 +69,7 @@ export function TasksPage() {
     setActiveSessionId,
     isLoading: isSessionListLoading,
     error: sessionListError,
-  } = useCopilotSessions();
+  } = useCopilotSessions({ syncWithStore: true });
 
   const { currentSessionId: storeSessionId } = useSessionStore();
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
