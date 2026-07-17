@@ -145,12 +145,12 @@ export function HomePage() {
             <Card className="feature-item" padding="lg">
               <div className="feature-icon"><i className="fas fa-project-diagram"></i></div>
               <h4>知识图表</h4>
-              <p>可视化技术节点关系，理解技术之间的关联。</p>
+              <p>AI 生成任务关系图，直观呈现任务阶段及其关联。</p>
             </Card>
             <Card className="feature-item" padding="lg">
               <div className="feature-icon"><i className="fas fa-route"></i></div>
               <h4>路径规划</h4>
-              <p>BFS 算法找到最短学习路径，高效学习。</p>
+              <p>生成阶段性学习计划，任务细分可执行，进度可追踪。</p>
             </Card>
             <Card className="feature-item" padding="lg">
               <div className="feature-icon"><i className="fas fa-history"></i></div>

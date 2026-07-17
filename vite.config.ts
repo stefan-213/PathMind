@@ -17,5 +17,21 @@ export default defineConfig({
         changeOrigin: true,
       }
     }
+  },
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks(id) {
+          // 将大依赖拆分成独立 chunk，按需加载
+          if (id.includes('node_modules')) {
+            if (id.includes('react')) return 'vendor-react'
+            if (id.includes('react-router')) return 'vendor-router'
+            if (id.includes('d3')) return 'vendor-d3'
+            if (id.includes('mxgraph') || id.includes('react-drawio')) return 'vendor-graph'
+            return 'vendor-misc'
+          }
+        }
+      }
+    }
   }
 })

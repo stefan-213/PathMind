@@ -65,7 +65,7 @@ $consult-on-primary: #ffffff;
 .consult-loading-overlay {
   position: absolute;
   inset: 0;
-  background: rgba($consult-background, 0.85);
+  background: rgba($consult-background, 1);
   display: flex;
   align-items: center;
   justify-content: center;

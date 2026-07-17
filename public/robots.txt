@@ -1,0 +1,7 @@
+User-agent: *
+Allow: /
+
+# 禁止爬取 API 和私有路径
+Disallow: /api/
+
+Sitemap: https://yourdomain.com/sitemap.xml
