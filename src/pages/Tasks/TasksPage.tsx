@@ -9,22 +9,8 @@ import { useSessionStore } from '../../stores/sessionStore';
 import { useCopilotSessions } from '../../hooks';
 import { pathmindStorage } from '../../utils/storage';
 import type { Schedule, SubSchedule, Achievement } from '../../types/api';
+import type { StageTaskViewModel, StageViewModel } from './types';
 import './TasksPage.scss';
-
-interface StageTaskViewModel {
-  id: number | string;
-  scheduleId: string;
-  taskId?: string | number;
-  timeText: string;
-  taskTitle: string;
-  status: number;
-}
-
-interface StageViewModel {
-  id: string;
-  title: string;
-  tasks: StageTaskViewModel[];
-}
 
 const createStageViewModel = (schedule: Schedule, stageIndex: number): StageViewModel => {
   const stageTitle = `阶段${stageIndex + 1}·${schedule.title || '未命名阶段'}`;
