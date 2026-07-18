@@ -1,3 +1,12 @@
+/**
+ * ID 生成工具
+ */
+
+/**
+ * 创建唯一 ID
+ * @param prefix - ID 前缀，默认为 'id'
+ * @returns 唯一标识符字符串
+ */
 export const createId = (prefix = 'id') => {
   const randomUUID = globalThis.crypto?.randomUUID?.bind(globalThis.crypto);
 

@@ -28,7 +28,8 @@ import { Header } from '../../components/layout/Header';
 // Header: 页面顶部导航栏
 
 // ---------- 子组件导入 ----------
-import { TypingDots, MessageItem, QuickOptions } from './components';
+import { TypingDots } from '../../components/common';
+import { MessageItem, QuickOptions } from './components';
 
 // ---------- API 函数导入 ----------
 import { createChatSession, deleteChatSession, getChatList, getChatHistory } from '../../api/conversation';

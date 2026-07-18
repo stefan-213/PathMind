@@ -18,7 +18,8 @@ import { normalizeDrawioXml } from '../../utils/drawioXml';
 import { useCopilotSessions } from '../../hooks';
 import { AGENT_IDS, STORAGE_KEYS } from '../../constants';
 import { pathmindStorage } from '../../utils/storage';
-import { isRecord, normalizeGeneratedChart, getChartContent, getFailureMessage, type GeneratedChart, DEFAULT_GRAPH_EMPTY_MESSAGE } from './utils/chartParser';
+import { isRecord } from '../../utils/typeGuards';
+import { normalizeGeneratedChart, getChartContent, getFailureMessage, type GeneratedChart, DEFAULT_GRAPH_EMPTY_MESSAGE } from './utils/chartParser';
 import { loadChart, type ChartLoadSource } from './utils/chartLoader';
 import './GraphPage.scss';
 

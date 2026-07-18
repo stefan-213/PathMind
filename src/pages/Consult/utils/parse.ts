@@ -1,12 +1,11 @@
+/**
+ * AI 回复解析工具
+ * 解析 Copilot 会话中 AI 返回的思考过程、JSON 响应和方案对比内容
+ */
+
 import type { ParsedJSONResponse, PlanComparisonResponse } from '../../../types/copilot';
 import type { PlanOption } from '../../../types/api';
-
-/**
- * 类型守卫：检查值是否为非数组的对象
- */
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === 'object' && value !== null && !Array.isArray(value);
-}
+import { isRecord } from '../../../utils/typeGuards';
 
 /**
  * 安全获取字符串值
@@ -194,7 +193,6 @@ const INITIAL_QUICK_OPTIONS = [
 
 export {
   parseAIContent,
-  isRecord,
   getString,
   getStringArray,
   normalizePlanOption,

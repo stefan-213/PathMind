@@ -1,3 +1,7 @@
+/**
+ * Auth 表单验证规则
+ */
+
 export const rules = {
   username: [
     { test: (v: unknown) => !!v, message: '请输入用户名' },

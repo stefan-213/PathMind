@@ -21,8 +21,9 @@ import {
   uploadDocument,
 } from '../../api/knowledgeBase';
 import type { KnowledgeBase, KnowledgeBaseFile } from '../../types/api';
+import { isRecord } from '../../utils/typeGuards';
 import {
-  isRecord, getText, getFirstText, getNumber, getArray,
+  getText, getFirstText, getNumber, getArray,
   hasKnowledgeBaseShape, hasKnowledgeFileShape, normalizeKnowledgeBaseFile,
   normalizeKnowledgeBase, getKnowledgeBaseArray, normalizeKnowledgeBaseList,
   normalizeCreatedKnowledgeBase, getErrorMessage, formatFileSize, formatDate,

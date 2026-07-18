@@ -1,11 +1,14 @@
+/**
+ * Copilot 会话数据处理工具
+ */
+
+import { isRecord } from './typeGuards';
+
 export interface CopilotSessionResource {
   id: string;
   sessionId: string;
   title: string;
 }
-
-const isRecord = (value: unknown): value is Record<string, unknown> =>
-  typeof value === 'object' && value !== null && !Array.isArray(value);
 
 export const normalizeCopilotSessionMap = (
   value: unknown,

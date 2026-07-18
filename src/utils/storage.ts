@@ -1,3 +1,8 @@
+/**
+ * PathMind 本地存储工具
+ * 提供 Consult/Graph/Tasks 页面的数据持久化功能
+ */
+
 import type { UserProfile, Task, LocalUserProgress as UserProgress } from '../types/copilot';
 import { STORAGE_KEYS as PATHMIND_KEYS } from '../constants';
 

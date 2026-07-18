@@ -1,10 +1,13 @@
+/**
+ * 知识库数据规范化工具
+ * 解析和标准化知识库、知识库文件的 API 响应数据
+ */
+
 import type { KnowledgeBase, KnowledgeBaseFile } from '../../../types/api';
+import { isRecord } from '../../../utils/typeGuards';
 
 export type DataRecord = Record<string, unknown>;
 export type KnowledgeBaseDialogMode = 'create' | 'rename';
-
-export const isRecord = (value: unknown): value is DataRecord =>
-  typeof value === 'object' && value !== null && !Array.isArray(value);
 
 export const getText = (value: unknown): string => {
   if (typeof value === 'string') return value.trim();

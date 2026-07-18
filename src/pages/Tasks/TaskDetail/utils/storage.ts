@@ -1,5 +1,11 @@
+/**
+ * 任务详情本地存储工具
+ * 处理任务计划、学习记录的本地持久化
+ */
+
 import type { Schedule } from '../../../../types/api';
-import { expandTaskInputs, isRecord, normalizeTask, toNumber, toText } from './normalize';
+import { isRecord } from '../../../../utils/typeGuards';
+import { expandTaskInputs, normalizeTask, toNumber, toText } from './normalize';
 
 export const readLocalSchedules = (): Schedule[] => {
   const planDataStr = localStorage.getItem('pathmind_plan_data');

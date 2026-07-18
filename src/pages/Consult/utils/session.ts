@@ -2,6 +2,7 @@ import type { Session, AIReply } from '../../../types/copilot';
 import { AGENT_IDS } from '../../../constants';
 import { consultation } from '../../../api/conversation';
 import { parseAIContent, parseJSONResponse, extractFallbackTextFromJson } from './parse';
+import { createId } from '../../../utils/id';
 
 const AGENT_ID = AGENT_IDS.COPILOT;
 const TRANSCRIPT_AGENT_ID = AGENT_IDS.COPILOT;
@@ -10,11 +11,9 @@ export { AGENT_ID, TRANSCRIPT_AGENT_ID };
 
 /**
  * 生成唯一ID
- * @returns 格式为 "时间戳-随机字符串" 的唯一ID
+ * @returns 唯一ID
  */
-function generateId(): string {
-  return Date.now() + '-' + Math.random().toString(36).substr(2, 8);
-}
+const generateId = () => createId('session');
 
 /**
  * 获取默认会话对象

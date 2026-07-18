@@ -1,4 +1,10 @@
+/**
+ * 任务数据规范化工具
+ * 解析和标准化任务、子任务、计划记录的内部数据格式
+ */
+
 import type { SubSchedule } from '../../../../types/api';
+import { isRecord } from '../../../../utils/typeGuards';
 
 export type Message = {
   role: 'user' | 'assistant';
@@ -14,9 +20,6 @@ export const QUICK_OPTIONS = [
   '给我设计一个练习题',
   '如何判断这个任务已经完成',
 ];
-
-export const isRecord = (value: unknown): value is PlanRecord =>
-  typeof value === 'object' && value !== null && !Array.isArray(value);
 
 export const toText = (value: unknown, fallback = '') => {
   if (typeof value === 'string') return value;

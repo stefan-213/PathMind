@@ -2,6 +2,7 @@
  * 图表内容解析工具
  */
 import { normalizeDrawioXml } from '../../../utils/drawioXml';
+import { isRecord } from '../../../utils/typeGuards';
 import { pathmindStorage } from '../../../utils/storage';
 import type { Schedule } from '../../../types/api';
 
@@ -9,12 +10,6 @@ import type { Schedule } from '../../../types/api';
 // 常量
 // ============================================================
 const DEFAULT_GRAPH_EMPTY_MESSAGE = '在Copilot页面输入需求，让 AI 为你生成计划图表';
-
-// ============================================================
-// 工具函数：类型守卫
-// ============================================================
-const isRecord = (value: unknown): value is Record<string, unknown> =>
-  typeof value === 'object' && value !== null && !Array.isArray(value);
 
 // ============================================================
 // 工具函数：文本解析
@@ -225,7 +220,6 @@ const renderChartResponse = (
 
 export {
   DEFAULT_GRAPH_EMPTY_MESSAGE,
-  isRecord,
   stripThinkTags,
   extractDrawioXmlText,
   extractJsonObjectText,

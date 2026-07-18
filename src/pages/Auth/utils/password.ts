@@ -1,3 +1,7 @@
+/**
+ * 密码强度检测工具
+ */
+
 export const getPasswordStrength = (pwd: string): { level: number; text: string } => {
   if (!pwd) return { level: 0, text: '' };
   if (pwd.length < 6) return { level: 1, text: '太短' };

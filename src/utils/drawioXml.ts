@@ -1,3 +1,8 @@
+/**
+ * draw.io XML 规范化工具
+ * 用于提取、修复和验证 draw.io 格式的 XML 内容
+ */
+
 type NormalizeDrawioXmlResult =
   | {
       ok: true;

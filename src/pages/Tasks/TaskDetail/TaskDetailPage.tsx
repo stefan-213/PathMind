@@ -7,7 +7,7 @@ import { pathmindStorage } from '../../../utils/storage';
 import type { Schedule, SubSchedule } from '../../../types/api';
 import type { Message } from './utils';
 import { QUICK_OPTIONS, readLocalSchedules, generateLocalReply } from './utils';
-import { TypingDots } from './components/TypingDots';
+import { TypingDots } from '../../../components/common';
 import './TaskDetailPage.scss';
 
 export function TaskDetailPage() {

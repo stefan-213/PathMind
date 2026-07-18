@@ -8,6 +8,7 @@ export { EmptyState } from './EmptyState';
 export { Spin } from './Spin';
 export { CelebrationModal } from './CelebrationModal';
 export { Skeleton, SkeletonText } from './Skeleton';
+export { TypingDots } from './TypingDots';
 export {
   ResourceSidebar,
   type ResourceSidebarAction,
