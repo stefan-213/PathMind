@@ -1,6 +1,6 @@
 import { lazy } from 'react';
 import { Navigate, Route, createRoutesFromElements } from 'react-router-dom';
-import { ProtectedRoute, PublicRoute } from '../components/ProtectedRoute';
+import { ProtectedRoute, PublicRoute } from '../components/providers/ProtectedRoute';
 import { RootLayout } from './RootLayout';
 import { HomePage } from '../pages/Home';
 

@@ -33,26 +33,3 @@ export const STORAGE_KEYS = {
   GENERATING_PLAN: 'pathmind_generating_plan',
 } as const;
 
-// ============================================================
-// API Paths
-// ============================================================
-// export const API_PATHS = {
-//   AUTH: {
-//     LOGIN: '/api/auth/login',
-//     REGISTER: '/api/auth/register',
-//     LOGOUT: '/api/user/quitLogin',
-//     INFO: '/api/user/info',
-//     UPDATE: '/api/auth/update',
-//     CHANGE_PASSWORD: '/api/auth/change-password',
-//   },
-//   AGENT: {
-//     LIST: '/api/agent/list',
-//     CREATE_SESSION: '/api/agent/createSession',
-//     DELETE_SESSION: '/api/agent/deleteSession',
-//     GET_SESSION_LIST: '/api/agent/getSessionList',
-//     GOAL: '/api/agent/goal',
-//     TRANSCRIPT: '/api/agent/transcript',
-//     CHARTS: '/api/agent/charts',
-//     GET_XML: '/api/agent/getXml',
-//   },
-// } as const;

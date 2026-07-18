@@ -11,39 +11,13 @@ import { Header, Footer } from '../../components/layout';
 import { Card, Badge, Spin } from '../../components/common';
 import { useFormValidation, useToast } from '../../hooks';
 import type { Achievement, UserPlan } from '../../types/api';
+import { editRules, passwordRules } from './utils';
 import './ProfilePage.scss';
 
 type ModalState =
   | { type: 'achievement'; data: Achievement }
   | { type: 'goal'; data: UserPlan }
   | null;
-
-/** 邮箱格式校验 */
-const isValidEmail = (email: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
-
-// ==================== 验证规则 ====================
-const editRules = {
-  username: [
-    { test: (v: unknown) => !!String(v).trim(), message: '用户名不能为空' },
-  ],
-  email: [
-    { test: (v: unknown) => !!String(v).trim(), message: '邮箱不能为空' },
-    { test: (v: unknown) => isValidEmail(String(v)), message: '邮箱格式不正确' },
-  ],
-};
-
-const passwordRules = {
-  oldPassword: [
-    { test: (v: unknown) => !!v, message: '请输入当前密码' },
-  ],
-  newPassword: [
-    { test: (v: unknown) => !!v, message: '请输入新密码' },
-    { test: (v: unknown) => String(v).length >= 6, message: '新密码至少需要 6 位' },
-  ],
-  confirmPassword: [
-    { test: (v: unknown) => !!v, message: '请确认新密码' },
-  ],
-};
 
 // ==================== 组件 ====================
 export function ProfilePage() {

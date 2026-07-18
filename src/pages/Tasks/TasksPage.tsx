@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Header, Footer } from '../../components/layout';
-import { Card, Badge, EmptyState, ResourceSidebar, Spin, CelebrationModal, type ResourceSidebarItem } from '../../components/common';
+import { Card, Badge, EmptyState, Spin, CelebrationModal, type ResourceSidebarItem } from '../../components/common';
 import { getAchievements } from '../../api/profile';
 import { deleteSchedule } from '../../api/tasks';
 import { useScheduleStore } from '../../stores/scheduleStore';
@@ -10,6 +10,7 @@ import { useCopilotSessions } from '../../hooks';
 import { pathmindStorage } from '../../utils/storage';
 import type { Schedule, SubSchedule, Achievement } from '../../types/api';
 import type { StageTaskViewModel, StageViewModel } from './types';
+import { SessionSidebar } from './components';
 import './TasksPage.scss';
 
 const createStageViewModel = (schedule: Schedule, stageIndex: number): StageViewModel => {
@@ -192,26 +193,6 @@ export function TasksPage() {
     void loadSchedules(sessionId);
   };
 
-  const renderSessionSidebar = (fallbackSubtitle: string) => (
-    <ResourceSidebar
-      header={{
-        title: '我的任务',
-        iconClass: 'fas fa-tasks',
-        subtitle: activeSessionTitle || fallbackSubtitle,
-      }}
-      sectionTitle="历史会话"
-      items={sessionSidebarItems}
-      activeItemId={activeSessionId ?? ''}
-      isCollapsed={isSidebarCollapsed}
-      onToggleCollapse={() => setIsSidebarCollapsed((current) => !current)}
-      onSelectItem={handleSelectTaskSession}
-      emptyText={sessionSidebarEmptyText}
-      collapseTitle="收起侧栏"
-      expandTitle="展开侧栏"
-      className="tasks-resource-sidebar"
-    />
-  );
-
   // 曾尝试加载但数据为空
   const isEmptyAfterLoad = hasAttemptedLoadSchedules && scheduleSections.length === 0;
 
@@ -220,7 +201,16 @@ export function TasksPage() {
       <div className="tasks-page">
         <Header />
         <div className="tasks-layout">
-          {renderSessionSidebar('暂无任务数据')}
+          <SessionSidebar
+            activeSessionTitle={activeSessionTitle}
+            fallbackSubtitle="暂无任务数据"
+            sessionSidebarItems={sessionSidebarItems}
+            activeSessionId={activeSessionId}
+            isSidebarCollapsed={isSidebarCollapsed}
+            onToggleCollapse={() => setIsSidebarCollapsed((current) => !current)}
+            onSelectItem={handleSelectTaskSession}
+            emptyText={sessionSidebarEmptyText}
+          />
           <main className="main tasks-main tasks-main--empty">
             <EmptyState
               icon={<i className="fas fa-clipboard-list"></i>}
@@ -267,7 +257,16 @@ export function TasksPage() {
         </div>
       )}
       <div className="tasks-layout">
-        {renderSessionSidebar(`${completedCount}/${totalCount} 已完成`)}
+        <SessionSidebar
+            activeSessionTitle={activeSessionTitle}
+            fallbackSubtitle={`${completedCount}/${totalCount} 已完成`}
+            sessionSidebarItems={sessionSidebarItems}
+            activeSessionId={activeSessionId}
+            isSidebarCollapsed={isSidebarCollapsed}
+            onToggleCollapse={() => setIsSidebarCollapsed((current) => !current)}
+            onSelectItem={handleSelectTaskSession}
+            emptyText={sessionSidebarEmptyText}
+          />
         <main className="main tasks-main">
         {/* Progress Card */}
         <Card className="progress-card">
