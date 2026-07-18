@@ -145,6 +145,9 @@
   background: #2d628e;
   flex-shrink: 0;
 }
+section {
+  margin: 10px 0;
+}
 
 .task-detail-chat {
   flex: 1;
@@ -216,7 +219,7 @@
   flex-wrap: wrap;
   justify-content: center;
   gap: 8px;
-  padding: 0 24px 12px;
+  padding: 12px 24px;
 }
 
 .task-detail-quick-options button {
@@ -239,44 +242,76 @@
   align-items: flex-end;
   gap: 10px;
   margin: 0 auto;
-  padding: 14px 24px 22px;
+  padding: 8px 12px;
+  background: #ffffff;
+  border-radius: 16px;
+  box-shadow: 0 4px 20px -8px rgba(0, 29, 52, 0.12);
+  border: 1px solid #e0e3e5;
   width: min(860px, 100%);
+  transition: border-color 0.2s, box-shadow 0.2s;
+
+  &:focus-within {
+    border-color: rgba(45, 98, 142, 0.5);
+    box-shadow: 0 4px 20px -4px rgba(0, 29, 52, 0.15);
+  }
 }
 
 .task-detail-input-area textarea {
   flex: 1;
-  min-height: 44px;
-  max-height: 130px;
-  padding: 12px 14px;
-  border: 1px solid #d8e1ea;
-  border-radius: 8px;
-  background: #ffffff;
-  color: #1f2937;
+  background: transparent;
+  border: none;
   outline: none;
-  resize: vertical;
-  font: inherit;
-  line-height: 1.45;
-}
+  padding: 8px 12px;
+  font-size: 14px;
+  font-weight: 500;
+  color: #475569;
+  resize: none;
+  min-height: 24px;
+  max-height: 120px;
+  line-height: 1.5;
 
-.task-detail-input-area textarea:focus {
-  border-color: #2d628e;
-  box-shadow: 0 0 0 3px rgba(45, 98, 142, 0.12);
+  &::placeholder {
+    color: #94a3b8;
+  }
 }
 
 .task-detail-send {
-  width: 44px;
-  height: 44px;
-  border: 0;
-  border-radius: 8px;
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
   background: #003152;
-  color: #ffffff;
+  border: none;
   cursor: pointer;
-  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  transition: all 0.2s;
+}
+
+.task-detail-send:hover:not(:disabled) {
+  background: #0A4A75;
 }
 
 .task-detail-send:disabled {
   cursor: not-allowed;
   opacity: 0.5;
+}
+
+.task-detail-input-hint {
+  text-align: center;
+  font-size: 11px;
+  color: #94a3b8;
+  margin-top: 8px;
+
+  kbd {
+    padding: 2px 6px;
+    background: #f2f4f6;
+    border-radius: 4px;
+    font-family: inherit;
+    font-size: 10px;
+    color: #64748b;
+  }
 }
 
 @media (max-width: 760px) {

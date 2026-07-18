@@ -244,6 +244,11 @@ export function TaskDetailPage() {
               <i className="fas fa-paper-plane"></i>
             </button>
           </div>
+
+          {/* 键盘快捷键提示 */}
+          <div className="task-detail-input-hint">
+            <kbd>Enter</kbd> 发送 · <kbd>Shift + Enter</kbd> 换行
+          </div>
         </section>
       </div>
     </div>
