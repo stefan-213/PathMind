@@ -55,7 +55,8 @@ $radius-xs: 4px;
 $radius-sm: 8px;
 $radius-card: 12px;
 $radius-btn: 999px;
-$radius-full: 999px;
+$radius-full: 9999px;
+$radius-lg: 12px;
 $radius-xl: 16px;
 $radius-2xl: 24px;
 $radius-3xl: 32px;
@@ -84,6 +85,7 @@ $shadow-auth-card: 0 20px 40px -20px rgba(0, 49, 82, 0.12);
 // -------------------------------------------
 $space-xs: 4px;
 $space-sm: 8px;
+$space: 12px;
 $space-md: 16px;
 $space-lg: 24px;
 $space-xl: 32px;
@@ -218,19 +220,69 @@ $graph-recommended: #10B981;
     --radius-card: #{$radius-card};
     --radius-btn: #{$radius-btn};
     --radius-sm: #{$radius-sm};
+    --radius-lg: #{$radius-lg};
+    --radius-xl: #{$radius-xl};
+    --radius-full: #{$radius-full};
 
     // Shadows
     --shadow-card: #{$shadow-card};
     --shadow-hover: #{$shadow-hover};
+    --shadow-sm: #{$shadow-sm};
+    --shadow-md: #{$shadow-md};
+    --shadow-lg: #{$shadow-lg};
+    --shadow-xl: #{$shadow-xl};
 
     // Compatibility
     --primary: #{$primary-blue};
     --primary-light: #{$blue-hover};
+    --primary-dark: #002842;
+    --primary-bg: #{$blue-soft};
+    --primary-border: #{$blue-light};
+    --primary-shadow: #{$shadow-sm};
     --accent: #{$accent-orange};
     --accent-light: #{$accent-light};
     --accent-hover: #{$orange-hover};
     --text: #{$text-body};
+    --text-h: #{$text-title};
+    --bg: #{$bg-white};
+    --border: #{$border-light};
     --border-color: #{$border-color};
+    --code-bg: #f4f3ec;
+
+    // Social
+    --social-bg: rgba(244, 243, 236, 0.5);
+
+    // Typography
+    --sans: "Inter", system-ui, -apple-system, sans-serif;
+    --heading: "Inter", system-ui, -apple-system, sans-serif;
+    --mono: ui-monospace, Consolas, monospace;
+
+    --bg-primary: #f8fafc;
+    --bg-secondary: #ffffff;
+    --bg-dark: #0f172a;
+    --bg-card: #ffffff;
+
+    --text-light: #9ca3af;
+    --text-white: #ffffff;
+    --text-muted: #94a3b8;
+
+    // Spacing
+    --space-xs: #{$space-xs};
+    --space-sm: #{$space-sm};
+    --space: #{$space};
+    --space-md: #{$space-md};
+    --space-lg: #{$space-lg};
+    --space-xl: #{$space-xl};
+    --space-2xl: #{$space-2xl};
+    --space-3xl: #{$space-3xl};
+
+    // Responsive padding
+    --padding-mobile: #{$padding-mobile};
+    --padding-tablet: #{$padding-tablet};
+    --padding-desktop: #{$padding-desktop};
+
+    // Transition
+    --transition: all 0.2s;
 
     // Status colors
     --color-success: #{$color-success};

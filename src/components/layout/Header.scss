@@ -151,11 +151,11 @@
     }
 
     // 交错延迟 - 直接写死避免 SCSS 循环问题
-    &:nth-of-type(1) { .floating-nav-bar--expanded & { transition-delay: 0.1s; } }
-    &:nth-of-type(2) { .floating-nav-bar--expanded & { transition-delay: 0.16s; } }
-    &:nth-of-type(3) { .floating-nav-bar--expanded & { transition-delay: 0.22s; } }
-    &:nth-of-type(4) { .floating-nav-bar--expanded & { transition-delay: 0.28s; } }
-    &:nth-of-type(5) { .floating-nav-bar--expanded & { transition-delay: 0.34s; } }
+    // &:nth-of-type(1) { .floating-nav-bar--expanded & { transition-delay: 0.1s; } }
+    // &:nth-of-type(2) { .floating-nav-bar--expanded & { transition-delay: 0.16s; } }
+    // &:nth-of-type(3) { .floating-nav-bar--expanded & { transition-delay: 0.22s; } }
+    // &:nth-of-type(4) { .floating-nav-bar--expanded & { transition-delay: 0.28s; } }
+    // &:nth-of-type(5) { .floating-nav-bar--expanded & { transition-delay: 0.34s; } }
 
     .fas {
       font-size: 16px;

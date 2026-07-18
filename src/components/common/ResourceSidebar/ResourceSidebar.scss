@@ -1,3 +1,5 @@
+@use '../../../styles/mixins' as *;
+
 $resource-sidebar-primary: #003152;
 $resource-sidebar-primary-text: #001c31;
 $resource-sidebar-surface-lowest: #ffffff;
@@ -13,6 +15,7 @@ $resource-sidebar-danger: #ef4444;
   height: 100vh;
   background: $resource-sidebar-surface-lowest;
   border-right: 1px solid rgba($resource-sidebar-outline-variant, 0.15);
+  @include custom-scrollbar;
   transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   position: relative;
   flex-shrink: 0;

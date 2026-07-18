@@ -1,3 +1,5 @@
+@use "../../../styles/mixins" as *;
+
 .task-detail-page {
   height: 100vh;
   display: flex;
@@ -21,6 +23,7 @@
   overflow-y: auto;
   background: #ffffff;
   border-right: 1px solid rgba(0, 0, 0, 0.06);
+  @include custom-scrollbar;
 }
 
 .task-detail-sidebar-header {
@@ -156,6 +159,7 @@
   min-height: 0;
   overflow-y: auto;
   padding: 28px 24px 18px;
+  @include custom-scrollbar;
 }
 
 .task-detail-message {

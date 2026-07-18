@@ -1,3 +1,5 @@
+@use "../../styles/mixins" as *;
+
 .tasks-page {
   min-height: 100vh;
   display: flex;
@@ -31,6 +33,7 @@
   margin: 0;
   overflow-y: auto;
   padding: var(--space-xl) calc(var(--space-3xl) + var(--space-xl)) var(--space-xl) var(--space-xl);
+  @include custom-scrollbar;
 }
 
 .tasks-main--empty {
