@@ -9,6 +9,9 @@ export { Spin } from './Spin';
 export { CelebrationModal } from './CelebrationModal';
 export { Skeleton, SkeletonText } from './Skeleton';
 export { TypingDots } from './TypingDots';
+export { ErrorBoundary } from './ErrorBoundary';
+export { ScrollToTop } from './ScrollToTop';
+export { ProtectedRoute, PublicRoute } from './ProtectedRoute';
 export {
   ResourceSidebar,
   type ResourceSidebarAction,

@@ -316,7 +316,7 @@ export function ProfilePage() {
                         <i className="far fa-edit"></i> 编辑资料
                       </button>
                     </div>
-                    <div className="info-row">
+                    {/* <div className="info-row">
                       <div className="info-icon">
                         <i className="far fa-calendar-alt"></i>
                       </div>
@@ -328,7 +328,7 @@ export function ProfilePage() {
                             : '未知'}
                         </div>
                       </div>
-                    </div>
+                    </div> */}
                     <div className="info-row">
                       <div className="info-icon">
                         <i className="fas fa-lock"></i>

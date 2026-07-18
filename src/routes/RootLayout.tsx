@@ -1,6 +1,5 @@
 import { Outlet } from 'react-router-dom';
-import { ErrorBoundary } from '../components/providers/ErrorBoundary';
-import { ScrollToTop } from '../components/providers/ScrollToTop';
+import { ErrorBoundary, ScrollToTop } from '../components/common';
 
 export function RootLayout() {
   return (
