@@ -4,6 +4,7 @@
 import { useState, useRef, useEffect } from 'react';
 import type { KeyboardEvent } from 'react';
 import { useChatStore } from '../../stores/chatStore';
+import type { ChatMessage } from '../../stores/chatStore';
 import './AISidePanel.scss';
 
 interface AISidePanelProps {
@@ -35,9 +36,12 @@ export function AISidePanel({
   onToggleCollapse,
   onSatisfied,
 }: AISidePanelProps) {
-  const { messages, addMessage, setSatisfactionState } = useChatStore();
+  const messagesBySession = useChatStore((s) => s.messagesBySession);
+  const activeSessionId = useChatStore((s) => s.activeSessionId);
+  const { addMessage, setSatisfactionState } = useChatStore.getState();
+  const currentMessages = (activeSessionId ? messagesBySession[activeSessionId] : null) ?? [];
   const [input, setInput] = useState('');
-  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const currentMessagesEndRef = useRef<HTMLDivElement>(null);
   const hasInitializedRef = useRef(false);
   const panelClassName = [
     'ai-side-panel',
@@ -52,12 +56,12 @@ export function AISidePanel({
 
   // 自动滚动到最新消息
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages, isLoading]);
+    currentMessagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [currentMessages, isLoading]);
 
   // 初始化：进入页面时如果已有图表，自动发送满意度询问
   useEffect(() => {
-    if (hasInitialGraph && messages.length === 0 && !hasInitializedRef.current) {
+    if (hasInitialGraph && currentMessages.length === 0 && !hasInitializedRef.current) {
       hasInitializedRef.current = true;
       addMessage({
         role: 'assistant',
@@ -120,8 +124,8 @@ export function AISidePanel({
         </div>
       ) : (
         <>
-          <div className="messages-container">
-            {messages.length === 0 && (
+          <div className="currentMessages-container">
+            {currentMessages.length === 0 && (
               <div className="empty-state">
                 <i className="fas fa-lightbulb"></i>
                 <p>在Copilot页面输入需求，让 AI 为你生成计划图表</p>
@@ -129,7 +133,7 @@ export function AISidePanel({
               </div>
             )}
 
-            {messages.map((msg) => (
+            {currentMessages.map((msg: ChatMessage) => (
               <div key={msg.id} className={`message ${msg.role}`}>
                 <div className="message-avatar">
                   {msg.role === 'user' ? (
@@ -147,7 +151,7 @@ export function AISidePanel({
                   )}
                   {/* 满意度按钮 - 仅在最后一条 AI 消息时显示 */}
                   {msg.role === 'assistant' &&
-                    msg === messages[messages.length - 1] && (
+                    msg === currentMessages[currentMessages.length - 1] && (
                       <div className="satisfaction-buttons">
                         <button
                           className="btn-satisfy"
@@ -177,7 +181,7 @@ export function AISidePanel({
                 </div>
               </div>
             ) : null}
-            <div ref={messagesEndRef} />
+            <div ref={currentMessagesEndRef} />
           </div>
 
           <div className="input-area">

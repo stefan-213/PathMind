@@ -41,13 +41,14 @@ import { setXml } from '../../api/graph';
 // ---------- 类型定义导入 ----------
 import type {
   Session,                 // 会话数据类型
-  Message,                 // 消息数据类型
   OpenGraphPayload,       // 打开图表时的参数类型
 } from '../../types/copilot';
 
 // ---------- 状态管理导入 ----------
 import { useSessionStore } from '../../stores/sessionStore';
+import { useChatStore, type ChatMessage } from '../../stores/chatStore';
 // useSessionStore: 全局会话状态管理
+// useChatStore: AI对话消息状态管理（按会话隔离）
 
 // ---------- 常量导入 ----------
 import { STORAGE_KEYS } from '../../constants';
@@ -84,6 +85,11 @@ export function ConsultPage() {
   // ---------- Hooks ----------
   const navigate = useNavigate(); // 路由导航
 
+  // ---------- 订阅 chatStore（消息按会话隔离） ----------
+  const chatStoreMessages = useChatStore((s) => s.messagesBySession);
+  const chatStoreActiveId = useChatStore((s) => s.activeSessionId);
+  const chatMessages = chatStoreActiveId ? (chatStoreMessages[chatStoreActiveId] ?? []) : [];
+
   // ---------- 计算属性 ----------
   const currentSession = sessions.find((s) => s.id === currentSessionId) || sessions[0]; // 当前会话对象
   const stepOptions = currentSession?.quickOptions.length          // 当前步骤的快捷选项
@@ -111,15 +117,7 @@ export function ConsultPage() {
     setSessions((prev) =>
       prev.map((s) => {
         if (s.id === currentSessionId) {
-          const updated = { ...s, ...updates };
-          // 自动更新标题：如果标题是"默认对话"且有用户消息，取前28字符作为标题
-          if (updates.messages && s.title === '默认对话') {
-            const firstUserMsg = updates.messages.find((m: Message) => m.role === 'user');
-            if (firstUserMsg) {
-              updated.title = firstUserMsg.content.substring(0, 28) || '技术咨询';
-            }
-          }
-          return updated;
+          return { ...s, ...updates };
         }
         return s;
       })
@@ -134,15 +132,7 @@ export function ConsultPage() {
    */
   const addMessage = useCallback((role: 'user' | 'assistant', content: string, isHtml = false) => {
     if (!currentSessionId) return;
-    const newMessage: Message = { role, content, isHtml, timestamp: Date.now() };
-    setSessions((prev) =>
-      prev.map((s) => {
-        if (s.id === currentSessionId) {
-          return { ...s, messages: [...s.messages, newMessage] };
-        }
-        return s;
-      })
-    );
+    useChatStore.getState().addMessage({ role, content });
     scrollToBottom();
   }, [currentSessionId, scrollToBottom]);
 
@@ -277,9 +267,9 @@ export function ConsultPage() {
    * 用于禁用已回答的交互式消息的选项
    */
   const isAnsweredInteractiveMessage = useCallback((messageIndex: number) => {
-    if (!currentSession) return false;
+    if (!chatMessages.length) return false;
 
-    const message = currentSession.messages[messageIndex];
+    const message = chatMessages[messageIndex];
     if (!message || message.role !== 'assistant') return false;
 
     const { response } = parseAIContent(message.content);
@@ -289,10 +279,10 @@ export function ConsultPage() {
     if (!parsed || parsed.type !== 'question' || !parsed.options?.length) return false;
 
     // 检查该消息之后是否有用户消息
-    return currentSession.messages
+    return chatMessages
       .slice(messageIndex + 1)
       .some((nextMessage) => nextMessage.role === 'user');
-  }, [currentSession]);
+  }, [chatMessages]);
 
   /**
    * 发送输入框中的消息
@@ -316,33 +306,17 @@ export function ConsultPage() {
       const res = await getChatHistory({ sessionId, agentId: TRANSCRIPT_AGENT_ID });
 
       if (Array.isArray(res.data) && res.data.length > 0) {
-        // 有历史消息：转换为Message格式
-        const historyMessages: Message[] = res.data.map((item) => ({
+        // 有历史消息：转换为ChatMessage格式并注入chatStore
+        const chatMessages: ChatMessage[] = res.data.map((item, idx) => ({
+          id: `history-${sessionId}-${idx}`,
           role: item.role === 'user' ? 'user' : 'assistant',
           content: item.content,
-          isHtml: false,
           timestamp: Date.now(),
         }));
-        setSessions((prev) =>
-          prev.map((s) => s.sessionId === sessionId ? {
-            ...s,
-            messages: historyMessages,
-          } : s)
-        );
+        useChatStore.getState().setMessagesForSession(sessionId, chatMessages);
       } else {
-        // 没有历史消息：添加欢迎消息和初始快捷选项
-        setSessions((prev) =>
-          prev.map((s) => s.sessionId === sessionId && s.messages.length === 0 ? {
-            ...s,
-            messages: [{
-              role: 'assistant' as const,
-              content: getWelcomeMessageHtml(),
-              isHtml: true,
-              timestamp: Date.now(),
-            }],
-            quickOptions: INITIAL_QUICK_OPTIONS,
-          } : s)
-        );
+        // 没有历史消息：添加欢迎消息
+        useChatStore.getState().addMessage({ role: 'assistant', content: getWelcomeMessageHtml() });
       }
       loadedHistorySessionIdsRef.current.add(sessionId);
     } catch (err) {
@@ -359,6 +333,7 @@ export function ConsultPage() {
     if (isWaitingForAI) return;
     if (id === currentSessionId) return;
     setCurrentSessionId(id);
+    useChatStore.getState().setActiveSessionId(id);
     scrollToBottom();
   }, [currentSessionId, isWaitingForAI, scrollToBottom]);
 
@@ -465,12 +440,14 @@ export function ConsultPage() {
         setSessions(serverSessions);
         const latestSession = serverSessions[serverSessions.length - 1];
         setCurrentSessionId(latestSession.id);
+        useChatStore.getState().setActiveSessionId(latestSession.id);
       } catch (err) {
         console.error('Load server sessions failed:', err);
         // 降级：创建本地默认会话
         const newSess = [getDefaultSession()];
         setSessions(newSess);
         setCurrentSessionId(newSess[0].id);
+        useChatStore.getState().setActiveSessionId(newSess[0].id);
       }
     };
     loadServerSessions();
@@ -482,10 +459,10 @@ export function ConsultPage() {
   useEffect(() => {
     const sessionId = currentSession?.sessionId;
     if (!sessionId) return;
-    if (currentSession.messages.length > 0) return;
+    if (chatMessages.length > 0) return;
 
     loadSessionHistory(sessionId);
-  }, [currentSession?.sessionId, currentSession?.messages.length, loadSessionHistory]);
+  }, [currentSession?.sessionId, chatMessages.length, loadSessionHistory]);
 
   /**
    * 输入框高度自适应
@@ -553,9 +530,9 @@ export function ConsultPage() {
           <section className="chat-area" ref={chatScrollRef}>
             <div className="chat-messages">
               {/* 渲染所有消息 */}
-              {currentSession?.messages.map((msg, i) => (
+              {chatMessages.map((msg, i) => (
                 <MessageItem
-                  key={i}
+                  key={msg.id}
                   message={msg}
                   onOptionSelect={handleQuickSelect}
                   onPlanOptionSelect={handlePlanOptionSelect}

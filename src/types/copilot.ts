@@ -20,7 +20,6 @@ export interface Session {
   id: string;
   title: string;
   createdAt: string;
-  messages: Message[];
   finalXml: string;
   planDetails: { week: string; items: string[] }[];
   agentId?: string;

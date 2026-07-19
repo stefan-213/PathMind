@@ -24,7 +24,6 @@ function getDefaultSession(): Session {
     id: generateId(),                    // 本地唯一ID
     title: '默认对话',                   // 会话标题
     createdAt: new Date().toISOString(), // 创建时间
-    messages: [],                        // 消息列表
     finalXml: '',                       // 最终生成的XML
     planDetails: [],                    // 计划详情
     quickOptions: [],                   // 快捷选项

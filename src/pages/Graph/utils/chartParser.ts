@@ -204,7 +204,7 @@ const renderChartResponse = (
   const chart = normalizeGeneratedChart(contentData);
 
   if (!chart) {
-    // setChartLoadError('计划图表生成失败，请稍后重试');
+    setChartLoadError('计划图表生成失败，请稍后重试');
     setIsChartLoading(false);
     return;
   }
