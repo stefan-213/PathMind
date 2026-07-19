@@ -12,7 +12,6 @@ import type { GraphNode } from '../../types/graph';
 import type { Schedule } from '../../types/api';
 import { updataXml, getXml } from '../../api/graph';
 import { createSchedule } from '../../api/tasks';
-import { useChatStore } from '../../stores/chatStore';
 import { useSessionStore } from '../../stores/sessionStore';
 import { useCopilotSessions } from '../../hooks';
 import { STORAGE_KEYS } from '../../constants';
@@ -27,7 +26,13 @@ import './GraphPage.scss';
 // ============================================================
 export function GraphPage() {
   const navigate = useNavigate();
-  const addMessage = useChatStore((state) => state.addMessage);
+  // AI 消息状态（传递给 AISidePanel）
+  const [aiMessages, setAiMessages] = useState<Array<{ role: 'user' | 'assistant'; content: string; hasGraph?: boolean; timestamp: number }>>([]);
+
+  // 包装函数：将消息追加到 aiMessages（带 id 和 timestamp）
+  const handleAiAddMessage = useCallback((msg: { role: 'user' | 'assistant'; content: string; hasGraph?: boolean }) => {
+    setAiMessages((prev) => [...prev, { ...msg, id: `msg-${Date.now()}`, timestamp: Date.now() }]);
+  }, []);
   // 选中节点（节点详情面板）
   const [selectedNode, setSelectedNode] = useState<GraphNode | null>(null);
   const pageRef = useRef<HTMLDivElement>(null);
@@ -236,6 +241,20 @@ export function GraphPage() {
   }, [activeSessionId, graphXml, isChartLoading, storeContext]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // ---------------------------------------------
+  // 副作用：进入页面时已有图表，自动发送满意度询问
+  // ---------------------------------------------
+  useEffect(() => {
+    if (graphXml && aiMessages.length === 0) {
+      setAiMessages([{
+        id: `init-${Date.now()}`,
+        role: 'assistant',
+        content: '左侧图表您是否满意？如果不满意请提出修改意见',
+        timestamp: Date.now(),
+      }]);
+    }
+  }, [graphXml]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // ---------------------------------------------
   // 事件处理：AI 修改图表
   // ---------------------------------------------
   const handleAiModifyGraph = useCallback(
@@ -245,7 +264,7 @@ export function GraphPage() {
 
       if (!normalizedMessage || isAiUpdating || isScheduleGenerating) return;
       if (!normalizedSessionId) {
-        addMessage({ role: 'assistant', content: '请先选择一个会话图表后再发送修改意见。' });
+        setAiMessages((prev) => [...prev, { role: 'assistant', content: '请先选择一个会话图表后再发送修改意见。', timestamp: Date.now() }]);
         return;
       }
 
@@ -266,21 +285,22 @@ export function GraphPage() {
 
         const title = sessions.find((s) => s.sessionId === normalizedSessionId)?.title ?? normalizedSessionId;
         cacheAndRenderSessionChart(normalizedSessionId, title, chart);
-        addMessage({
+        setAiMessages((prev) => [...prev, {
           role: 'assistant',
           content: '已按照您的需求修改，请查看，如果不满意请继续提出修改意见。',
           hasGraph: true,
-        });
+          timestamp: Date.now(),
+        }]);
       } catch (error) {
         console.error('Update graph failed:', error);
         const messageText = error instanceof Error && error.message ? error.message : '图表修改失败，请稍后重试';
         setChartLoadError(messageText);
-        addMessage({ role: 'assistant', content: messageText });
+        setAiMessages((prev) => [...prev, { role: 'assistant', content: messageText, timestamp: Date.now() }]);
       } finally {
         setIsAiUpdating(false);
       }
     },
-    [activeSessionId, addMessage, cacheAndRenderSessionChart, isAiUpdating, isScheduleGenerating, sessions],
+    [activeSessionId, setAiMessages, cacheAndRenderSessionChart, isAiUpdating, isScheduleGenerating, sessions],
   );
 
   // ---------------------------------------------
@@ -291,7 +311,7 @@ export function GraphPage() {
       const normalizedSessionId = activeSessionId?.trim() ?? '';
       if (isScheduleGenerating) return;
       if (!normalizedSessionId) {
-        addMessage({ role: 'assistant', content: '当前还没有可用于生成日程表的图表，请先生成或选择一个图表。' });
+        setAiMessages((prev) => [...prev, { role: 'assistant', content: '当前还没有可用于生成日程表的图表，请先生成或选择一个图表。', timestamp: Date.now() }]);
         return;
       }
 
@@ -319,12 +339,12 @@ export function GraphPage() {
       } catch (error) {
         console.error('Generate schedule failed:', error);
         const messageText = error instanceof Error && error.message ? error.message : '日程表生成失败，请稍后重试';
-        addMessage({ role: 'assistant', content: messageText });
+        setAiMessages((prev) => [...prev, { role: 'assistant', content: messageText, timestamp: Date.now() }]);
       } finally {
         setIsScheduleGenerating(false);
       }
     },
-    [activeSessionId, addMessage, isScheduleGenerating, navigate],
+    [activeSessionId, setAiMessages, isScheduleGenerating, navigate],
   );
 
   // ---------------------------------------------
@@ -333,10 +353,11 @@ export function GraphPage() {
   const handleSelectGraphSession = useCallback(
     (sessionId: string) => {
       const title = sessions.find((s) => s.sessionId === sessionId)?.title ?? sessionId;
-      // 切换会话时立即清空当前图表，避免显示旧会话的图
+      // 切换会话时立即清空当前图表和消息，避免显示旧会话数据
       setGraphXml(null);
       setChartLoadError(null);
       setGraphEmptyMessage(DEFAULT_GRAPH_EMPTY_MESSAGE);
+      setAiMessages([]);
       setActiveSessionId(sessionId);
       if (renderCachedSessionChart(sessionId, title)) return;
 
@@ -354,7 +375,7 @@ export function GraphPage() {
         },
       );
     },
-    [sessions, renderCachedSessionChart, setGraphXml, setGraphEmptyMessage, setChartLoadError, setIsChartLoading, setActiveSessionId],
+    [sessions, renderCachedSessionChart, setGraphXml, setGraphEmptyMessage, setChartLoadError, setIsChartLoading, setActiveSessionId, setAiMessages],
   );
 
   // ---------------------------------------------
@@ -449,8 +470,8 @@ export function GraphPage() {
           </div>
 
           <AISidePanel
-            hasInitialGraph={Boolean(graphXml)}
-            sessionId={activeSessionId}
+            messages={aiMessages}
+            onAddMessage={handleAiAddMessage}
             isLoading={isAiUpdating}
             isScheduleGenerating={isScheduleGenerating}
             isCollapsed={isAiPanelCollapsed}

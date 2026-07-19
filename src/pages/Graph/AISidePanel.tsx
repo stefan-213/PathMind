@@ -3,15 +3,21 @@
  */
 import { useState, useRef, useEffect } from 'react';
 import type { KeyboardEvent } from 'react';
-import { useChatStore } from '../../stores/chatStore';
-import type { ChatMessage } from '../../stores/chatStore';
 import './AISidePanel.scss';
 
+interface ChatMessage {
+  id: string;
+  role: 'user' | 'assistant';
+  content: string;
+  hasGraph?: boolean;
+  timestamp: number;
+}
+
 interface AISidePanelProps {
-  /** 是否有初始图表（进入页面时已有） */
-  hasInitialGraph?: boolean;
-  /** 当前会话 ID（切换时重置初始化状态） */
-  sessionId?: string | null;
+  /** 消息列表（由父组件 GraphPage 管理） */
+  messages: ChatMessage[];
+  /** 添加消息回调（由父组件调用） */
+  onAddMessage?: (msg: Omit<ChatMessage, 'id' | 'timestamp'>) => void;
   /** 发送消息回调（由父组件处理 API 调用） */
   onSendMessage?: (message: string) => void | Promise<void>;
   /** 加载状态 */
@@ -27,8 +33,8 @@ interface AISidePanelProps {
 }
 
 export function AISidePanel({
-  hasInitialGraph,
-  sessionId,
+  messages,
+  onAddMessage,
   onSendMessage,
   isLoading,
   isScheduleGenerating = false,
@@ -36,50 +42,25 @@ export function AISidePanel({
   onToggleCollapse,
   onSatisfied,
 }: AISidePanelProps) {
-  const messagesBySession = useChatStore((s) => s.messagesBySession);
-  const activeSessionId = useChatStore((s) => s.activeSessionId);
-  const { addMessage, setSatisfactionState } = useChatStore.getState();
-  const currentMessages = (activeSessionId ? messagesBySession[activeSessionId] : null) ?? [];
   const [input, setInput] = useState('');
-  const currentMessagesEndRef = useRef<HTMLDivElement>(null);
-  const hasInitializedRef = useRef(false);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
   const panelClassName = [
     'ai-side-panel',
     isCollapsed ? 'ai-side-panel--collapsed' : '',
   ].filter(Boolean).join(' ');
   const toggleTitle = isCollapsed ? '展开 AI 助手' : '收起 AI 助手';
 
-  // 会话切换时重置初始化状态
-  useEffect(() => {
-    hasInitializedRef.current = false;
-  }, [sessionId]);
-
   // 自动滚动到最新消息
   useEffect(() => {
-    currentMessagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [currentMessages, isLoading]);
-
-  // 初始化：进入页面时如果已有图表，自动发送满意度询问
-  useEffect(() => {
-    if (hasInitialGraph && currentMessages.length === 0 && !hasInitializedRef.current) {
-      hasInitializedRef.current = true;
-      addMessage({
-        role: 'assistant',
-        content: '左侧图表您是否满意？如果不满意请提出修改意见',
-      });
-      setSatisfactionState('waiting');
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [hasInitialGraph, sessionId]);
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [messages, isLoading]);
 
   const handleSend = () => {
     if (!input.trim() || isLoading || isScheduleGenerating) return;
 
     const userMessage = input.trim();
     setInput('');
-    addMessage({ role: 'user', content: userMessage });
-
-    // 通知父组件发送消息
+    onAddMessage?.({ role: 'user', content: userMessage });
     void onSendMessage?.(userMessage);
   };
 
@@ -124,8 +105,8 @@ export function AISidePanel({
         </div>
       ) : (
         <>
-          <div className="currentMessages-container">
-            {currentMessages.length === 0 && (
+          <div className="messages-container">
+            {messages.length === 0 && (
               <div className="empty-state">
                 <i className="fas fa-lightbulb"></i>
                 <p>在Copilot页面输入需求，让 AI 为你生成计划图表</p>
@@ -133,7 +114,7 @@ export function AISidePanel({
               </div>
             )}
 
-            {currentMessages.map((msg: ChatMessage) => (
+            {messages.map((msg) => (
               <div key={msg.id} className={`message ${msg.role}`}>
                 <div className="message-avatar">
                   {msg.role === 'user' ? (
@@ -151,7 +132,7 @@ export function AISidePanel({
                   )}
                   {/* 满意度按钮 - 仅在最后一条 AI 消息时显示 */}
                   {msg.role === 'assistant' &&
-                    msg === currentMessages[currentMessages.length - 1] && (
+                    msg === messages[messages.length - 1] && (
                       <div className="satisfaction-buttons">
                         <button
                           className="btn-satisfy"
@@ -181,7 +162,7 @@ export function AISidePanel({
                 </div>
               </div>
             ) : null}
-            <div ref={currentMessagesEndRef} />
+            <div ref={messagesEndRef} />
           </div>
 
           <div className="input-area">
