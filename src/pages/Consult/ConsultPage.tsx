@@ -214,7 +214,6 @@ export function ConsultPage() {
     // 将当前会话信息存入全局store
     useSessionStore.getState().setCurrentSession(
       currentSession.sessionId,
-      currentSession.agentId,
       payload.optionId
         ? { optionId: payload.optionId }
         : undefined

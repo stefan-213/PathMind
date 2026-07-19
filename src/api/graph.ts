@@ -21,10 +21,6 @@ export const setXml = (data: {
   agentId?: string;
   sessionId?: string;
   message?: string;
-  consultationMsg?: {
-    goal: string;
-    base: string;
-  };
 }) => {
   return post<{
     content: string;

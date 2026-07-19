@@ -29,7 +29,7 @@ export function TaskDetailPage() {
     return null;
   }, [sessionIdParam]);
 
-  const schedules = useMemo(() => readLocalSchedules(), []);
+  const schedules = useMemo(() => readLocalSchedules(sessionId ?? undefined), [sessionId]);
 
   // 当有 sessionId 时，尝试从后端获取数据覆盖 localStorage 的数据
   const [backendSchedules, setBackendSchedules] = useState<Schedule[]>([]);

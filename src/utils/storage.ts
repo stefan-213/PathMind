@@ -15,21 +15,30 @@ export interface ConsultChartData {
   agentId: string;
   sessionId: string;
   optionId?: string;
-  consultationMsg?: {
-    goal: string;
-    base: string;
-  };
 }
 
 export const pathmindStorage = {
   consult: {
-    save: (data: ConsultChartData): void =>
-      localStorage.setItem(PATHMIND_KEYS.CONSULT_CHART, JSON.stringify(data)),
-    load: (): ConsultChartData | null => {
-      const raw = localStorage.getItem(PATHMIND_KEYS.CONSULT_CHART);
+    save: (data: ConsultChartData): void => {
+      const key = data.sessionId
+        ? `${PATHMIND_KEYS.CONSULT_CHART}_${data.sessionId}`
+        : PATHMIND_KEYS.CONSULT_CHART;
+      localStorage.setItem(key, JSON.stringify(data));
+    },
+    load: (sessionId?: string): ConsultChartData | null => {
+      const key = sessionId
+        ? `${PATHMIND_KEYS.CONSULT_CHART}_${sessionId}`
+        : PATHMIND_KEYS.CONSULT_CHART;
+      const raw = localStorage.getItem(key);
       return raw ? JSON.parse(raw) : null;
     },
-    clear: (): void => localStorage.removeItem(PATHMIND_KEYS.CONSULT_CHART),
+    clear: (sessionId?: string): void => {
+      if (sessionId) {
+        localStorage.removeItem(`${PATHMIND_KEYS.CONSULT_CHART}_${sessionId}`);
+      } else {
+        localStorage.removeItem(PATHMIND_KEYS.CONSULT_CHART);
+      }
+    },
   },
   plan: {
     save: (schedules: Schedule[], sessionId?: string): void => {
@@ -45,6 +54,7 @@ export const pathmindStorage = {
       return raw ? JSON.parse(raw) : [];
     },
     saveTitle: (title: string, sessionId?: string): void => {
+      if (!title.trim()) return;
       if (sessionId) {
         localStorage.setItem(`${PATHMIND_KEYS.PLAN_TITLE}_${sessionId}`, title);
       } else {
@@ -63,6 +73,15 @@ export const pathmindStorage = {
         localStorage.removeItem(PATHMIND_KEYS.PLAN_DATA);
         localStorage.removeItem(PATHMIND_KEYS.PLAN_TITLE);
       }
+    },
+  },
+  sessionCharts: {
+    save: (charts: Record<string, { xml: string; data?: unknown[]; repaired: boolean }>): void => {
+      localStorage.setItem(PATHMIND_KEYS.SESSION_CHARTS, JSON.stringify(charts));
+    },
+    load: (): Record<string, { xml: string; data?: unknown[]; repaired: boolean }> => {
+      const raw = localStorage.getItem(PATHMIND_KEYS.SESSION_CHARTS);
+      return raw ? JSON.parse(raw) : {};
     },
   },
 };

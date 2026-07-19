@@ -4,51 +4,10 @@
  */
 
 import type { Schedule } from '../../../../types/api';
-import { isRecord } from '../../../../utils/typeGuards';
-import { expandTaskInputs, normalizeTask, toNumber, toText } from './normalize';
+import { pathmindStorage } from '../../../../utils/storage';
 
-export const readLocalSchedules = (): Schedule[] => {
-  const planDataStr = localStorage.getItem('pathmind_plan_data');
-  if (!planDataStr) return [];
-
-  try {
-    const planData = JSON.parse(planDataStr);
-    if (!Array.isArray(planData)) return [];
-
-    return planData
-      .map((item, scheduleIndex) => {
-        if (!isRecord(item)) return null;
-
-        const id = String(toNumber(item.id, scheduleIndex + 1));
-        const title = toText(item.title, `学习计划 ${scheduleIndex + 1}`);
-        const rawTasks = Array.isArray(item.subScheduleList)
-          ? expandTaskInputs(item.subScheduleList)
-          : Array.isArray(item.tasks)
-            ? expandTaskInputs(item.tasks)
-            : Array.isArray(item.details)
-              ? expandTaskInputs(item.details)
-              : splitDetails(item.details);
-
-        const subScheduleList = rawTasks
-          .map((taskInput, taskIndex) => normalizeTask(taskInput, taskIndex, id, title))
-          .filter((task): task is Schedule['subScheduleList'][number] => Boolean(task));
-
-        return {
-          id,
-          scheduleId: toText(item.scheduleId, `local-schedule-${scheduleIndex + 1}`),
-          userId: toText(item.userId, 'local'),
-          title,
-          time: toText(item.time),
-          content: toText(item.content),
-          status: item.status === 1 || item.status === '1' ? 1 : 0,
-          subScheduleList,
-        };
-      })
-      .filter(Boolean) as Schedule[];
-  } catch (error) {
-    console.error('读取任务详情本地数据失败:', error);
-    return [];
-  }
+export const readLocalSchedules = (sessionId?: string): Schedule[] => {
+  return pathmindStorage.plan.load(sessionId);
 };
 
 /** 本地降级回复 */
@@ -96,15 +55,4 @@ export const generateLocalReply = (taskTitle: string, message: string) => {
   }
 
   return `我会围绕 **${taskTitle}** 帮你拆解。你可以问我学习步骤、资料推荐、练习设计、完成标准，或者直接说你卡在哪个概念上。`;
-};
-
-const splitDetails = (value: unknown) => {
-  if (typeof value !== 'string') return [];
-  return value
-    .replace(/\r\n?/g, '\n')
-    .replace(/(第\d+(?:-\d+)?[天周])\s*\n\s*(?!第\d+(?:-\d+)?[天周])([^\n]+)/g, '$1-$2')
-    .replace(/[，,；;]\s*(?=第\d+(?:-\d+)?[天周](?:\s*[-—－:：])?)/g, '\n')
-    .split(/[；;\n]+/)
-    .map(item => item.trim())
-    .filter(Boolean);
 };

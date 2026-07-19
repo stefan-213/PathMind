@@ -31,5 +31,7 @@ export const STORAGE_KEYS = {
   PLAN_TITLE: 'pathmind_plan_title',
   /** 图表生成中标记（跨页面传递 loading 状态） */
   GENERATING_PLAN: 'pathmind_generating_plan',
+  /** Graph 会话图表缓存 */
+  SESSION_CHARTS: 'pathmind_session_charts',
 } as const;
 

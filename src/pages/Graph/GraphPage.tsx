@@ -43,7 +43,7 @@ export function GraphPage() {
 
   // 错误兜底：保留上次成功结果 + 重试参数
   const [lastSuccessfulXml, setLastSuccessfulXml] = useState<string | null>(null);
-  const lastChartSourceRef = useRef<{ type: 'store-context'; optionId?: string; goal?: string; base?: string; sessionId?: string } | { type: 'localStorage'; goal?: string; base?: string; sessionId?: string } | null>(null);
+  const lastChartSourceRef = useRef<{ type: 'store-context'; optionId?: string; sessionId?: string } | { type: 'localStorage'; sessionId?: string } | null>(null);
 
   // AI 修改状态
   const [isAiUpdating, setIsAiUpdating] = useState(false);
@@ -66,8 +66,10 @@ export function GraphPage() {
   // sessionStore 数据
   const { currentSessionId: storeSessionId, consultContext: storeContext } = useSessionStore();
 
-  // 会话图表缓存
-  const [sessionCharts, setSessionCharts] = useState<Record<string, GeneratedChart>>({});
+  // 会话图表缓存（从 localStorage 恢复）
+  const [sessionCharts, setSessionCharts] = useState<Record<string, GeneratedChart>>(() =>
+    pathmindStorage.sessionCharts.load() as Record<string, GeneratedChart>
+  );
 
   // 防止重复加载已有图表
   const hasAutoLoadedInitialSessionRef = useRef(false);
@@ -106,7 +108,11 @@ export function GraphPage() {
 
   const cacheAndRenderSessionChart = useCallback(
     (sessionId: string, title: string, chart: GeneratedChart) => {
-      setSessionCharts((current) => ({ ...current, [sessionId]: chart }));
+      setSessionCharts((current) => {
+        const next = { ...current, [sessionId]: chart };
+        pathmindStorage.sessionCharts.save(next);
+        return next;
+      });
       setGraphXml(chart.xml);
       setGraphEmptyMessage(DEFAULT_GRAPH_EMPTY_MESSAGE);
       setChartLoadError(null);
@@ -170,9 +176,9 @@ export function GraphPage() {
   useEffect(() => {
     if (storeContext) {
       // 优先从 sessionStore 读取（Copilot 跳转过来时）
-      const { optionId, goal, base } = storeContext;
+      const { optionId } = storeContext;
       void loadChart(
-        { type: 'store-context', optionId, goal, base, sessionId: storeSessionId ?? undefined },
+        { type: 'store-context', optionId, sessionId: storeSessionId ?? undefined },
         { setGraphXml, setGraphEmptyMessage, setChartLoadError, setIsChartLoading, setActiveSessionId,
           onSuccess: (xml) => setLastSuccessfulXml(xml),
           recordSource: (xml, source) => { setLastSuccessfulXml(xml); if (source) lastChartSourceRef.current = source as typeof lastChartSourceRef.current; },
@@ -186,10 +192,10 @@ export function GraphPage() {
     const chartData = pathmindStorage.consult.load();
     if (!chartData) return;
 
-    const { consultationMsg, sessionId } = chartData;
-    if (consultationMsg?.goal && consultationMsg?.base) {
+    const { sessionId } = chartData;
+    if (sessionId) {
       void loadChart(
-        { type: 'localStorage', goal: consultationMsg.goal, base: consultationMsg.base, sessionId },
+        { type: 'localStorage', sessionId },
         { setGraphXml, setGraphEmptyMessage, setChartLoadError, setIsChartLoading, setActiveSessionId,
           onSuccess: (xml) => setLastSuccessfulXml(xml),
           recordSource: (xml, source) => { setLastSuccessfulXml(xml); if (source) lastChartSourceRef.current = source as typeof lastChartSourceRef.current; },
