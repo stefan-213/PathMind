@@ -201,10 +201,20 @@ const renderChartResponse = (
   { setGraphXml, setGraphEmptyMessage, setChartLoadError, setIsChartLoading, onSuccess, recordSource }: RenderChartOptions,
 ) => {
   const contentData = getChartContent(res);
+
+  // 优先检查 API 是否明确返回失败
+  const failureMsg = getFailureMessage(res, '');
+  if (failureMsg) {
+    setChartLoadError(failureMsg);
+    setIsChartLoading(false);
+    return;
+  }
+
   const chart = normalizeGeneratedChart(contentData);
 
   if (!chart) {
-    setChartLoadError('计划图表生成失败，请稍后重试');
+    // API 成功但无图表数据 → 从未生成过图表，显示空状态
+    setGraphEmptyMessage(DEFAULT_GRAPH_EMPTY_MESSAGE);
     setIsChartLoading(false);
     return;
   }
