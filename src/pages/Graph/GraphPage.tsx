@@ -41,9 +41,9 @@ export function GraphPage() {
   );
   const [chartLoadError, setChartLoadError] = useState<string | null>(null);
 
-  // 错误兜底：保留上次成功结果 + 重试参数
-  const [lastSuccessfulXml, setLastSuccessfulXml] = useState<string | null>(null);
-  const lastChartSourceRef = useRef<{ type: 'store-context'; optionId?: string; sessionId?: string } | { type: 'localStorage'; sessionId?: string } | null>(null);
+  // 错误兜底：保留每个会话的上次成功结果 + 重试参数
+  const [lastSuccessfulXmlBySession, setLastSuccessfulXmlBySession] = useState<Record<string, string>>({});
+  const lastChartSourceRef = useRef<Record<string, { type: 'store-context'; optionId?: string; sessionId?: string } | { type: 'localStorage'; sessionId?: string }>>({});
 
   // AI 修改状态
   const [isAiUpdating, setIsAiUpdating] = useState(false);
@@ -77,19 +77,23 @@ export function GraphPage() {
   // ---------------------------------------------
   // 辅助：缓存并渲染会话图表
   // ---------------------------------------------
-  // 记录成功图表 + source，支持重试
-  const recordSuccessfulChart = useCallback((xml: string, source: typeof lastChartSourceRef.current) => {
-    setLastSuccessfulXml(xml);
-    if (source) lastChartSourceRef.current = source;
+  // 记录成功图表 + source，支持重试（按会话隔离）
+  const recordSuccessfulChart = useCallback((sessionId: string, xml: string, source?: typeof lastChartSourceRef.current[string]) => {
+    setLastSuccessfulXmlBySession((prev) => ({ ...prev, [sessionId]: xml }));
+    if (source) {
+      lastChartSourceRef.current = { ...lastChartSourceRef.current, [sessionId]: source };
+    }
   }, []);
 
   // ---------------------------------------------
   // 辅助：重试图表生成
   // ---------------------------------------------
   const handleRetryChart = useCallback(() => {
-    const source = lastChartSourceRef.current;
-    if (!source) return;
-    lastChartSourceRef.current = null;
+    const sid = activeSessionId ?? '';
+    const source = lastChartSourceRef.current[sid];
+    if (!source || !sid) return;
+    const { [sid]: _, ...rest } = lastChartSourceRef.current;
+    lastChartSourceRef.current = rest;
     setChartLoadError(null);
     void loadChart(source, {
       setGraphXml,
@@ -98,13 +102,13 @@ export function GraphPage() {
       setIsChartLoading,
       setActiveSessionId,
       recordSource: (xml) => {
-        setLastSuccessfulXml(xml);
+        setLastSuccessfulXmlBySession((prev) => ({ ...prev, [sid]: xml }));
       },
       onSuccess: (xml) => {
-        setLastSuccessfulXml(xml);
+        setLastSuccessfulXmlBySession((prev) => ({ ...prev, [sid]: xml }));
       },
     });
-  }, []);
+  }, [activeSessionId]);
 
   const cacheAndRenderSessionChart = useCallback(
     (sessionId: string, title: string, chart: GeneratedChart) => {
@@ -117,7 +121,7 @@ export function GraphPage() {
       setGraphEmptyMessage(DEFAULT_GRAPH_EMPTY_MESSAGE);
       setChartLoadError(null);
       setSelectedNode(null);
-      recordSuccessfulChart(chart.xml, null);
+      recordSuccessfulChart(sessionId, chart.xml);
 
       if (Array.isArray(chart.data) && chart.data.length > 0) {
         pathmindStorage.plan.save(chart.data as Schedule[], sessionId);
@@ -138,7 +142,7 @@ export function GraphPage() {
       setGraphEmptyMessage(DEFAULT_GRAPH_EMPTY_MESSAGE);
       setSelectedNode(null);
       setChartLoadError(null);
-      recordSuccessfulChart(cachedChart.xml, null);
+      recordSuccessfulChart(sessionId, cachedChart.xml);
 
       if (Array.isArray(cachedChart.data) && cachedChart.data.length > 0) {
         pathmindStorage.plan.save(cachedChart.data as Schedule[], sessionId);
@@ -180,8 +184,17 @@ export function GraphPage() {
       void loadChart(
         { type: 'store-context', optionId, sessionId: storeSessionId ?? undefined },
         { setGraphXml, setGraphEmptyMessage, setChartLoadError, setIsChartLoading, setActiveSessionId,
-          onSuccess: (xml) => setLastSuccessfulXml(xml),
-          recordSource: (xml, source) => { setLastSuccessfulXml(xml); if (source) lastChartSourceRef.current = source as typeof lastChartSourceRef.current; },
+          onSuccess: (xml) => {
+            const sid = storeSessionId ?? '';
+            if (sid) setLastSuccessfulXmlBySession((prev) => ({ ...prev, [sid]: xml }));
+          },
+          recordSource: (xml, source) => {
+            const sid = storeSessionId ?? '';
+            if (sid) {
+              setLastSuccessfulXmlBySession((prev) => ({ ...prev, [sid]: xml }));
+              if (source) lastChartSourceRef.current = { ...lastChartSourceRef.current, [sid]: source as typeof lastChartSourceRef.current[string] };
+            }
+          },
         },
       );
       useSessionStore.getState().clearCurrentSession();
@@ -197,8 +210,13 @@ export function GraphPage() {
       void loadChart(
         { type: 'localStorage', sessionId },
         { setGraphXml, setGraphEmptyMessage, setChartLoadError, setIsChartLoading, setActiveSessionId,
-          onSuccess: (xml) => setLastSuccessfulXml(xml),
-          recordSource: (xml, source) => { setLastSuccessfulXml(xml); if (source) lastChartSourceRef.current = source as typeof lastChartSourceRef.current; },
+          onSuccess: (xml) => {
+            setLastSuccessfulXmlBySession((prev) => ({ ...prev, [sessionId]: xml }));
+          },
+          recordSource: (xml, source) => {
+            setLastSuccessfulXmlBySession((prev) => ({ ...prev, [sessionId]: xml }));
+            if (source) lastChartSourceRef.current = { ...lastChartSourceRef.current, [sessionId]: source as typeof lastChartSourceRef.current[string] };
+          },
         },
       );
     }
@@ -315,6 +333,10 @@ export function GraphPage() {
   const handleSelectGraphSession = useCallback(
     (sessionId: string) => {
       const title = sessions.find((s) => s.sessionId === sessionId)?.title ?? sessionId;
+      // 切换会话时立即清空当前图表，避免显示旧会话的图
+      setGraphXml(null);
+      setChartLoadError(null);
+      setGraphEmptyMessage(DEFAULT_GRAPH_EMPTY_MESSAGE);
       setActiveSessionId(sessionId);
       if (renderCachedSessionChart(sessionId, title)) return;
 
@@ -322,8 +344,13 @@ export function GraphPage() {
       void loadChart(
         { type: 'localStorage', sessionId },
         { setGraphXml, setGraphEmptyMessage, setChartLoadError, setIsChartLoading, setActiveSessionId,
-          onSuccess: (xml) => setLastSuccessfulXml(xml),
-          recordSource: (xml, source) => { setLastSuccessfulXml(xml); if (source) lastChartSourceRef.current = source as typeof lastChartSourceRef.current; },
+          onSuccess: (xml) => {
+            setLastSuccessfulXmlBySession((prev) => ({ ...prev, [sessionId]: xml }));
+          },
+          recordSource: (xml, source) => {
+            setLastSuccessfulXmlBySession((prev) => ({ ...prev, [sessionId]: xml }));
+            if (source) lastChartSourceRef.current = { ...lastChartSourceRef.current, [sessionId]: source as typeof lastChartSourceRef.current[string] };
+          },
         },
       );
     },
@@ -374,7 +401,7 @@ export function GraphPage() {
           <div className="graph-wrapper with-ai-panel">
             <GraphCanvas
               key={activeSessionId ?? 'graph-canvas'}
-              xml={chartLoadError && lastSuccessfulXml ? lastSuccessfulXml : graphXml}
+              xml={(activeSessionId && lastSuccessfulXmlBySession[activeSessionId] && chartLoadError) ? lastSuccessfulXmlBySession[activeSessionId] : graphXml}
               emptyMessage={graphEmptyMessage}
             />
 
@@ -382,7 +409,7 @@ export function GraphPage() {
               <div className="graph-load-error">
                 <i className="fas fa-circle-exclamation"></i>
                 <span>{chartLoadError}</span>
-                {lastSuccessfulXml && <span className="error-hint">上次成功结果已保留</span>}
+                {activeSessionId && lastSuccessfulXmlBySession[activeSessionId] && <span className="error-hint">上次成功结果已保留</span>}
                 <button className="btn btn-primary btn-sm" onClick={handleRetryChart}>
                   <i className="fas fa-redo"></i> 重试
                 </button>
