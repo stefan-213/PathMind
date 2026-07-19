@@ -62,17 +62,6 @@ function renderHeaderLogo(header: ResourceSidebarHeader) {
   );
 }
 
-const areEqual = (prev: ResourceSidebarProps, next: ResourceSidebarProps) =>
-  prev.isCollapsed === next.isCollapsed &&
-  prev.activeItemId === next.activeItemId &&
-  prev.items === next.items &&
-  prev.header.title === next.header.title &&
-  prev.header.subtitle === next.header.subtitle &&
-  prev.primaryAction?.label === next.primaryAction?.label &&
-  prev.primaryAction?.disabled === next.primaryAction?.disabled &&
-  prev.sectionTitle === next.sectionTitle &&
-  prev.emptyText === next.emptyText;
-
 export const ResourceSidebar = memo(function ResourceSidebar({
   header,
   primaryAction,
@@ -229,4 +218,4 @@ export const ResourceSidebar = memo(function ResourceSidebar({
       )}
     </aside>
   );
-}, areEqual);
+});

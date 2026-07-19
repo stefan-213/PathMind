@@ -339,6 +339,10 @@
     background: $blue-soft;
   }
 }
+.knowledge-sidebar-tree__folder-info{
+  display: flex;
+  align-items: center;
+}
 
 .knowledge-sidebar-tree__folder-row,
 .knowledge-sidebar-tree__file-row {
@@ -365,11 +369,22 @@
 
 .knowledge-sidebar-tree__toggle {
   width: 28px;
-  height: 36px;
+  height: 28px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  margin-left: 4px;
   flex-shrink: 0;
+  border: none;
+  border-radius: $radius-sm;
+  background: transparent;
+  cursor: pointer;
+  transition: $transition-base;
+
+  &:hover:not(:disabled) {
+    color: $primary-blue;
+    background: $blue-light;
+  }
 
   &:disabled {
     cursor: default;

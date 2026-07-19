@@ -157,7 +157,11 @@ export function KnowledgeBasePage() {
     setSelectedFileId(null);
     setExpandedKnowledgeBaseIds((currentIds) => {
       const nextIds = new Set(currentIds);
-      nextIds.add(id);
+      if (nextIds.has(id)) {
+        nextIds.delete(id);
+      } else {
+        nextIds.add(id);
+      }
       return nextIds;
     });
   }, []);
@@ -470,56 +474,62 @@ export function KnowledgeBasePage() {
                 <button
                   type="button"
                   className="knowledge-sidebar-tree__toggle"
-                  onClick={() => handleToggleKnowledgeBase(knowledgeBase.id)}
-                  disabled={knowledgeBase.files.length === 0}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleToggleKnowledgeBase(knowledgeBase.id);
+                  }}
                   aria-label={isExpanded ? '收起文件列表' : '展开文件列表'}
                 >
                   <i className={`fas ${isExpanded ? 'fa-chevron-down' : 'fa-chevron-right'}`}></i>
                 </button>
 
-                <>
+                <div className="knowledge-sidebar-tree__folder-main">
+                  <i className="fas fa-folder knowledge-sidebar-tree__folder-icon"></i>
+                  <span className="knowledge-sidebar-tree__folder-text">
+                    <span className="knowledge-sidebar-tree__folder-title">
+                      {knowledgeBase.name}
+                    </span>
+                    <span className="knowledge-sidebar-tree__folder-meta">
+                      {knowledgeBase.files.length > 0
+                        ? `${knowledgeBase.files.length} 个文件`
+                        : '暂无文件'}
+                    </span>
+                  </span>
+                </div>
+
+                <div className="knowledge-sidebar-tree__actions">
                   <button
                     type="button"
-                    className="knowledge-sidebar-tree__folder-main"
-                    onClick={() => handleSelectKnowledgeBase(knowledgeBase.id)}
+                    className="knowledge-sidebar-tree__icon-btn"
+                    title="重命名知识库"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      openRenameDialog(knowledgeBase);
+                    }}
+                    disabled={isDeleting}
                   >
-                    <i className="fas fa-folder knowledge-sidebar-tree__folder-icon"></i>
-                    <span className="knowledge-sidebar-tree__folder-text">
-                      <span className="knowledge-sidebar-tree__folder-title">
-                        {knowledgeBase.name}
-                      </span>
-                      <span className="knowledge-sidebar-tree__folder-meta">
-                        {knowledgeBase.files.length > 0
-                          ? `${knowledgeBase.files.length} 个文件`
-                          : '暂无文件'}
-                      </span>
-                    </span>
+                    <i className="fas fa-pen"></i>
                   </button>
-                  <div className="knowledge-sidebar-tree__actions">
-                    <button
-                      type="button"
-                      className="knowledge-sidebar-tree__icon-btn"
-                      title="重命名知识库"
-                      onClick={() => openRenameDialog(knowledgeBase)}
-                      disabled={isDeleting}
-                    >
-                      <i className="fas fa-pen"></i>
-                    </button>
-                    <button
-                      type="button"
-                      className="knowledge-sidebar-tree__icon-btn knowledge-sidebar-tree__icon-btn--danger"
-                      title="删除知识库"
-                      onClick={() => void handleDeleteKnowledgeBase(knowledgeBase)}
-                      disabled={isDeleting}
-                    >
-                      <i className={`fas ${isDeleting ? 'fa-spinner fa-spin' : 'fa-trash'}`}></i>
-                    </button>
-                  </div>
-                </>
+                  <button
+                    type="button"
+                    className="knowledge-sidebar-tree__icon-btn knowledge-sidebar-tree__icon-btn--danger"
+                    title="删除知识库"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      void handleDeleteKnowledgeBase(knowledgeBase);
+                    }}
+                    disabled={isDeleting}
+                  >
+                    <i className={`fas ${isDeleting ? 'fa-spinner fa-spin' : 'fa-trash'}`}></i>
+                  </button>
+                </div>
               </div>
 
               {isExpanded && knowledgeBase.files.length > 0 ? (
-                <div className="knowledge-sidebar-tree__files">
+                <div
+                  className="knowledge-sidebar-tree__files"
+                  onClick={(e) => e.stopPropagation()}
+                >
                   {knowledgeBase.files.map((file) => {
                     const actionId = getFileActionId(knowledgeBase.id, file.id);
                     const isDeletingFile = deletingFileId === actionId;
@@ -532,7 +542,8 @@ export function KnowledgeBasePage() {
                         <button
                           type="button"
                           className="knowledge-sidebar-tree__file-main"
-                          onClick={() => {
+                          onClick={(e) => {
+                            e.stopPropagation();
                             setSelectedKnowledgeBaseId(knowledgeBase.id);
                             setSelectedFileId(file.id);
                           }}
@@ -544,7 +555,10 @@ export function KnowledgeBasePage() {
                           type="button"
                           className="knowledge-sidebar-tree__icon-btn knowledge-sidebar-tree__icon-btn--danger"
                           title="删除文件"
-                          onClick={() => void handleDeleteFile(knowledgeBase.id, file)}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            void handleDeleteFile(knowledgeBase.id, file);
+                          }}
                           disabled={isDeletingFile}
                         >
                           <i className={`fas ${isDeletingFile ? 'fa-spinner fa-spin' : 'fa-trash'}`}></i>

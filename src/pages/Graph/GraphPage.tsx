@@ -10,17 +10,16 @@ import { GraphCanvas } from './GraphCanvas';
 import { AISidePanel } from './AISidePanel';
 import type { GraphNode } from '../../types/graph';
 import type { Schedule } from '../../types/api';
-import { setXml, updataXml, getXml } from '../../api/graph';
+import { updataXml, getXml } from '../../api/graph';
 import { createSchedule } from '../../api/tasks';
 import { useChatStore } from '../../stores/chatStore';
 import { useSessionStore } from '../../stores/sessionStore';
-import { normalizeDrawioXml } from '../../utils/drawioXml';
 import { useCopilotSessions } from '../../hooks';
-import { AGENT_IDS, STORAGE_KEYS } from '../../constants';
+import { STORAGE_KEYS } from '../../constants';
 import { pathmindStorage } from '../../utils/storage';
 import { isRecord } from '../../utils/typeGuards';
 import { normalizeGeneratedChart, getChartContent, getFailureMessage, type GeneratedChart, DEFAULT_GRAPH_EMPTY_MESSAGE } from './utils/chartParser';
-import { loadChart, type ChartLoadSource } from './utils/chartLoader';
+import { loadChart } from './utils/chartLoader';
 import './GraphPage.scss';
 
 // ============================================================
