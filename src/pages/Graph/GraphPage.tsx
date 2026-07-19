@@ -41,6 +41,10 @@ export function GraphPage() {
   );
   const [chartLoadError, setChartLoadError] = useState<string | null>(null);
 
+  // 错误兜底：保留上次成功结果 + 重试参数
+  const [lastSuccessfulXml, setLastSuccessfulXml] = useState<string | null>(null);
+  const lastChartSourceRef = useRef<{ type: 'store-context'; optionId?: string; goal?: string; base?: string; sessionId?: string } | { type: 'localStorage'; goal?: string; base?: string; sessionId?: string } | null>(null);
+
   // AI 修改状态
   const [isAiUpdating, setIsAiUpdating] = useState(false);
 
@@ -71,6 +75,35 @@ export function GraphPage() {
   // ---------------------------------------------
   // 辅助：缓存并渲染会话图表
   // ---------------------------------------------
+  // 记录成功图表 + source，支持重试
+  const recordSuccessfulChart = useCallback((xml: string, source: typeof lastChartSourceRef.current) => {
+    setLastSuccessfulXml(xml);
+    if (source) lastChartSourceRef.current = source;
+  }, []);
+
+  // ---------------------------------------------
+  // 辅助：重试图表生成
+  // ---------------------------------------------
+  const handleRetryChart = useCallback(() => {
+    const source = lastChartSourceRef.current;
+    if (!source) return;
+    lastChartSourceRef.current = null;
+    setChartLoadError(null);
+    void loadChart(source, {
+      setGraphXml,
+      setGraphEmptyMessage,
+      setChartLoadError,
+      setIsChartLoading,
+      setActiveSessionId,
+      recordSource: (xml) => {
+        setLastSuccessfulXml(xml);
+      },
+      onSuccess: (xml) => {
+        setLastSuccessfulXml(xml);
+      },
+    });
+  }, []);
+
   const cacheAndRenderSessionChart = useCallback(
     (sessionId: string, title: string, chart: GeneratedChart) => {
       setSessionCharts((current) => ({ ...current, [sessionId]: chart }));
@@ -78,6 +111,7 @@ export function GraphPage() {
       setGraphEmptyMessage(DEFAULT_GRAPH_EMPTY_MESSAGE);
       setChartLoadError(null);
       setSelectedNode(null);
+      recordSuccessfulChart(chart.xml, null);
 
       if (Array.isArray(chart.data) && chart.data.length > 0) {
         pathmindStorage.plan.save(chart.data as Schedule[], sessionId);
@@ -86,7 +120,7 @@ export function GraphPage() {
         pathmindStorage.plan.saveTitle(title, sessionId);
       }
     },
-    [],
+    [recordSuccessfulChart],
   );
 
   const renderCachedSessionChart = useCallback(
@@ -98,6 +132,7 @@ export function GraphPage() {
       setGraphEmptyMessage(DEFAULT_GRAPH_EMPTY_MESSAGE);
       setSelectedNode(null);
       setChartLoadError(null);
+      recordSuccessfulChart(cachedChart.xml, null);
 
       if (Array.isArray(cachedChart.data) && cachedChart.data.length > 0) {
         pathmindStorage.plan.save(cachedChart.data as Schedule[], sessionId);
@@ -107,7 +142,7 @@ export function GraphPage() {
       }
       return true;
     },
-    [sessionCharts],
+    [sessionCharts, recordSuccessfulChart],
   );
 
   // ---------------------------------------------
@@ -138,7 +173,10 @@ export function GraphPage() {
       const { optionId, goal, base } = storeContext;
       void loadChart(
         { type: 'store-context', optionId, goal, base, sessionId: storeSessionId ?? undefined },
-        { setGraphXml, setGraphEmptyMessage, setChartLoadError, setIsChartLoading, setActiveSessionId },
+        { setGraphXml, setGraphEmptyMessage, setChartLoadError, setIsChartLoading, setActiveSessionId,
+          onSuccess: (xml) => setLastSuccessfulXml(xml),
+          recordSource: (xml, source) => { setLastSuccessfulXml(xml); if (source) lastChartSourceRef.current = source as typeof lastChartSourceRef.current; },
+        },
       );
       useSessionStore.getState().clearCurrentSession();
       return;
@@ -152,7 +190,10 @@ export function GraphPage() {
     if (consultationMsg?.goal && consultationMsg?.base) {
       void loadChart(
         { type: 'localStorage', goal: consultationMsg.goal, base: consultationMsg.base, sessionId },
-        { setGraphXml, setGraphEmptyMessage, setChartLoadError, setIsChartLoading, setActiveSessionId },
+        { setGraphXml, setGraphEmptyMessage, setChartLoadError, setIsChartLoading, setActiveSessionId,
+          onSuccess: (xml) => setLastSuccessfulXml(xml),
+          recordSource: (xml, source) => { setLastSuccessfulXml(xml); if (source) lastChartSourceRef.current = source as typeof lastChartSourceRef.current; },
+        },
       );
     }
     pathmindStorage.consult.clear();
@@ -274,7 +315,10 @@ export function GraphPage() {
       // 加载该会话的已有图表
       void loadChart(
         { type: 'localStorage', sessionId },
-        { setGraphXml, setGraphEmptyMessage, setChartLoadError, setIsChartLoading, setActiveSessionId },
+        { setGraphXml, setGraphEmptyMessage, setChartLoadError, setIsChartLoading, setActiveSessionId,
+          onSuccess: (xml) => setLastSuccessfulXml(xml),
+          recordSource: (xml, source) => { setLastSuccessfulXml(xml); if (source) lastChartSourceRef.current = source as typeof lastChartSourceRef.current; },
+        },
       );
     },
     [sessions, renderCachedSessionChart, setGraphXml, setGraphEmptyMessage, setChartLoadError, setIsChartLoading, setActiveSessionId],
@@ -324,14 +368,18 @@ export function GraphPage() {
           <div className="graph-wrapper with-ai-panel">
             <GraphCanvas
               key={activeSessionId ?? 'graph-canvas'}
-              xml={graphXml}
+              xml={chartLoadError && lastSuccessfulXml ? lastSuccessfulXml : graphXml}
               emptyMessage={graphEmptyMessage}
             />
 
             {chartLoadError && !isChartLoading && (
               <div className="graph-load-error">
                 <i className="fas fa-circle-exclamation"></i>
-                {chartLoadError}
+                <span>{chartLoadError}</span>
+                {lastSuccessfulXml && <span className="error-hint">上次成功结果已保留</span>}
+                <button className="btn btn-primary btn-sm" onClick={handleRetryChart}>
+                  <i className="fas fa-redo"></i> 重试
+                </button>
               </div>
             )}
 

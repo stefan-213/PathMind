@@ -188,13 +188,17 @@ type RenderChartOptions = {
   setGraphEmptyMessage: (msg: string) => void;
   setChartLoadError: (err: string | null) => void;
   setIsChartLoading: (loading: boolean) => void;
+  /** 成功后回调（仅传 xml） */
+  onSuccess?: (xml: string) => void;
+  /** 成功后记录重试来源（传 xml 和 source） */
+  recordSource?: (xml: string, source: unknown) => void;
 };
 
 const renderChartResponse = (
   res: unknown,
   title: string,
   sessionId: string | undefined,
-  { setGraphXml, setGraphEmptyMessage, setChartLoadError, setIsChartLoading }: RenderChartOptions,
+  { setGraphXml, setGraphEmptyMessage, setChartLoadError, setIsChartLoading, onSuccess, recordSource }: RenderChartOptions,
 ) => {
   const contentData = getChartContent(res);
   const chart = normalizeGeneratedChart(contentData);
@@ -209,6 +213,8 @@ const renderChartResponse = (
   setGraphEmptyMessage(DEFAULT_GRAPH_EMPTY_MESSAGE);
   setChartLoadError(null);
   setIsChartLoading(false);
+  onSuccess?.(chart.xml);
+  recordSource?.(chart.xml, null);
 
   if (Array.isArray(chart.data) && chart.data.length > 0) {
     pathmindStorage.plan.save(chart.data as Schedule[], sessionId);

@@ -1,5 +1,3 @@
-import type { Schedule } from '../../types/api';
-
 export interface StageTaskViewModel {
   id: number | string;
   scheduleId: string;

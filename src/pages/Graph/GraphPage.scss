@@ -75,7 +75,7 @@
   display: flex;
   align-items: center;
   gap: var(--space-sm);
-  max-width: min(420px, calc(100% - 32px));
+  max-width: min(480px, calc(100% - 32px));
   padding: var(--space-sm) var(--space-md);
   border: 1px solid #ffd3cc;
   border-radius: 8px;
@@ -87,6 +87,23 @@
 
   i {
     flex-shrink: 0;
+  }
+
+  span {
+    flex: 1;
+  }
+
+  .error-hint {
+    flex: none;
+    font-size: 12px;
+    opacity: 0.75;
+  }
+
+  .btn-sm {
+    flex-shrink: 0;
+    padding: 4px 12px;
+    font-size: 13px;
+    border-radius: 6px;
   }
 }
 

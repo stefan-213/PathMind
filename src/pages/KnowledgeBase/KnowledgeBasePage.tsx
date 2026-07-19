@@ -21,14 +21,11 @@ import {
   uploadDocument,
 } from '../../api/knowledgeBase';
 import type { KnowledgeBase, KnowledgeBaseFile } from '../../types/api';
-import { isRecord } from '../../utils/typeGuards';
 import {
-  getText, getFirstText, getNumber, getArray,
-  hasKnowledgeBaseShape, hasKnowledgeFileShape, normalizeKnowledgeBaseFile,
-  normalizeKnowledgeBase, getKnowledgeBaseArray, normalizeKnowledgeBaseList,
+  normalizeKnowledgeBaseList, getFirstText, getNumber,
   normalizeCreatedKnowledgeBase, getErrorMessage, formatFileSize, formatDate,
   getFileActionId,
-  type DataRecord, type KnowledgeBaseDialogMode,
+  type KnowledgeBaseDialogMode,
 } from './utils/normalize';
 import './KnowledgeBasePage.scss';
 

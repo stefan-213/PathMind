@@ -24,6 +24,8 @@ const loadChart = async (
     setChartLoadError,
     setIsChartLoading,
     setActiveSessionId,
+    onSuccess,
+    recordSource,
   }: RenderChartOptions & { setActiveSessionId: (id: string | null) => void },
 ) => {
   setIsChartLoading(true);
@@ -54,6 +56,10 @@ const loadChart = async (
       const title = source.type === 'store-context' ? (source.goal ?? '') : (source.goal ?? '');
       renderChartResponse(res, title, sessionId || undefined, {
         setGraphXml, setGraphEmptyMessage, setChartLoadError, setIsChartLoading,
+        onSuccess: (xml) => {
+          onSuccess?.(xml);
+          recordSource?.(xml, source);
+        },
       });
 
       if (sessionId) {
@@ -71,6 +77,10 @@ const loadChart = async (
       const res = await getXml(sessionId);
       renderChartResponse(res, '', sessionId, {
         setGraphXml, setGraphEmptyMessage, setChartLoadError, setIsChartLoading,
+        onSuccess: (xml) => {
+          onSuccess?.(xml);
+          recordSource?.(xml, source);
+        },
       });
       setActiveSessionId(sessionId);
     }

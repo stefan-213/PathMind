@@ -58,7 +58,7 @@ import './ConsultPage.scss';
 // 页面样式文件
 
 // ---------- 工具函数导入 ----------
-import { generateId, getDefaultSession, INITIAL_QUICK_OPTIONS, AGENT_ID, TRANSCRIPT_AGENT_ID, parseAIContent, parseJSONResponse, extractFallbackTextFromJson, fetchAIReply, getWelcomeMessageHtml } from './utils';
+import { getDefaultSession, INITIAL_QUICK_OPTIONS, AGENT_ID, TRANSCRIPT_AGENT_ID, parseAIContent, parseJSONResponse, fetchAIReply, getWelcomeMessageHtml } from './utils';
 
 // ---------- 主页面组件 ----------
 /**

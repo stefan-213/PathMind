@@ -26,6 +26,7 @@ function getDefaultSession(): Session {
     createdAt: new Date().toISOString(), // 创建时间
     messages: [],                        // 消息列表
     finalXml: '',                       // 最终生成的XML
+    planDetails: [],                    // 计划详情
     quickOptions: [],                   // 快捷选项
     agentId: AGENT_ID,                  // 智能体ID
     sessionId: '',                       // 服务端会话ID（后续更新）
