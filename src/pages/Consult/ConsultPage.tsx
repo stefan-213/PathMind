@@ -132,7 +132,7 @@ export function ConsultPage() {
    */
   const addMessage = useCallback((role: 'user' | 'assistant', content: string, isHtml = false) => {
     if (!currentSessionId) return;
-    useChatStore.getState().addMessage({ role, content });
+    useChatStore.getState().addMessage({ role, content, isHtml });
     scrollToBottom();
   }, [currentSessionId, scrollToBottom]);
 
@@ -316,7 +316,7 @@ export function ConsultPage() {
         useChatStore.getState().setMessagesForSession(sessionId, chatMessages);
       } else {
         // 没有历史消息：添加欢迎消息
-        useChatStore.getState().addMessage({ role: 'assistant', content: getWelcomeMessageHtml() });
+        useChatStore.getState().addMessage({ role: 'assistant', content: getWelcomeMessageHtml(), isHtml: true });
       }
       loadedHistorySessionIdsRef.current.add(sessionId);
     } catch (err) {

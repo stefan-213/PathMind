@@ -10,6 +10,8 @@ export interface ChatMessage {
   content: string;
   /** 标记此消息是否包含图表数据 */
   hasGraph?: boolean;
+  /** 标记此消息是否包含 HTML 内容 */
+  isHtml?: boolean;
   timestamp: number;
 }
 
