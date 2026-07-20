@@ -1,7 +1,7 @@
 import type { Session, AIReply } from '../../../types/copilot';
 import { AGENT_IDS } from '../../../constants';
 import { consultation } from '../../../api/conversation';
-import { parseAIContent, parseJSONResponse, extractFallbackTextFromJson } from './parse';
+import { parseAIContent, parseJSONResponse, extractFallbackTextFromJson, INITIAL_QUICK_OPTIONS } from './parse';
 import { createId } from '../../../utils/id';
 
 const AGENT_ID = AGENT_IDS.COPILOT;
@@ -26,7 +26,7 @@ function getDefaultSession(): Session {
     createdAt: new Date().toISOString(), // 创建时间
     finalXml: '',                       // 最终生成的XML
     planDetails: [],                    // 计划详情
-    quickOptions: [],                   // 快捷选项
+    quickOptions: INITIAL_QUICK_OPTIONS, // 快捷选项
     agentId: AGENT_ID,                  // 智能体ID
     sessionId: '',                       // 服务端会话ID（后续更新）
   };
