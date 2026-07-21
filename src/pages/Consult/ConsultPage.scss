@@ -53,6 +53,9 @@ $consult-on-primary: #ffffff;
   height: 100vh;
   overflow: hidden;
   position: relative;
+  section{
+    margin: 10px 0;
+  }
 }
 
 // 聊天区域

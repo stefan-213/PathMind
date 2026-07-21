@@ -353,7 +353,11 @@ export function ConsultPage() {
     const remaining = sessions.filter((s) => s.id !== id);
     setSessions(remaining);
     if (currentSessionId === id) {
-      setCurrentSessionId(remaining[0]?.id || null);
+      const nextSession = remaining[0];
+      setCurrentSessionId(nextSession?.id || null);
+      if (nextSession) {
+        useChatStore.getState().setActiveSessionId(nextSession.id);
+      }
     }
   }, [sessions, currentSessionId]);
 
@@ -386,6 +390,7 @@ export function ConsultPage() {
         const newSession = serverSessions.find(s => s.sessionId === newSessionId);
         if (newSession) {
           setCurrentSessionId(newSession.id);
+          useChatStore.getState().setActiveSessionId(newSession.id);
         } else {
           setCurrentSessionId(serverSessions[serverSessions.length - 1]?.id || null);
         }
