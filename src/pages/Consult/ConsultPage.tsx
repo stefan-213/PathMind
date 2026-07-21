@@ -111,12 +111,14 @@ export function ConsultPage() {
   /**
    * 更新当前会话
    * @param updates - 要更新的字段
+   * @param sessionId - 可选，指定会话ID（默认使用 currentSessionId）
    */
-  const updateCurrentSession = useCallback((updates: Partial<Session>) => {
-    if (!currentSessionId) return;
+  const updateCurrentSession = useCallback((updates: Partial<Session>, sessionId?: string) => {
+    const targetId = sessionId ?? currentSessionId;
+    if (!targetId) return;
     setSessions((prev) =>
       prev.map((s) => {
-        if (s.id === currentSessionId) {
+        if (s.id === targetId) {
           return { ...s, ...updates };
         }
         return s;
@@ -314,9 +316,12 @@ export function ConsultPage() {
           timestamp: Date.now(),
         }));
         useChatStore.getState().setMessagesForSession(sessionId, chatMessages);
+        updateCurrentSession({ quickOptions: [] });
       } else {
         // 没有历史消息：添加欢迎消息
         useChatStore.getState().addMessage({ role: 'assistant', content: getWelcomeMessageHtml(), isHtml: true });
+        // 需要显示快捷选项
+        updateCurrentSession({ quickOptions:INITIAL_QUICK_OPTIONS});
       }
       loadedHistorySessionIdsRef.current.add(sessionId);
     } catch (err) {
@@ -324,7 +329,7 @@ export function ConsultPage() {
     } finally {
       loadingHistorySessionIdsRef.current.delete(sessionId);
     }
-  }, []);
+  }, [updateCurrentSession]);
 
   /**
    * 切换会话
@@ -334,8 +339,10 @@ export function ConsultPage() {
     if (id === currentSessionId) return;
     setCurrentSessionId(id);
     useChatStore.getState().setActiveSessionId(id);
+    // 清空当前会话的快捷选项（已切换到新会话，id 是新会话的 ID）
+    updateCurrentSession({ quickOptions: [] }, id);
     scrollToBottom();
-  }, [currentSessionId, isWaitingForAI, scrollToBottom]);
+  }, [currentSessionId, isWaitingForAI, updateCurrentSession, scrollToBottom]);
 
   /**
    * 删除会话
@@ -354,9 +361,11 @@ export function ConsultPage() {
     setSessions(remaining);
     if (currentSessionId === id) {
       const nextSession = remaining[0];
-      setCurrentSessionId(nextSession?.id || null);
+      const nextSessionId = nextSession?.id || null;
+      setCurrentSessionId(nextSessionId);
       if (nextSession) {
         useChatStore.getState().setActiveSessionId(nextSession.id);
+        updateCurrentSession({ quickOptions: [] }, nextSession.id);
       }
     }
   }, [sessions, currentSessionId]);
