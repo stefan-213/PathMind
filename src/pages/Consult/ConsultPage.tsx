@@ -330,7 +330,26 @@ export function ConsultPage() {
       loadingHistorySessionIdsRef.current.delete(sessionId);
     }
   }, [updateCurrentSession]);
+  
+  /**
+   * 判断是否加载初始快捷选项
+   */
 
+  const initializeSessionQuickOptions = useCallback((sessionId: string) => {
+    const messages = useChatStore.getState().messagesBySession[sessionId] || [];
+    const hasUserMessage = messages.some(msg => msg.role === 'user');
+    
+    if (hasUserMessage) {
+      // 有用户消息 → 有真实对话，清空快捷选项
+      updateCurrentSession({ quickOptions: [] }, sessionId);
+    } else if (messages.length === 0) {
+      // 完全没有消息 → 新会话，设置初始快捷选项
+      updateCurrentSession({ quickOptions: INITIAL_QUICK_OPTIONS }, sessionId);
+    } else {
+      // 只有欢迎消息 → 新会话，设置初始快捷选项
+      updateCurrentSession({ quickOptions: INITIAL_QUICK_OPTIONS }, sessionId);
+    }
+  }, [updateCurrentSession]);
   /**
    * 切换会话
    */
@@ -339,8 +358,7 @@ export function ConsultPage() {
     if (id === currentSessionId) return;
     setCurrentSessionId(id);
     useChatStore.getState().setActiveSessionId(id);
-    // 清空当前会话的快捷选项（已切换到新会话，id 是新会话的 ID）
-    updateCurrentSession({ quickOptions: [] }, id);
+    initializeSessionQuickOptions(id)
     scrollToBottom();
   }, [currentSessionId, isWaitingForAI, updateCurrentSession, scrollToBottom]);
 
@@ -455,6 +473,7 @@ export function ConsultPage() {
         const latestSession = serverSessions[serverSessions.length - 1];
         setCurrentSessionId(latestSession.id);
         useChatStore.getState().setActiveSessionId(latestSession.id);
+        initializeSessionQuickOptions(latestSession.id);
       } catch (err) {
         console.error('Load server sessions failed:', err);
         // 降级：创建本地默认会话
