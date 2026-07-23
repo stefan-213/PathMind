@@ -38,8 +38,9 @@
 
   // 两栏布局
   .two-columns {
+    width: 100%;
     display: grid;
-    grid-template-columns: 1fr 1.8fr;
+    grid-template-columns: 30% 70%;
     gap: 32px;
   }
 
@@ -299,11 +300,20 @@
     margin-bottom: 20px;
     padding-bottom: 12px;
     border-bottom: 1px solid var(--border-light);
+    max-width: 100%;
     overflow-x: auto;
-    scrollbar-width: none;
 
     &::-webkit-scrollbar {
-      display: none;
+      height: 10px;
+    }
+
+    &::-webkit-scrollbar-track {
+      background: transparent;
+    }
+
+    &::-webkit-scrollbar-thumb {
+      background: var(--border-light);
+      border-radius: 2px;
     }
   }
 
