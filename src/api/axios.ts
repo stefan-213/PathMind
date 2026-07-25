@@ -20,7 +20,9 @@ const normalizeBaseUrl = (baseUrl?: string) => {
   return `http://${trimmedBaseUrl}`;
 };
 
-const BASE_URL = normalizeBaseUrl(import.meta.env.VITE_API_BASE_URL);
+const BASE_URL = import.meta.env.VITE_API_BASE_URL 
+  ? normalizeBaseUrl(import.meta.env.VITE_API_BASE_URL) 
+  : '/api';
 
 // 无需认证的接口白名单
 const NO_AUTH_WHITELIST = [

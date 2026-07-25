@@ -27,7 +27,7 @@ import './GraphPage.scss';
 export function GraphPage() {
   const navigate = useNavigate();
   // AI 消息状态（传递给 AISidePanel）
-  const [aiMessages, setAiMessages] = useState<Array<{ role: 'user' | 'assistant'; content: string; hasGraph?: boolean; timestamp: number }>>([]);
+  const [aiMessages, setAiMessages] = useState<Array<{ id: string; role: 'user' | 'assistant'; content: string; hasGraph?: boolean; timestamp: number }>>([]);
 
   // 包装函数：将消息追加到 aiMessages（带 id 和 timestamp）
   const handleAiAddMessage = useCallback((msg: { role: 'user' | 'assistant'; content: string; hasGraph?: boolean }) => {
@@ -264,7 +264,7 @@ export function GraphPage() {
 
       if (!normalizedMessage || isAiUpdating || isScheduleGenerating) return;
       if (!normalizedSessionId) {
-        setAiMessages((prev) => [...prev, { role: 'assistant', content: '请先选择一个会话图表后再发送修改意见。', timestamp: Date.now() }]);
+        setAiMessages((prev) => [...prev, { id: `msg-${Date.now()}`, role: 'assistant', content: '请先选择一个会话图表后再发送修改意见。', timestamp: Date.now() }]);
         return;
       }
 
@@ -286,6 +286,7 @@ export function GraphPage() {
         const title = sessions.find((s) => s.sessionId === normalizedSessionId)?.title ?? normalizedSessionId;
         cacheAndRenderSessionChart(normalizedSessionId, title, chart);
         setAiMessages((prev) => [...prev, {
+          id: `msg-${Date.now()}`,
           role: 'assistant',
           content: '已按照您的需求修改，请查看，如果不满意请继续提出修改意见。',
           hasGraph: true,
@@ -295,7 +296,7 @@ export function GraphPage() {
         console.error('Update graph failed:', error);
         const messageText = error instanceof Error && error.message ? error.message : '图表修改失败，请稍后重试';
         setChartLoadError(messageText);
-        setAiMessages((prev) => [...prev, { role: 'assistant', content: messageText, timestamp: Date.now() }]);
+        setAiMessages((prev) => [...prev, { id: `msg-${Date.now()}`, role: 'assistant', content: messageText, timestamp: Date.now() }]);
       } finally {
         setIsAiUpdating(false);
       }
@@ -311,7 +312,7 @@ export function GraphPage() {
       const normalizedSessionId = activeSessionId?.trim() ?? '';
       if (isScheduleGenerating) return;
       if (!normalizedSessionId) {
-        setAiMessages((prev) => [...prev, { role: 'assistant', content: '当前还没有可用于生成日程表的图表，请先生成或选择一个图表。', timestamp: Date.now() }]);
+        setAiMessages((prev) => [...prev, { id: `msg-${Date.now()}`, role: 'assistant', content: '当前还没有可用于生成日程表的图表，请先生成或选择一个图表。', timestamp: Date.now() }]);
         return;
       }
 
@@ -339,7 +340,7 @@ export function GraphPage() {
       } catch (error) {
         console.error('Generate schedule failed:', error);
         const messageText = error instanceof Error && error.message ? error.message : '日程表生成失败，请稍后重试';
-        setAiMessages((prev) => [...prev, { role: 'assistant', content: messageText, timestamp: Date.now() }]);
+        setAiMessages((prev) => [...prev, { id: `msg-${Date.now()}`, role: 'assistant', content: messageText, timestamp: Date.now() }]);
       } finally {
         setIsScheduleGenerating(false);
       }
