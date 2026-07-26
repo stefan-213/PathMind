@@ -189,8 +189,7 @@ export function TasksPage() {
 
   const handleSelectTaskSession = (sessionId: string) => {
     setActiveSessionId(sessionId);
-    // 切换会话时加载对应日程
-    void loadSchedules(sessionId);
+    // loadSchedules 会在 useEffect 中因 activeSessionId 变化而被自动调用，无需重复调用
   };
 
   // 曾尝试加载但数据为空

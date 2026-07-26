@@ -27,7 +27,7 @@
  * - reload: () => void - 重新加载
  */
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { getChatList } from '../api/conversation';
 import { AGENT_IDS } from '../constants';
 import { normalizeCopilotSessionMap, type CopilotSessionResource } from '../utils';
@@ -72,6 +72,12 @@ export function useCopilotSessions(
   const storeSessionId = useSessionStore((s) => s.currentSessionId);
   const setStoreSession = useSessionStore((s) => s.setCurrentSession);
 
+  // 用 ref 保存 storeSessionId，避免 loadSessions 依赖变化时重新加载
+  const storeSessionIdRef = useRef(storeSessionId);
+  useEffect(() => {
+    storeSessionIdRef.current = storeSessionId;
+  }, [storeSessionId]);
+
   /**
    * 加载会话列表
    */
@@ -93,12 +99,12 @@ export function useCopilotSessions(
       // 确定初始选中的会话
       let initialSessionId: string | null = null;
 
-      if (syncWithStore && storeSessionId) {
+      if (syncWithStore && storeSessionIdRef.current) {
         // 同步模式：优先使用 store 中的会话 ID
-        initialSessionId = nextSessions.some((s) => s.sessionId === storeSessionId)
-          ? storeSessionId
+        initialSessionId = nextSessions.some((s) => s.sessionId === storeSessionIdRef.current)
+          ? storeSessionIdRef.current
           : nextSessions[0]?.sessionId ?? null;
-      } else {
+      } else if (!syncWithStore) {
         // 非同步模式：保持当前选中或选择第一个
         initialSessionId = nextSessions[0]?.sessionId ?? null;
       }
@@ -110,7 +116,7 @@ export function useCopilotSessions(
     } finally {
       setIsLoading(false);
     }
-  }, [syncWithStore, storeSessionId]);
+  }, [syncWithStore]);
 
   /**
    * 设置当前会话 ID

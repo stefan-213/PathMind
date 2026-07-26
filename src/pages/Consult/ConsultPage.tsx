@@ -446,6 +446,7 @@ export function ConsultPage() {
           const newSess = [getDefaultSession()];
           setSessions(newSess);
           setCurrentSessionId(newSess[0].id);
+          useChatStore.getState().setActiveSessionId(newSess[0].id);
           // 在服务端创建真实会话
           try {
             const sessionRes = await createChatSession(AGENT_ID);

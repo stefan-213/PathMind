@@ -19,8 +19,8 @@ export const updateKnowledgeBase = (data: UpdateKnowledgeBaseRequest) => {
   return put<unknown>('/api/knowledge/base', data);
 };
 
-export const deleteKnowledgeBase = (id: string) => {
-  return del<unknown>(`/api/knowledge/base/${id}`);
+export const deleteKnowledgeBase = (knowledgeBaseId: string) => {
+  return del<unknown>(`/api/knowledge/base/${knowledgeBaseId}`);
 };
 
 export const getDocuments = (knowledgeBaseId: string) => {
