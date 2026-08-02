@@ -34,6 +34,7 @@ import { MessageItem, QuickOptions } from './components';
 // ---------- API 函数导入 ----------
 import { createChatSession, deleteChatSession, getChatList, getChatHistory } from '../../api/conversation';
 import { setXml } from '../../api/graph';
+import { INITIAL_CHART_STREAM_PROGRESS, normalizeChartStreamProgress } from '../../api/chartStreamProgress';
 // createChatSession: 创建新的聊天会话
 // deleteChatSession: 删除聊天会话
 // getChatList: 获取会话列表
@@ -73,6 +74,7 @@ export function ConsultPage() {
   const [isCollapsed, setIsCollapsed] = useState(false);          // 侧边栏是否折叠
   const [isWaitingForAI, setIsWaitingForAI] = useState(false);    // 是否等待AI响应
   const [isGeneratingPlan, setIsGeneratingPlan] = useState(false); // 是否正在生成图表
+  const [chartGenerationMessage, setChartGenerationMessage] = useState(INITIAL_CHART_STREAM_PROGRESS.content);
   const [inputText, setInputText] = useState('');                 // 输入框文本
 
   // ---------- Refs ----------
@@ -81,9 +83,16 @@ export function ConsultPage() {
   const loadedHistorySessionIdsRef = useRef<Set<string>>(new Set()); // 已加载历史的会话ID集合
   const loadingHistorySessionIdsRef = useRef<Set<string>>(new Set()); // 正在加载历史的会话ID集合
   const quickSelectLockRef = useRef(false);                       // 快捷选择锁，防止重复点击
+  const chartGenerationControllerRef = useRef<AbortController | null>(null);
 
   // ---------- Hooks ----------
   const navigate = useNavigate(); // 路由导航
+
+  useEffect(() => {
+    return () => {
+      chartGenerationControllerRef.current?.abort();
+    };
+  }, []);
 
   // ---------- 订阅 chatStore（消息按会话隔离） ----------
   const chatStoreMessages = useChatStore((s) => s.messagesBySession);
@@ -228,20 +237,52 @@ export function ConsultPage() {
    * 用户从方案对比中选择一个方案，生成对应的图表
    */
   const handlePlanOptionSelect = useCallback((optionId: string, optionIndex: number) => {
-    if (isWaitingForAI || !currentSession?.agentId || !currentSession?.sessionId) return;
+    if (isWaitingForAI || isGeneratingPlan || !currentSession?.agentId || !currentSession?.sessionId) return;
+
+    chartGenerationControllerRef.current?.abort();
+    const controller = new AbortController();
+    chartGenerationControllerRef.current = controller;
 
     setIsGeneratingPlan(true);
+    setChartGenerationMessage(INITIAL_CHART_STREAM_PROGRESS.content);
+
     setXml({
       agentId: '100003',
       sessionId: currentSession.sessionId,
       message: String(optionIndex),
+    }, {
+      signal: controller.signal,
+      onEvent: (event) => {
+        if (event.type === 'start' || event.type === 'message') {
+          const progressState = normalizeChartStreamProgress(event);
+          setChartGenerationMessage(progressState.content);
+        }
+        if (event.type === 'done') {
+          setChartGenerationMessage('生成完成');
+        }
+      },
     }).then(() => {
-      openGraphFromConsultData({ optionId });
-    }).catch(() => {
-      setIsGeneratingPlan(false);
+      if (!controller.signal.aborted) {
+        openGraphFromConsultData({ optionId });
+      }
+    }).catch((error: unknown) => {
+      const isAbortError =
+        (error instanceof DOMException && error.name === 'AbortError') ||
+        (error instanceof Error && error.name === 'AbortError');
+
+      if (!isAbortError) {
+        console.error('Generate chart failed:', error);
+        setIsGeneratingPlan(false);
+        setChartGenerationMessage(INITIAL_CHART_STREAM_PROGRESS.content);
+      }
+    }).finally(() => {
+      if (chartGenerationControllerRef.current === controller) {
+        chartGenerationControllerRef.current = null;
+      }
     });
   }, [
     currentSession,
+    isGeneratingPlan,
     isWaitingForAI,
     openGraphFromConsultData,
   ]);
@@ -528,7 +569,10 @@ export function ConsultPage() {
       {/* 图表生成中的加载遮罩 */}
       {isGeneratingPlan && (
         <div className="consult-loading-overlay">
-          <Spin size="large" tip="图表生成中..." />
+          <div className="consult-generation-status" role="status" aria-live="polite">
+            <Spin size="large" tip={chartGenerationMessage} />
+            <div className="consult-generation-hint">预计时长 1-3 min，感谢您的耐心等待</div>
+          </div>
         </div>
       )}
 

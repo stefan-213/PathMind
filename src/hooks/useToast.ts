@@ -48,7 +48,7 @@ export interface UseToastReturn {
  * Toast Hook
  * @param defaultDuration - 默认显示时长(ms)
  */
-export function useToast(defaultDuration = 3000): UseToastReturn {
+export function useToast(defaultDuration = 600000): UseToastReturn {
   const [toast, setToast] = useState<ToastOptions | null>(null);
   const timerRef = useRef<number | null>(null);
 

@@ -28,7 +28,7 @@ export function Header() {
 
   const handleLogout = async () => {
     await logout();
-    window.location.href = '/login';
+    window.location.href = `${import.meta.env.BASE_URL}login`;
   };
 
   return (

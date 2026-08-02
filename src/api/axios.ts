@@ -6,23 +6,23 @@ import type { AxiosInstance, AxiosRequestConfig, AxiosResponse, InternalAxiosReq
 import type { ApiResponse } from '../types/api';
 import { useAuthStore } from '../stores/authStore';
 
-const normalizeBaseUrl = (baseUrl?: string) => {
-  const trimmedBaseUrl = baseUrl?.trim() ?? '';
+// const normalizeBaseUrl = (baseUrl?: string) => {
+//   const trimmedBaseUrl = baseUrl?.trim() ?? '';
 
-  if (!trimmedBaseUrl) {
-    return '';
-  }
+//   if (!trimmedBaseUrl) {
+//     return '';
+//   }
 
-  if (trimmedBaseUrl.startsWith('/') || /^https?:\/\//i.test(trimmedBaseUrl)) {
-    return trimmedBaseUrl;
-  }
+//   if (trimmedBaseUrl.startsWith('/') || /^https?:\/\//i.test(trimmedBaseUrl)) {
+//     return trimmedBaseUrl;
+//   }
 
-  return `http://${trimmedBaseUrl}`;
-};
+//   return `http://${trimmedBaseUrl}`;
+// };
 
-const BASE_URL = import.meta.env.VITE_API_BASE_URL 
-  ? normalizeBaseUrl(import.meta.env.VITE_API_BASE_URL) 
-  : '/api';
+// const BASE_URL = import.meta.env.VITE_API_BASE_URL 
+//   ? normalizeBaseUrl(import.meta.env.VITE_API_BASE_URL) 
+//   : '/api';
 
 // 无需认证的接口白名单
 const NO_AUTH_WHITELIST = [
@@ -32,8 +32,8 @@ const NO_AUTH_WHITELIST = [
 ];
 
 export const axiosInstance: AxiosInstance = axios.create({
-  baseURL: BASE_URL,
-  timeout: 3000000,
+  baseURL: '',
+  timeout: 600000,
   headers: {
     'Content-Type': 'application/json',
   },
@@ -125,7 +125,12 @@ axiosInstance.interceptors.response.use(
         case 401:
           // 未授权，清除 zustand store 中的 token 并跳转到登录页
           useAuthStore.getState().logout();
-          window.location.href = '/login';
+          {
+            const loginUrl = `${import.meta.env.BASE_URL}login`;
+            if (!window.location.pathname.endsWith('/login')) {
+              window.location.href = loginUrl;
+            }
+          }
           break;
         case 403:
           console.error('没有权限访问');

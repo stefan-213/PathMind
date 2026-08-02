@@ -185,10 +185,10 @@ function getWelcomeMessageHtml(): string {
 
 // 初始快捷选项：用户首次进入时显示的快速开始选项
 const INITIAL_QUICK_OPTIONS = [
-  'AI智能问答应用',
-  '企业级Web系统',
-  '移动端App',
-  '数据分析平台',
+  '人工智能与大模型应用',
+  '全栈软件开发',
+  '云计算与DevOps',
+  '网络与信息安全',
 ];
 
 export {

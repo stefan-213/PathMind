@@ -37,6 +37,20 @@ $consult-on-primary: #ffffff;
   justify-content: center;
   z-index: 100;
 }
+.consult-generation-status {
+  width: min(360px, calc(100vw - 48px));
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 18px;
+}
+
+.consult-generation-hint {
+  color: var(--text-secondary);
+  font-size: 13px;
+  line-height: 1.5;
+  text-align: center;
+}
 
 // ---------- 主内容容器（侧边栏+聊天） ----------
 .consult-container {
