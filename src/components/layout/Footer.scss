@@ -21,6 +21,12 @@
     }
 }
 
+@media (max-width: 767px) {
+    .footer {
+        padding-bottom: calc(32px + var(--mobile-nav-height) + var(--mobile-safe-bottom));
+    }
+}
+
 .footer-logo {
     font-weight: 600;
     font-size: 1.3rem;

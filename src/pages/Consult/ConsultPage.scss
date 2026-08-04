@@ -59,6 +59,10 @@ $consult-on-primary: #ffffff;
   overflow: hidden;
 }
 
+.consult-mobile-toolbar {
+  display: none;
+}
+
 // ---------- 主内容区 ----------
 .consult-main {
   flex: 1;
@@ -379,6 +383,61 @@ $consult-on-primary: #ffffff;
   thead .plan-comparison-table__column--recommended {
     border-top: 3px solid #F59E0B;
   }
+}
+
+.plan-comparison-cards {
+  display: none;
+}
+
+.plan-comparison-card {
+  padding: 14px 16px;
+  border: 1px solid $consult-surface-variant;
+  border-radius: 14px;
+  background: $consult-surface-lowest;
+}
+
+.plan-comparison-card--recommended {
+  border-color: rgba(245, 158, 11, 0.45);
+  background: rgba(245, 158, 11, 0.06);
+}
+
+.plan-comparison-card__header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 12px;
+
+  h3 {
+    margin: 0;
+    color: $consult-primary-text;
+    font-size: 15px;
+    line-height: 1.35;
+  }
+}
+
+.plan-comparison-card__body {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.plan-comparison-card__row {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.plan-comparison-card__label {
+  color: $consult-primary;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.plan-comparison-card__value {
+  color: $consult-on-surface-variant;
+  font-size: 13px;
+  line-height: 1.6;
 }
 
 .plan-option-name {
@@ -1114,25 +1173,88 @@ $consult-on-primary: #ffffff;
 
 // ---------- 响应式 ----------
 @media (max-width: 768px) {
-  .consult-header {
-    padding: 20px 16px 12px;
+  .consult-page {
+    height: calc(100dvh - var(--mobile-nav-height) - var(--mobile-safe-bottom));
+    min-height: 0;
+  }
+
+  .consult-container {
+    min-height: 0;
+  }
+
+  .consult-main {
+    height: 100%;
+    min-height: 0;
+  }
+
+  .consult-mobile-toolbar {
+    display: flex;
+    justify-content: flex-start;
+    padding: 12px 16px 0;
+
+    button {
+      min-height: 38px;
+      padding: 0 14px;
+      border: 1px solid $consult-surface-variant;
+      border-radius: 999px;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      color: $consult-primary;
+      background: $consult-surface-lowest;
+      font: inherit;
+      font-size: 13px;
+      font-weight: 700;
+      cursor: pointer;
+    }
   }
 
   .chat-area {
-    padding: 0 16px 16px;
+    padding: 0 16px 12px;
   }
 
-  .input-area {
+  .chat-messages {
+    max-width: none;
+    gap: 16px;
+  }
+
+  .message-item,
+  .message-item--plan-options {
+    max-width: 100%;
+    margin-left: 0;
+    margin-right: 0;
+  }
+
+  .message-bubble {
+    padding: 14px 16px;
+  }
+
+  .consult-input-area {
     padding: 12px 16px 16px;
+  }
+
+  .consult-input-wrapper {
+    border-radius: 14px;
   }
 
   .quick-option-btn {
     padding: 8px 14px;
     font-size: 12px;
+    white-space: normal;
   }
 
   .plan-comparison-table {
     min-width: 920px;
+  }
+
+  .plan-comparison-table-wrap {
+    display: none;
+  }
+
+  .plan-comparison-cards {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
   }
 
   .plan-option-actions {

@@ -39,6 +39,7 @@ export function KnowledgeBasePage() {
     () => new Set(),
   );
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+  const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
   const [isLoadingList, setIsLoadingList] = useState(true);
   const [isUploading, setIsUploading] = useState(false);
   const [isDragActive, setIsDragActive] = useState(false);
@@ -152,6 +153,7 @@ export function KnowledgeBasePage() {
   const handleSelectKnowledgeBase = useCallback((id: string) => {
     setSelectedKnowledgeBaseId(id);
     setSelectedFileId(null);
+    setIsMobileSidebarOpen(false);
     setExpandedKnowledgeBaseIds((currentIds) => {
       const nextIds = new Set(currentIds);
       if (nextIds.has(id)) {
@@ -480,7 +482,14 @@ export function KnowledgeBasePage() {
                   <i className={`fas ${isExpanded ? 'fa-chevron-down' : 'fa-chevron-right'}`}></i>
                 </button>
 
-                <div className="knowledge-sidebar-tree__folder-main">
+                <button
+                  type="button"
+                  className="knowledge-sidebar-tree__folder-main"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleSelectKnowledgeBase(knowledgeBase.id);
+                  }}
+                >
                   <i className="fas fa-folder knowledge-sidebar-tree__folder-icon"></i>
                   <span className="knowledge-sidebar-tree__folder-text">
                     <span className="knowledge-sidebar-tree__folder-title">
@@ -492,7 +501,7 @@ export function KnowledgeBasePage() {
                         : '暂无文件'}
                     </span>
                   </span>
-                </div>
+                </button>
 
                 <div className="knowledge-sidebar-tree__actions">
                   <button
@@ -543,6 +552,7 @@ export function KnowledgeBasePage() {
                             e.stopPropagation();
                             setSelectedKnowledgeBaseId(knowledgeBase.id);
                             setSelectedFileId(file.id);
+                            setIsMobileSidebarOpen(false);
                           }}
                         >
                           <i className="fas fa-file-alt"></i>
@@ -602,6 +612,9 @@ export function KnowledgeBasePage() {
           onToggleCollapse={() => setIsSidebarCollapsed((current) => !current)}
           onSelectItem={handleSelectKnowledgeBase}
           emptyText="暂无知识库"
+          isMobileOpen={isMobileSidebarOpen}
+          onMobileClose={() => setIsMobileSidebarOpen(false)}
+          mobileCloseTitle="关闭我的知识库"
           className="knowledge-resource-sidebar"
         >
           {renderKnowledgeTree()}
@@ -629,7 +642,14 @@ export function KnowledgeBasePage() {
             </div>
           </header>
 
-          <div className="knowledge-mobile-selector">
+          <div className="knowledge-mobile-toolbar">
+            <button type="button" onClick={() => setIsMobileSidebarOpen(true)}>
+              <i className="fas fa-database"></i>
+              <span>我的知识库</span>
+            </button>
+          </div>
+
+          {/* <div className="knowledge-mobile-selector">
             <select
               value={selectedKnowledgeBaseId ?? ''}
               onChange={(event) => handleSelectKnowledgeBase(event.target.value)}
@@ -643,7 +663,7 @@ export function KnowledgeBasePage() {
                 </option>
               ))}
             </select>
-          </div>
+          </div> */}
 
           {errorMessage ? (
             <div className="knowledge-alert" role="alert">

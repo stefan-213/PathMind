@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Header, Footer } from '../../components/layout';
+import { Header } from '../../components/layout';
 import { Card, Badge, EmptyState, Spin, CelebrationModal, type ResourceSidebarItem } from '../../components/common';
 import { getAchievements } from '../../api/profile';
 import { deleteSchedule } from '../../api/tasks';
@@ -60,6 +60,7 @@ export function TasksPage() {
 
   const { currentSessionId: storeSessionId } = useSessionStore();
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+  const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
   const [hasAttemptedLoadSchedules, setHasAttemptedLoadSchedules] = useState(false);
   const [showCelebration, setShowCelebration] = useState(false);
   const [newAchievements, setNewAchievements] = useState<Achievement[]>([]);
@@ -209,8 +210,16 @@ export function TasksPage() {
             onToggleCollapse={() => setIsSidebarCollapsed((current) => !current)}
             onSelectItem={handleSelectTaskSession}
             emptyText={sessionSidebarEmptyText}
+            isMobileOpen={isMobileSidebarOpen}
+            onMobileClose={() => setIsMobileSidebarOpen(false)}
           />
           <main className="main tasks-main tasks-main--empty">
+            <div className="tasks-mobile-toolbar">
+              <button type="button" onClick={() => setIsMobileSidebarOpen(true)}>
+                <i className="fas fa-history"></i>
+                <span>历史会话</span>
+              </button>
+            </div>
             <EmptyState
               icon={<i className="fas fa-clipboard-list"></i>}
               title="还没有任务"
@@ -237,7 +246,7 @@ export function TasksPage() {
             />
           </main>
         </div>
-        <Footer />
+        {/* <Footer /> */}
         <CelebrationModal
           isOpen={showCelebration}
           onClose={() => setShowCelebration(false)}
@@ -265,8 +274,16 @@ export function TasksPage() {
             onToggleCollapse={() => setIsSidebarCollapsed((current) => !current)}
             onSelectItem={handleSelectTaskSession}
             emptyText={sessionSidebarEmptyText}
+            isMobileOpen={isMobileSidebarOpen}
+            onMobileClose={() => setIsMobileSidebarOpen(false)}
           />
         <main className="main tasks-main">
+        <div className="tasks-mobile-toolbar">
+          <button type="button" onClick={() => setIsMobileSidebarOpen(true)}>
+            <i className="fas fa-history"></i>
+            <span>历史会话</span>
+          </button>
+        </div>
         {/* Progress Card */}
         <Card className="progress-card">
           <div className="progress-header">

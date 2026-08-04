@@ -30,6 +30,12 @@ interface AISidePanelProps {
   onToggleCollapse?: () => void;
   /** 点击满意后的提交回调 */
   onSatisfied?: () => void | Promise<void>;
+  /** 手机端是否打开底部抽屉 */
+  isMobileOpen?: boolean;
+  /** 关闭手机端底部抽屉 */
+  onMobileClose?: () => void;
+  /** 手机端关闭按钮标题 */
+  mobileCloseTitle?: string;
 }
 
 export function AISidePanel({
@@ -41,14 +47,19 @@ export function AISidePanel({
   isCollapsed = false,
   onToggleCollapse,
   onSatisfied,
+  isMobileOpen = false,
+  onMobileClose,
+  mobileCloseTitle = '关闭 AI 助手',
 }: AISidePanelProps) {
   const [input, setInput] = useState('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const shouldRenderCollapsed = isCollapsed && !isMobileOpen;
   const panelClassName = [
     'ai-side-panel',
-    isCollapsed ? 'ai-side-panel--collapsed' : '',
+    shouldRenderCollapsed ? 'ai-side-panel--collapsed' : '',
+    isMobileOpen ? 'ai-side-panel--mobile-open' : '',
   ].filter(Boolean).join(' ');
-  const toggleTitle = isCollapsed ? '展开 AI 助手' : '收起 AI 助手';
+  const toggleTitle = shouldRenderCollapsed ? '展开 AI 助手' : '收起 AI 助手';
 
   // 自动滚动到最新消息
   useEffect(() => {
@@ -77,6 +88,13 @@ export function AISidePanel({
   };
 
   return (
+    <>
+    <button
+      type="button"
+      className={`ai-side-panel__mobile-backdrop ${isMobileOpen ? 'ai-side-panel__mobile-backdrop--show' : ''}`}
+      onClick={onMobileClose}
+      aria-label={mobileCloseTitle}
+    />
     <aside className={panelClassName} aria-label="AI 助手">
       <div className="panel-header">
         <div className="panel-title-area">
@@ -94,12 +112,21 @@ export function AISidePanel({
             aria-label={toggleTitle}
             aria-expanded={!isCollapsed}
           >
-            <i className={`fas ${isCollapsed ? 'fa-angle-left' : 'fa-angle-right'}`}></i>
+            <i className={`fas ${shouldRenderCollapsed ? 'fa-angle-left' : 'fa-angle-right'}`}></i>
           </button>
         ) : null}
+        <button
+          type="button"
+          className="panel-mobile-close-btn"
+          onClick={onMobileClose}
+          title={mobileCloseTitle}
+          aria-label={mobileCloseTitle}
+        >
+          <i className="fas fa-times"></i>
+        </button>
       </div>
 
-      {isCollapsed ? (
+      {shouldRenderCollapsed ? (
         <div className="panel-collapsed-body" aria-hidden="true">
           <i className="fas fa-robot"></i>
         </div>
@@ -186,5 +213,6 @@ export function AISidePanel({
         </>
       )}
     </aside>
+    </>
   );
 }

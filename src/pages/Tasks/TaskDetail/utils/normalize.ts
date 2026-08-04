@@ -16,9 +16,10 @@ export type PlanRecord = Record<string, unknown>;
 
 export const QUICK_OPTIONS = [
   '帮我拆解这个任务的学习步骤',
-  '推荐完成这个任务需要看的资料',
-  '给我设计一个练习题',
   '如何判断这个任务已经完成',
+  '给我设计一个练习题',
+  '推荐完成这个任务需要看的资料',
+  
 ];
 
 export const toText = (value: unknown, fallback = '') => {

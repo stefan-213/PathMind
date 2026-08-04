@@ -67,6 +67,8 @@ export function GraphPage() {
 
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [isAiPanelCollapsed, setIsAiPanelCollapsed] = useState(false);
+  const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
+  const [isMobileAiPanelOpen, setIsMobileAiPanelOpen] = useState(false);
 
   // sessionStore 数据
   const { currentSessionId: storeSessionId, consultContext: storeContext } = useSessionStore();
@@ -97,7 +99,8 @@ export function GraphPage() {
     const sid = activeSessionId ?? '';
     const source = lastChartSourceRef.current[sid];
     if (!source || !sid) return;
-    const { [sid]: _, ...rest } = lastChartSourceRef.current;
+    const rest = { ...lastChartSourceRef.current };
+    delete rest[sid];
     lastChartSourceRef.current = rest;
     setChartLoadError(null);
     void loadChart(source, {
@@ -417,10 +420,36 @@ export function GraphPage() {
             emptyText={sessionSidebarEmptyText}
             collapseTitle="收起侧栏"
             expandTitle="展开侧栏"
+            isMobileOpen={isMobileSidebarOpen}
+            onMobileClose={() => setIsMobileSidebarOpen(false)}
+            mobileCloseTitle="关闭历史会话"
             className="graph-resource-sidebar"
           />
 
           <div className="graph-wrapper with-ai-panel">
+            <div className="graph-mobile-actions">
+              <button
+                type="button"
+                onClick={() => {
+                  setIsMobileAiPanelOpen(false);
+                  setIsMobileSidebarOpen(true);
+                }}
+              >
+                <i className="fas fa-history"></i>
+                <span>历史</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setIsMobileSidebarOpen(false);
+                  setIsMobileAiPanelOpen(true);
+                }}
+              >
+                <i className="fas fa-robot"></i>
+                <span>AI 助手</span>
+              </button>
+            </div>
+
             <GraphCanvas
               key={activeSessionId ?? 'graph-canvas'}
               xml={(activeSessionId && lastSuccessfulXmlBySession[activeSessionId] && chartLoadError) ? lastSuccessfulXmlBySession[activeSessionId] : graphXml}
@@ -476,6 +505,8 @@ export function GraphPage() {
             isLoading={isAiUpdating}
             isScheduleGenerating={isScheduleGenerating}
             isCollapsed={isAiPanelCollapsed}
+            isMobileOpen={isMobileAiPanelOpen}
+            onMobileClose={() => setIsMobileAiPanelOpen(false)}
             onSendMessage={handleAiModifyGraph}
             onSatisfied={handleGenerateSchedule}
             onToggleCollapse={() => setIsAiPanelCollapsed((c) => !c)}

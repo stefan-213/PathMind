@@ -119,7 +119,8 @@ export const useChatStore = create<ChatState>((set, get) => ({
   clearCurrentMessages: () =>
     set((state) => {
       if (!state.activeSessionId) return state;
-      const { [state.activeSessionId]: _, ...restMessages } = state.messagesBySession;
+      const restMessages = { ...state.messagesBySession };
+      delete restMessages[state.activeSessionId];
       return {
         messagesBySession: restMessages,
         satisfactionState: 'idle',

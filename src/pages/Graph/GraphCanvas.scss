@@ -6,9 +6,9 @@
   overflow: hidden;
 
   // 隐藏 draw.io 工具栏相关元素
-  :deep(.geSidebar),
-  :deep(.geToolbar),
-  :deep(.geMenubar) {
+  .geSidebar,
+  .geToolbar,
+  .geMenubar {
     display: none !important;
   }
 

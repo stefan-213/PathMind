@@ -77,6 +77,7 @@ export function TaskDetailPage() {
   ]);
   const [inputText, setInputText] = useState('');
   const [isTyping, setIsTyping] = useState(false);
+  const [isMobileDirectoryOpen, setIsMobileDirectoryOpen] = useState(false);
 
   const scrollToBottom = useCallback(() => {
     setTimeout(() => {
@@ -142,18 +143,37 @@ export function TaskDetailPage() {
     void sendMessage(option);
   };
 
+  const handleSelectTimelineTask = (task: SubSchedule) => {
+    setInputText(`帮我拆解「${task.task}」这个任务`);
+    setIsMobileDirectoryOpen(false);
+  };
+
   return (
     <div className="task-detail-page">
       <Header />
 
       <div className="task-detail-layout">
-        <aside className="task-detail-sidebar">
+        <button
+          type="button"
+          className={`task-detail-sidebar-backdrop ${isMobileDirectoryOpen ? 'task-detail-sidebar-backdrop--show' : ''}`}
+          onClick={() => setIsMobileDirectoryOpen(false)}
+          aria-label="关闭任务目录"
+        />
+        <aside className={`task-detail-sidebar ${isMobileDirectoryOpen ? 'task-detail-sidebar--mobile-open' : ''}`}>
           <div className="task-detail-sidebar-header">
             <Link to="/tasks" className="task-detail-back">
               <i className="fas fa-arrow-left"></i>
               返回任务
             </Link>
             <span className="task-detail-badge">任务详情</span>
+            <button
+              type="button"
+              className="task-detail-sidebar-close"
+              onClick={() => setIsMobileDirectoryOpen(false)}
+              aria-label="关闭任务目录"
+            >
+              <i className="fas fa-times"></i>
+            </button>
           </div>
 
           <div className="task-detail-plan-title">
@@ -176,7 +196,7 @@ export function TaskDetailPage() {
                 key={`${currentSchedule.scheduleId}-${task.id ?? index}`}
                 type="button"
                 className={`task-detail-timeline-item ${task.task === taskTitle ? 'active' : ''}`}
-                onClick={() => setInputText(`帮我拆解「${task.task}」这个任务`)}
+                onClick={() => handleSelectTimelineTask(task)}
               >
                 <span className="task-detail-dot"></span>
                 <span>
@@ -189,6 +209,13 @@ export function TaskDetailPage() {
         </aside>
 
         <section className="task-detail-chat">
+          <div className="task-detail-mobile-toolbar">
+            <button type="button" onClick={() => setIsMobileDirectoryOpen(true)}>
+              <i className="fas fa-list-check"></i>
+              <span>任务目录</span>
+            </button>
+          </div>
+
           <div className="task-detail-messages" ref={messagesInnerRef}>
             {messages.map((message, index) => (
               <div

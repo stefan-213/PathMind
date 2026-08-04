@@ -4,11 +4,22 @@
 ============================================ */
 @use 'styles/global' as *;
 
+:root {
+    --mobile-nav-height: 0px;
+    --mobile-safe-bottom: env(safe-area-inset-bottom, 0px);
+}
+
 /* 全局样式 */
 * {
     margin: 0;
     padding: 0;
     box-sizing: border-box;
+}
+
+html {
+    width: 100%;
+    min-height: 100%;
+    overflow-x: hidden;
 }
 
 body {
@@ -17,6 +28,9 @@ body {
     color: var(--text-title);
     line-height: 1.5;
     -webkit-font-smoothing: antialiased;
+    min-height: 100vh;
+    min-height: 100dvh;
+    overflow-x: hidden;
 }
 
 #root {
@@ -24,6 +38,7 @@ body {
     margin: 0 auto;
     text-align: left;
     min-height: 100vh;
+    min-height: 100dvh;
     display: flex;
     flex-direction: column;
     box-sizing: border-box;
@@ -168,5 +183,11 @@ img {
 @media (max-width: 1024px) {
     :root {
         font-size: 16px;
+    }
+}
+
+@media (max-width: 767px) {
+    :root {
+        --mobile-nav-height: 72px;
     }
 }

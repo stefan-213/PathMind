@@ -72,6 +72,7 @@ export function ConsultPage() {
   const [sessions, setSessions] = useState<Session[]>([]);        // 所有会话列表
   const [currentSessionId, setCurrentSessionId] = useState<string | null>(null); // 当前会话ID
   const [isCollapsed, setIsCollapsed] = useState(false);          // 侧边栏是否折叠
+  const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
   const [isWaitingForAI, setIsWaitingForAI] = useState(false);    // 是否等待AI响应
   const [isGeneratingPlan, setIsGeneratingPlan] = useState(false); // 是否正在生成图表
   const [chartGenerationMessage, setChartGenerationMessage] = useState(INITIAL_CHART_STREAM_PROGRESS.content);
@@ -600,10 +601,20 @@ export function ConsultPage() {
           onDeleteItem={handleDeleteSession}
           emptyText="暂无历史会话"
           deleteTitle="删除会话"
+          isMobileOpen={isMobileSidebarOpen}
+          onMobileClose={() => setIsMobileSidebarOpen(false)}
+          mobileCloseTitle="关闭历史会话"
         />
 
         {/* 主聊天区域 */}
         <main className="consult-main">
+          <div className="consult-mobile-toolbar">
+            <button type="button" onClick={() => setIsMobileSidebarOpen(true)}>
+              <i className="fas fa-history"></i>
+              <span>历史会话</span>
+            </button>
+          </div>
+
           {/* 消息显示区域 */}
           <section className="chat-area" ref={chatScrollRef}>
             <div className="chat-messages">

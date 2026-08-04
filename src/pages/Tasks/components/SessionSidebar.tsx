@@ -10,6 +10,8 @@ interface SessionSidebarProps {
   onToggleCollapse: () => void;
   onSelectItem: (sessionId: string) => void;
   emptyText: string;
+  isMobileOpen?: boolean;
+  onMobileClose?: () => void;
 }
 
 export function SessionSidebar({
@@ -21,6 +23,8 @@ export function SessionSidebar({
   onToggleCollapse,
   onSelectItem,
   emptyText,
+  isMobileOpen = false,
+  onMobileClose,
 }: SessionSidebarProps) {
   return (
     <ResourceSidebar
@@ -38,6 +42,9 @@ export function SessionSidebar({
       emptyText={emptyText}
       collapseTitle="收起侧栏"
       expandTitle="展开侧栏"
+      isMobileOpen={isMobileOpen}
+      onMobileClose={onMobileClose}
+      mobileCloseTitle="关闭历史会话"
       className="tasks-resource-sidebar"
     />
   );

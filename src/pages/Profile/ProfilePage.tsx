@@ -21,7 +21,7 @@ type ModalState =
 
 // ==================== 组件 ====================
 export function ProfilePage() {
-  const { user, updateUser } = useAuthStore();
+  const { user, updateUser, logout, isLoading: isAuthLoading } = useAuthStore();
   const profileLoading = useProfileLoading();
   const {
     plans,
@@ -83,12 +83,6 @@ export function ProfilePage() {
   const [selectedPlanId, setSelectedPlanId] = useState<number | null>(null);
 
   // 数据加载后自动选中第一个进行中的计划
-  useEffect(() => {
-    if (selectedPlanId === null && activePlans.length > 0) {
-      setSelectedPlanId(activePlans[0].id);
-    }
-  }, [activePlans, selectedPlanId]);
-
   // 弹窗
   const [modal, setModal] = useState<ModalState>(null);
 
@@ -211,9 +205,14 @@ export function ProfilePage() {
     showToast({ type: 'info', message: '头像上传功能开发中' });
   };
 
+  const handleLogout = async () => {
+    await logout();
+    window.location.href = `${import.meta.env.BASE_URL}login`;
+  };
+
   // 计算值
   const selectedPlan = useMemo(
-    () => activePlans.find((p) => p.id === selectedPlanId) || null,
+    () => activePlans.find((p) => p.id === selectedPlanId) || activePlans[0] || null,
     [activePlans, selectedPlanId]
   );
 
@@ -341,6 +340,17 @@ export function ProfilePage() {
                         修改
                       </button>
                     </div>
+                    <div className="profile-mobile-logout">
+                      <button
+                        type="button"
+                        className="profile-mobile-logout__button"
+                        onClick={handleLogout}
+                        disabled={isAuthLoading}
+                      >
+                        <i className="fas fa-sign-out-alt"></i>
+                        <span>{isAuthLoading ? '退出中...' : '退出登录'}</span>
+                      </button>
+                    </div>
                   </div>
                 ) : (
                   <div className="profile-edit">
@@ -455,7 +465,7 @@ export function ProfilePage() {
                         {activePlans.map((plan) => (
                           <div
                             key={plan.id}
-                            className={`batch-tab ${plan.id === selectedPlanId ? 'active' : ''}`}
+                            className={`batch-tab ${plan.id === selectedPlan?.id ? 'active' : ''}`}
                             onClick={() => handleSwitchBatch(plan.id)}
                           >
                             {plan.name}

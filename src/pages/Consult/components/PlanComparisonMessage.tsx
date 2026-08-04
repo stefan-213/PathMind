@@ -101,6 +101,32 @@ const PlanComparisonMessage = memo(function PlanComparisonMessage({
         </table>
       </div>
 
+      <div className="plan-comparison-cards">
+        {data.options.map((option) => {
+          const isRecommended = option.id === data.recommended.option_id;
+
+          return (
+            <article
+              key={option.id}
+              className={`plan-comparison-card ${isRecommended ? 'plan-comparison-card--recommended' : ''}`}
+            >
+              <div className="plan-comparison-card__header">
+                <h3>{option.name}</h3>
+                {isRecommended ? <Badge variant="accent" size="sm">推荐</Badge> : null}
+              </div>
+              <div className="plan-comparison-card__body">
+                {comparisonRows.map((row) => (
+                  <div key={`${option.id}-${row.label}`} className="plan-comparison-card__row">
+                    <span className="plan-comparison-card__label">{row.label}</span>
+                    <div className="plan-comparison-card__value">{row.render(option)}</div>
+                  </div>
+                ))}
+              </div>
+            </article>
+          );
+        })}
+      </div>
+
       {/* 推荐方案区域 */}
       <section className="plan-recommendation">
         <div className="plan-recommendation__title">

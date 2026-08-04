@@ -120,6 +120,10 @@ $resource-sidebar-danger: #ef4444;
   }
 }
 
+.resource-sidebar__mobile-close-btn {
+  display: none;
+}
+
 .resource-sidebar__compact-actions {
   display: flex;
   flex-direction: column;
@@ -384,8 +388,76 @@ $resource-sidebar-danger: #ef4444;
   opacity: 0.72;
 }
 
-@media (max-width: 768px) {
+.resource-sidebar__mobile-backdrop {
+  display: none;
+}
+
+@media (max-width: 767px) {
+  .resource-sidebar__mobile-backdrop {
+    position: fixed;
+    inset: 0 0 calc(var(--mobile-nav-height) + var(--mobile-safe-bottom)) 0;
+    z-index: 1090;
+    display: block;
+    border: 0;
+    background: rgba(15, 23, 42, 0.32);
+    cursor: pointer;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.24s ease;
+  }
+
+  .resource-sidebar__mobile-backdrop--show {
+    opacity: 1;
+    pointer-events: auto;
+  }
+
   .resource-sidebar {
+    position: fixed;
+    top: 0;
+    bottom: calc(var(--mobile-nav-height) + var(--mobile-safe-bottom));
+    left: 0;
+    z-index: 1100;
+    display: flex;
+    width: min(320px, calc(100vw - 48px));
+    height: auto;
+    max-width: 100%;
+    border-right: 1px solid rgba($resource-sidebar-outline-variant, 0.15);
+    box-shadow: 8px 0 28px rgba(15, 23, 42, 0.18);
+    transform: translateX(-105%);
+    transition: transform 0.24s ease;
+  }
+
+  .resource-sidebar--mobile-open {
+    transform: translateX(0);
+  }
+
+  .resource-sidebar__collapse-btn {
     display: none;
+  }
+
+  .resource-sidebar__mobile-close-btn {
+    width: 32px;
+    height: 32px;
+    border: none;
+    border-radius: 8px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    color: $resource-sidebar-on-surface-variant;
+    background: transparent;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    flex-shrink: 0;
+
+    &:hover,
+    &:focus-visible {
+      color: $resource-sidebar-primary;
+      background: rgba($resource-sidebar-primary, 0.08);
+      outline: none;
+    }
+  }
+
+  .resource-sidebar__delete-btn {
+    opacity: 1;
   }
 }
