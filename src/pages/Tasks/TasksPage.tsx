@@ -1,121 +1,257 @@
-import { useEffect } from 'react';
-import { Link } from 'react-router-dom';
-import { Header, Footer } from '../../components/layout';
-import { Card, Badge, EmptyState } from '../../components/common';
-import { getScheduleList, getScheduleContent, updateSubTask, deleteSchedule } from '../../api/tasks';
+import { useCallback, useEffect, useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import { Header } from '../../components/layout';
+import { Card, Badge, EmptyState, Spin, CelebrationModal, type ResourceSidebarItem } from '../../components/common';
+import { getAchievements } from '../../api/profile';
+import { deleteSchedule } from '../../api/tasks';
 import { useScheduleStore } from '../../stores/scheduleStore';
-import type { SubSchedule } from '../../types/api';
+import { useSessionStore } from '../../stores/sessionStore';
+import { useCopilotSessions } from '../../hooks';
+import { pathmindStorage } from '../../utils/storage';
+import type { Schedule, SubSchedule, Achievement } from '../../types/api';
+import type { StageTaskViewModel, StageViewModel } from './types';
+import { SessionSidebar } from './components';
 import './TasksPage.scss';
 
-type TasksByWeek = Record<string, SubSchedule[]>;
+const createStageViewModel = (schedule: Schedule, stageIndex: number): StageViewModel => {
+  const stageTitle = `阶段${stageIndex + 1}·${schedule.title || '未命名阶段'}`;
+
+  // 对 tasks 去重，防止相同 task.id 重复渲染导致 key 冲突
+  const uniqueTasks = schedule.subScheduleList.filter(
+    (task, index, arr) => arr.findIndex(t => t.id === task.id) === index,
+  );
+
+  return {
+    id: `${schedule.scheduleId}-${stageIndex}`,
+    title: stageTitle,
+    tasks: uniqueTasks.map((task, taskIndex) => ({
+      id: `${schedule.scheduleId}-${task.id ?? taskIndex}`,
+      scheduleId: schedule.scheduleId,
+      taskId: task.id,
+      timeText: task.day || '未标注时间',
+      taskTitle: task.task || '未命名任务',
+      status: task.status,
+    })),
+  };
+};
 
 export function TasksPage() {
-  const { schedules, currentSchedule, setSchedules, setCurrentSchedule, setLoading, clearSchedules } = useScheduleStore();
+  const navigate = useNavigate();
+  const {
+    schedules,
+    fetchSchedules,
+    clearSchedules,
+    toggleTask: storeToggleTask,
+  } = useScheduleStore();
+  const [isTaskLoading, setIsTaskLoading] = useState(false);
+  const [collapsedStageIds, setCollapsedStageIds] = useState<Set<string>>(() => new Set());
+  const [planTitle, setPlanTitle] = useState(() =>
+    pathmindStorage.plan.loadTitle()?.trim() || ''
+  );
 
-  useEffect(() => {
-    loadSchedules();
-  }, []);
+  // Copilot 会话列表
+  const {
+    sessions,
+    activeSessionId,
+    setActiveSessionId,
+    isLoading: isSessionListLoading,
+    error: sessionListError,
+  } = useCopilotSessions({ syncWithStore: true });
 
-  const loadSchedules = async () => {
-    setLoading(true);
+  const { currentSessionId: storeSessionId } = useSessionStore();
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+  const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
+  const [hasAttemptedLoadSchedules, setHasAttemptedLoadSchedules] = useState(false);
+  const [showCelebration, setShowCelebration] = useState(false);
+  const [newAchievements, setNewAchievements] = useState<Achievement[]>([]);
+
+  /**
+   * 从后端加载日程数据
+   * 每次从接口获取最新数据
+   */
+  const loadSchedules = useCallback(async (sessionId?: string) => {
+    if (!sessionId) {
+      clearSchedules();
+      setPlanTitle('');
+      setHasAttemptedLoadSchedules(true);
+      return;
+    }
+
+    setHasAttemptedLoadSchedules(false);
     try {
-      // 获取日程表列表
-      const listRes = await getScheduleList();
-      const listData = listRes.data;
-      if (listData && listData.length > 0) {
-        setSchedules(listData);
-
-        // 获取第一个日程表的内容
-        const firstSchedule = listData[0];
-        const contentRes = await getScheduleContent(firstSchedule.scheduleId);
-        const contentData = contentRes.data;
-        if (contentData && contentData.length > 0) {
-          setCurrentSchedule(contentData[0]);
-        }
-      }
+      await fetchSchedules(sessionId);
+      const title = pathmindStorage.plan.loadTitle(sessionId)?.trim() || '';
+      setPlanTitle(title);
     } catch (err) {
-      console.error('加载日程表失败:', err);
+      console.error('加载日程数据失败:', err);
+      clearSchedules();
+      setPlanTitle('');
     } finally {
-      setLoading(false);
+      setHasAttemptedLoadSchedules(true);
+    }
+  }, [fetchSchedules, clearSchedules]);
+
+  // 统一加载逻辑：优先使用 activeSessionId 从后端加载，否则降级到 localStorage
+  // 避免两个 useEffect 并发调用 loadSchedules 产生竞态条件
+  useEffect(() => {
+    // 优先从 sessionStore 读取 sessionId
+    const effectiveSessionId = storeSessionId || activeSessionId;
+    if (effectiveSessionId) {
+      void loadSchedules(effectiveSessionId);
+    } else {
+      void loadSchedules();
+    }
+  }, [storeSessionId, activeSessionId, loadSchedules]);
+
+  const scheduleSections = schedules.filter(schedule => schedule.subScheduleList.length > 0);
+  const allTasks = scheduleSections.reduce<SubSchedule[]>(
+    (acc, schedule) => acc.concat(schedule.subScheduleList),
+    [],
+  );
+
+  const toggleTask = async (scheduleId: string, taskId: string) => {
+    await storeToggleTask(scheduleId, taskId);
+
+    // 检查是否所有任务都已完成
+    const { schedules } = useScheduleStore.getState();
+    const allTasks = schedules.flatMap(s => s.subScheduleList);
+    const allCompleted = allTasks.length > 0 && allTasks.every(t => t.status === 1);
+    if (allCompleted) {
+      // 获取最新成就
+      const res = await getAchievements();
+      const unlocked = res.data?.filter(a => a.unlocked) ?? [];
+      setNewAchievements(unlocked);
+      setShowCelebration(true);
     }
   };
 
-  const tasks = currentSchedule?.subScheduleList || [];
-
-  const toggleTask = async (taskId: number) => {
-    const task = tasks.find(t => t.id === taskId);
-    if (!task || task.id === undefined) return;
-
-    const newStatus = task.status === 1 ? 0 : 1;
-    try {
-      await updateSubTask({
-        id: task.id!,
-        parentId: task.parentId!,
-        day: task.day,
-        task: task.task,
-        taskGoal: task.taskGoal,
-        description: task.description,
-        status: newStatus,
-        completedAt: newStatus === 1 ? new Date().toISOString() : null
-      });
-      // Reload to get updated data
-      if (currentSchedule) {
-        const contentRes = await getScheduleContent(currentSchedule.scheduleId);
-        const contentData = contentRes.data;
-        if (contentData && contentData.length > 0) {
-          setCurrentSchedule(contentData[0]);
-        }
+  const handleToggleStage = (stageId: string) => {
+    setCollapsedStageIds(prev => {
+      const next = new Set(prev);
+      if (next.has(stageId)) {
+        next.delete(stageId);
+      } else {
+        next.add(stageId);
       }
-    } catch (err) {
-      console.error('更新任务状态失败:', err);
-    }
+      return next;
+    });
   };
 
-  const handleClearAll = () => {
+  const handleTaskContentClick = (task: StageTaskViewModel) => {
+    const params = new URLSearchParams({
+      schedule: task.scheduleId,
+      task: task.taskTitle,
+    });
+
+    if (task.taskId !== undefined) {
+      params.set('taskId', String(task.taskId));
+    }
+
+    // 传递 sessionId 以便任务详情页调用后端 API
+    if (activeSessionId) {
+      params.set('sessionId', activeSessionId);
+    }
+
+    setIsTaskLoading(true);
+    navigate(`/task-detail?${params.toString()}`);
+  };
+
+  const handleClearAll = async () => {
     if (confirm('确定要删除这个日程表吗？')) {
-      const scheduleId = currentSchedule?.scheduleId;
-      if (scheduleId) {
-        deleteSchedule(scheduleId).then(() => {
-          clearSchedules();
-          loadSchedules();
-        });
+      if (activeSessionId) {
+        await deleteSchedule(activeSessionId);
       }
+      pathmindStorage.plan.clear(activeSessionId ?? undefined);
+      setPlanTitle('');
+      clearSchedules();
     }
   };
 
-  const tasksByWeek: TasksByWeek = tasks.reduce((acc, task) => {
-    const week = task.taskGoal || '学习任务';
-    if (!acc[week]) {
-      acc[week] = [];
-    }
-    acc[week].push(task);
-    return acc;
-  }, {} as TasksByWeek);
-
-  const completedCount = tasks.filter(t => t.status === 1).length;
-  const totalCount = tasks.length;
+  const completedCount = allTasks.filter(t => t.status === 1).length;
+  const totalCount = allTasks.length;
   const percentage = totalCount > 0 ? Math.round((completedCount / totalCount) * 100) : 0;
+  const totalGoalTitle = planTitle || 'AI 对话中的学习任务（总）';
+  const graphGoal = planTitle || scheduleSections.map(schedule => schedule.title).join('、') || totalGoalTitle;
+  const stages = scheduleSections.map((schedule, stageIndex) => {
+    // console.log('[stages] creating stage', stageIndex, 'with scheduleId:', schedule.scheduleId, 'tasks:', schedule.subScheduleList.map(t => t.id));
+    return createStageViewModel(schedule, stageIndex);
+  });
+  const activeSessionTitle =
+    sessions.find((session) => session.sessionId === activeSessionId)?.title ?? '';
+  const sessionSidebarItems: ResourceSidebarItem[] = sessions.map((session) => ({
+    id: session.sessionId,
+    title: session.title,
+    iconClass: 'fas fa-tasks',
+    // description: session.sessionId === activeSessionId ? '当前任务' : '待接入任务接口',
+  }));
+  const sessionSidebarEmptyText = isSessionListLoading
+    ? '会话加载中...'
+    : sessionListError || '暂无历史会话';
 
-  if (!currentSchedule || tasks.length === 0) {
+  const handleSelectTaskSession = (sessionId: string) => {
+    setActiveSessionId(sessionId);
+    // loadSchedules 会在 useEffect 中因 activeSessionId 变化而被自动调用，无需重复调用
+  };
+
+  // 曾尝试加载但数据为空
+  const isEmptyAfterLoad = hasAttemptedLoadSchedules && scheduleSections.length === 0;
+
+  if (scheduleSections.length === 0 || allTasks.length === 0) {
     return (
       <div className="tasks-page">
         <Header />
-        <main className="main">
-          <EmptyState
-            icon={<i className="fas fa-clipboard-list"></i>}
-            title="还没有任务"
-            description="先去AI Copilot制定你的学习计划吧"
-            action={
-              <Link to="/consult" className="btn btn-primary">
-                制定计划
-                <div className="arrow-right">
-                  <i className="fas fa-arrow-right"></i>
-                </div>
-              </Link>
-            }
+        <div className="tasks-layout">
+          <SessionSidebar
+            activeSessionTitle={activeSessionTitle}
+            fallbackSubtitle="暂无任务数据"
+            sessionSidebarItems={sessionSidebarItems}
+            activeSessionId={activeSessionId}
+            isSidebarCollapsed={isSidebarCollapsed}
+            onToggleCollapse={() => setIsSidebarCollapsed((current) => !current)}
+            onSelectItem={handleSelectTaskSession}
+            emptyText={sessionSidebarEmptyText}
+            isMobileOpen={isMobileSidebarOpen}
+            onMobileClose={() => setIsMobileSidebarOpen(false)}
           />
-        </main>
-        <Footer />
+          <main className="main tasks-main tasks-main--empty">
+            <div className="tasks-mobile-toolbar">
+              <button type="button" onClick={() => setIsMobileSidebarOpen(true)}>
+                <i className="fas fa-history"></i>
+                <span>历史会话</span>
+              </button>
+            </div>
+            <EmptyState
+              icon={<i className="fas fa-clipboard-list"></i>}
+              title="还没有任务"
+              description={isEmptyAfterLoad
+                ? '请到Graph页面继续完善计划，生成计划表'
+                : '先去AI Copilot制定你的学习计划吧'}
+              action={
+                isEmptyAfterLoad ? (
+                  <Link to="/graph" className="btn btn-primary">
+                    去Graph页面
+                    <div className="arrow-right">
+                      <i className="fas fa-arrow-right"></i>
+                    </div>
+                  </Link>
+                ) : (
+                  <Link to="/consult" className="btn btn-primary">
+                    制定计划
+                    <div className="arrow-right">
+                      <i className="fas fa-arrow-right"></i>
+                    </div>
+                  </Link>
+                )
+              }
+            />
+          </main>
+        </div>
+        {/* <Footer /> */}
+        <CelebrationModal
+          isOpen={showCelebration}
+          onClose={() => setShowCelebration(false)}
+          newAchievements={newAchievements}
+        />
       </div>
     );
   }
@@ -123,29 +259,31 @@ export function TasksPage() {
   return (
     <div className="tasks-page">
       <Header />
-      <main className="main">
-        {/* Schedule Selector */}
-        {schedules.length > 1 && (
-          <div className="schedule-selector">
-            <select
-              value={currentSchedule?.scheduleId || ''}
-              onChange={(e) => {
-                const selected = schedules.find(s => s.scheduleId === e.target.value);
-                if (selected) {
-                  getScheduleContent(selected.scheduleId).then(res => {
-                    const data = res.data;
-                    if (data && data.length > 0) setCurrentSchedule(data[0]);
-                  });
-                }
-              }}
-            >
-              {schedules.map(s => (
-                <option key={s.scheduleId} value={s.scheduleId}>{s.title}</option>
-              ))}
-            </select>
-          </div>
-        )}
-
+      {isTaskLoading && (
+        <div className="task-loading-overlay">
+          <Spin size="large" />
+        </div>
+      )}
+      <div className="tasks-layout">
+        <SessionSidebar
+            activeSessionTitle={activeSessionTitle}
+            fallbackSubtitle={`${completedCount}/${totalCount} 已完成`}
+            sessionSidebarItems={sessionSidebarItems}
+            activeSessionId={activeSessionId}
+            isSidebarCollapsed={isSidebarCollapsed}
+            onToggleCollapse={() => setIsSidebarCollapsed((current) => !current)}
+            onSelectItem={handleSelectTaskSession}
+            emptyText={sessionSidebarEmptyText}
+            isMobileOpen={isMobileSidebarOpen}
+            onMobileClose={() => setIsMobileSidebarOpen(false)}
+          />
+        <main className="main tasks-main">
+        <div className="tasks-mobile-toolbar">
+          <button type="button" onClick={() => setIsMobileSidebarOpen(true)}>
+            <i className="fas fa-history"></i>
+            <span>历史会话</span>
+          </button>
+        </div>
         {/* Progress Card */}
         <Card className="progress-card">
           <div className="progress-header">
@@ -163,48 +301,81 @@ export function TasksPage() {
 
         {/* Goal Card */}
         <Card className="goal-card">
-          <div className="goal-label">当前目标</div>
-          <div className="goal-text">{currentSchedule.title}</div>
+          <div className="goal-text">{totalGoalTitle}</div>
         </Card>
 
         {/* Task List */}
-        {Object.entries(tasksByWeek).map(([week, weekTasks]) => (
-          <div key={week}>
-            <div className="section-title">{week}</div>
-            <div className="task-list">
-              {weekTasks.map((task, index) => (
-                <Card
-                  key={task.id}
-                  variant="bordered"
-                  padding="md"
-                  className={`task-card ${task.status === 1 ? 'completed' : ''}`}
-                  onClick={() => toggleTask(task.id!)}
-                  style={{ animationDelay: `${index * 0.05}s` }}
+        <div className="stage-task-list">
+          {stages.map((stage) => {
+            const isCollapsed = collapsedStageIds.has(stage.id);
+            return (
+              <section className="stage-task-section" key={stage.id}>
+                <button
+                  type="button"
+                  className="stage-task-section__header"
+                  aria-expanded={!isCollapsed}
+                  onClick={() => handleToggleStage(stage.id)}
                 >
-                  <div className="task-check">
-                    {task.status === 1 ? <i className="fas fa-check"></i> : ''}
+                  <span className="stage-task-section__triangle" aria-hidden="true">
+                    {isCollapsed ? '▶' : '▼'}
+                  </span>
+                  <span className="stage-task-section__title">{stage.title}</span>
+                </button>
+
+                {!isCollapsed ? (
+                  <div className="stage-task-section__tasks">
+                    {stage.tasks.map((task) => (
+                      <div
+                        key={task.id}
+                        className={`stage-task-item ${task.status === 1 ? 'stage-task-item--completed' : ''}`}
+                      >
+                        <label className="stage-task-item__meta">
+                          <input
+                            type="checkbox"
+                            checked={task.status === 1}
+                            disabled={task.taskId === undefined}
+                            aria-label={`标记「${task.taskTitle}」为${task.status === 1 ? '未完成' : '已完成'}`}
+                            onChange={() => {
+                              if (task.taskId !== undefined) {
+                                toggleTask(task.scheduleId, String(task.taskId));
+                              }
+                            }}
+                          />
+                          <span>{task.timeText}</span>
+                        </label>
+                        <button
+                          type="button"
+                          className="stage-task-item__content"
+                          onClick={() => handleTaskContentClick(task)}
+                        >
+                          {task.taskTitle}
+                        </button>
+                      </div>
+                    ))}
                   </div>
-                  <div className="task-content">
-                    <div className="task-week">{task.day}</div>
-                    <div className="task-title">{task.task}</div>
-                  </div>
-                </Card>
-              ))}
-            </div>
-          </div>
-        ))}
+                ) : null}
+              </section>
+            );
+          })}
+        </div>
 
         {/* Action Buttons */}
         <div className="action-buttons">
           <button className="btn btn-secondary" onClick={handleClearAll}>
             重新开始
           </button>
-          <Link to={`/graph?goal=${encodeURIComponent(currentSchedule.title)}`} className="btn btn-primary">
+          <Link to={`/graph?goal=${encodeURIComponent(graphGoal)}`} className="btn btn-primary">
             查看知识图表
           </Link>
         </div>
-      </main>
-      <Footer />
+        </main>
+      </div>
+      {/* <Footer /> */}
+      <CelebrationModal
+        isOpen={showCelebration}
+        onClose={() => setShowCelebration(false)}
+        newAchievements={newAchievements}
+      />
     </div>
   );
 }

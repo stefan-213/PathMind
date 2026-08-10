@@ -2,196 +2,217 @@
  * AI 对话面板组件
  */
 import { useState, useRef, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { useChatStore } from '../../stores/chatStore';
-import { createTask } from '../../api/tasks';
+import type { KeyboardEvent } from 'react';
 import './AISidePanel.scss';
 
-interface AISidePanelProps {
-  /** 是否有初始图表（进入页面时已有） */
-  hasInitialGraph?: boolean;
-  /** 发送消息回调（由父组件处理 API 调用） */
-  onSendMessage?: (message: string) => void;
-  /** 加载状态 */
-  isLoading?: boolean;
+interface ChatMessage {
+  id: string;
+  role: 'user' | 'assistant';
+  content: string;
+  hasGraph?: boolean;
+  timestamp: number;
 }
 
-export function AISidePanel({ hasInitialGraph, onSendMessage, isLoading }: AISidePanelProps) {
-  const navigate = useNavigate();
-  const { messages, addMessage, sessionId, satisfactionState, setSatisfactionState } = useChatStore();
+interface AISidePanelProps {
+  /** 消息列表（由父组件 GraphPage 管理） */
+  messages: ChatMessage[];
+  /** 添加消息回调（由父组件调用） */
+  onAddMessage?: (msg: Omit<ChatMessage, 'id' | 'timestamp'>) => void;
+  /** 发送消息回调（由父组件处理 API 调用） */
+  onSendMessage?: (message: string) => void | Promise<void>;
+  /** 加载状态 */
+  isLoading?: boolean;
+  /** 是否正在生成日程表 */
+  isScheduleGenerating?: boolean;
+  /** 是否收起 AI 面板 */
+  isCollapsed?: boolean;
+  /** 展开 / 收起 AI 面板 */
+  onToggleCollapse?: () => void;
+  /** 点击满意后的提交回调 */
+  onSatisfied?: () => void | Promise<void>;
+  /** 手机端是否打开底部抽屉 */
+  isMobileOpen?: boolean;
+  /** 关闭手机端底部抽屉 */
+  onMobileClose?: () => void;
+  /** 手机端关闭按钮标题 */
+  mobileCloseTitle?: string;
+}
+
+export function AISidePanel({
+  messages,
+  onAddMessage,
+  onSendMessage,
+  isLoading,
+  isScheduleGenerating = false,
+  isCollapsed = false,
+  onToggleCollapse,
+  onSatisfied,
+  isMobileOpen = false,
+  onMobileClose,
+  mobileCloseTitle = '关闭 AI 助手',
+}: AISidePanelProps) {
   const [input, setInput] = useState('');
-  const [isCreating, setIsCreating] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  const hasInitializedRef = useRef(false);
+  const shouldRenderCollapsed = isCollapsed && !isMobileOpen;
+  const panelClassName = [
+    'ai-side-panel',
+    shouldRenderCollapsed ? 'ai-side-panel--collapsed' : '',
+    isMobileOpen ? 'ai-side-panel--mobile-open' : '',
+  ].filter(Boolean).join(' ');
+  const toggleTitle = shouldRenderCollapsed ? '展开 AI 助手' : '收起 AI 助手';
 
   // 自动滚动到最新消息
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages]);
-
-  // 初始化：进入页面时如果已有图表，自动发送满意度询问
-  useEffect(() => {
-    if (hasInitialGraph && messages.length === 0 && !hasInitializedRef.current) {
-      hasInitializedRef.current = true;
-      addMessage({
-        role: 'assistant',
-        content: '左侧图表您是否满意？如果不满意请提出修改意见',
-      });
-      setSatisfactionState('waiting');
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [hasInitialGraph]);
+  }, [messages, isLoading]);
 
   const handleSend = () => {
-    if (!input.trim()) return;
+    if (!input.trim() || isLoading || isScheduleGenerating) return;
 
     const userMessage = input.trim();
     setInput('');
-    addMessage({ role: 'user', content: userMessage });
-
-    // 如果是满意度询问阶段，用户输入视为修改意见，AI 自动回复
-    if (satisfactionState === 'waiting') {
-      setTimeout(() => {
-        addMessage({
-          role: 'assistant',
-          content: '已按照您的需求修改，请查看，如果不满意请提出修改意见',
-        });
-      }, 100);
-    }
-
-    // 通知父组件发送消息
-    onSendMessage?.(userMessage);
+    onAddMessage?.({ role: 'user', content: userMessage });
+    void onSendMessage?.(userMessage);
   };
 
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+  const handleKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
       handleSend();
     }
   };
 
-  const handleSatisfied = async () => {
-    setIsCreating(true);
-
-    const planDataStr = localStorage.getItem('pathmind_plan_data');
-    if (planDataStr) {
-      try {
-        const planData = JSON.parse(planDataStr);
-        const scheduleItems = planData.map((item: any) => ({
-          title: item.title || '',
-          time: item.time || '',
-          content: item.content || '',
-          tasks: item.details ? item.details.split(/[；]/).map((task: string, idx: number) => ({
-            day: `第${idx + 1}天`,
-            task: task.trim(),
-            taskGoal: '',
-            status: 0,
-          })) : [],
-        }));
-
-        await createTask({ data: scheduleItems });
-
-        setSatisfactionState('satisfied');
-
-        localStorage.removeItem('pathmind_plan_data');
-        localStorage.removeItem('pathmind_consult_chart');
-
-        navigate('/tasks');
-      } catch (err) {
-        console.error('创建日程表失败:', err);
-        alert('创建日程表失败，请重试');
-      } finally {
-        setIsCreating(false);
-      }
-    } else {
-      setIsCreating(false);
-    }
+  const handleSatisfied = () => {
+    if (isScheduleGenerating) return;
+    void onSatisfied?.();
   };
 
   return (
-    <div className="ai-side-panel">
+    <>
+    <button
+      type="button"
+      className={`ai-side-panel__mobile-backdrop ${isMobileOpen ? 'ai-side-panel__mobile-backdrop--show' : ''}`}
+      onClick={onMobileClose}
+      aria-label={mobileCloseTitle}
+    />
+    <aside className={panelClassName} aria-label="AI 助手">
       <div className="panel-header">
-        <h3>
-          <i className="fas fa-comment-dots"></i> AI 助手
-        </h3>
-        <p className="panel-hint">描述你想要的技术图表，AI 会自动分析并生成</p>
-      </div>
-
-      <div className="messages-container">
-        {messages.length === 0 && (
-          <div className="empty-state">
-            <i className="fas fa-lightbulb"></i>
-            <p>例如："帮我画一个前端学习路线图"</p>
-            <p>AI 会分析你的需求，自动选择合适的图表类型</p>
-          </div>
-        )}
-
-        {messages.map((msg) => (
-          <div key={msg.id} className={`message ${msg.role}`}>
-            <div className="message-avatar">
-              {msg.role === 'user' ? (
-                <i className="fas fa-user"></i>
-              ) : (
-                <i className="fas fa-robot"></i>
-              )}
-            </div>
-            <div className="message-content">
-              <div className="message-text">{msg.content}</div>
-              {msg.hasGraph && (
-                <div className="graph-indicator">
-                  <i className="fas fa-chart-pie"></i> 已生成图表
-                </div>
-              )}
-              {/* 满意度按钮 - 仅在最后一条 AI 消息且状态为 waiting 时显示 */}
-              {msg.role === 'assistant' &&
-                msg === messages[messages.length - 1] &&
-                satisfactionState === 'waiting' && (
-                  <div className="satisfaction-buttons">
-                    <button
-                      className="btn-satisfy"
-                      onClick={handleSatisfied}
-                      disabled={isCreating}
-                    >
-                      满意
-                    </button>
-                  </div>
-                )}
-              {/* 计划表跳转按钮 - 仅在满意后显示 */}
-              {msg.role === 'assistant' &&
-                msg === messages[messages.length - 1] &&
-                satisfactionState === 'satisfied' && (
-                  <div className="plan-link">
-                    <a href={`/tasks?sessionId=${sessionId}`} className="btn-to-plan">
-                      <i className="fas fa-tasks"></i> 查看计划表
-                    </a>
-                  </div>
-                )}
-              <div className="message-time">
-                {new Date(msg.timestamp).toLocaleTimeString()}
-              </div>
-            </div>
-          </div>
-        ))}
-        <div ref={messagesEndRef} />
-      </div>
-
-      <div className="input-area">
-        <input
-          type="text"
-          className="message-input"
-          placeholder="输入你的修改意见..."
-          value={input}
-          onChange={(e) => setInput(e.target.value)}
-          onKeyDown={handleKeyDown}
-        />
+        <div className="panel-title-area">
+          <h3>
+            <i className="fas fa-robot"></i> AI 助手
+          </h3>
+          <p className="panel-hint">描述你想要的图表，AI 会自动分析并修改</p>
+        </div>
+        {onToggleCollapse ? (
+          <button
+            type="button"
+            className="panel-toggle-btn"
+            onClick={onToggleCollapse}
+            title={toggleTitle}
+            aria-label={toggleTitle}
+            aria-expanded={!isCollapsed}
+          >
+            <i className={`fas ${shouldRenderCollapsed ? 'fa-angle-left' : 'fa-angle-right'}`}></i>
+          </button>
+        ) : null}
         <button
-          className="send-btn"
-          onClick={handleSend}
-          disabled={!input.trim() || isLoading}
+          type="button"
+          className="panel-mobile-close-btn"
+          onClick={onMobileClose}
+          title={mobileCloseTitle}
+          aria-label={mobileCloseTitle}
         >
-          <i className="fas fa-paper-plane"></i>
+          <i className="fas fa-times"></i>
         </button>
       </div>
-    </div>
+
+      {shouldRenderCollapsed ? (
+        <div className="panel-collapsed-body" aria-hidden="true">
+          <i className="fas fa-robot"></i>
+        </div>
+      ) : (
+        <>
+          <div className="messages-container">
+            {messages.length === 0 && (
+              <div className="empty-state">
+                <i className="fas fa-lightbulb"></i>
+                <p>在Copilot页面输入需求，让 AI 为你生成计划图表</p>
+                <p>AI 会分析你的需求，自动调整图表</p>
+              </div>
+            )}
+
+            {messages.map((msg) => (
+              <div key={msg.id} className={`message ${msg.role}`}>
+                <div className="message-avatar">
+                  {msg.role === 'user' ? (
+                    <i className="fas fa-user"></i>
+                  ) : (
+                    <i className="fas fa-robot"></i>
+                  )}
+                </div>
+                <div className="message-content">
+                  <div className="message-text">{msg.content}</div>
+                  {msg.hasGraph && (
+                    <div className="graph-indicator">
+                      <i className="fas fa-chart-pie"></i> 已生成图表
+                    </div>
+                  )}
+                  {/* 满意度按钮 - 仅在最后一条 AI 消息时显示 */}
+                  {msg.role === 'assistant' &&
+                    msg === messages[messages.length - 1] && (
+                      <div className="satisfaction-buttons">
+                        <button
+                          className="btn-satisfy"
+                          onClick={handleSatisfied}
+                          disabled={isScheduleGenerating}
+                        >
+                          {isScheduleGenerating ? '生成中...' : '满意'}
+                        </button>
+                      </div>
+                    )}
+                  <div className="message-time">
+                    {new Date(msg.timestamp).toLocaleTimeString()}
+                  </div>
+                </div>
+              </div>
+            ))}
+            {isLoading ? (
+              <div className="message assistant message--loading" role="status" aria-live="polite">
+                <div className="message-avatar">
+                  <i className="fas fa-robot"></i>
+                </div>
+                <div className="message-content">
+                  <div className="message-text message-loading-text">
+                    <i className="fas fa-spinner fa-spin" aria-hidden="true"></i>
+                    <span>图表正在修改中...</span>
+                  </div>
+                </div>
+              </div>
+            ) : null}
+            <div ref={messagesEndRef} />
+          </div>
+
+          <div className="input-area">
+            <input
+              type="text"
+              className="message-input"
+              placeholder="输入你的修改意见..."
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              onKeyDown={handleKeyDown}
+              disabled={isLoading || isScheduleGenerating}
+            />
+            <button
+              className="send-btn"
+              onClick={handleSend}
+              disabled={!input.trim() || isLoading || isScheduleGenerating}
+            >
+              <i className="fas fa-paper-plane"></i>
+            </button>
+          </div>
+        </>
+      )}
+    </aside>
+    </>
   );
 }

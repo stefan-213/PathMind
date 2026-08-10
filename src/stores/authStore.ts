@@ -4,7 +4,7 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import type { User } from '../types/api';
-import { authApi } from '../api/useApi';
+import { login, logout, register, getCurrentUser, updateUser, changePassword } from '../api/auth';
 
 interface AuthState {
   user: User | null;
@@ -25,7 +25,7 @@ interface AuthState {
 
 export const useAuthStore = create<AuthState>()(
   persist(
-    (set) => ({
+    (set, get) => ({
       user: null,
       token: null,
       isAuthenticated: false,
@@ -35,10 +35,13 @@ export const useAuthStore = create<AuthState>()(
       login: async (username: string, password: string) => {
         set({ isLoading: true, error: null });
         try {
-          const response = await authApi.login({ username, password });
+          const response = await login({ username, password });
           // 后端返回的 data 是 token 字符串（可能是 "Bearer xxx" 格式）
           let token = response.data as string;
 
+          if (response.success === false) {
+            throw new Error(response.error || '登录响应数据异常');
+          }
           if (!token) {
             throw new Error('登录响应数据异常');
           }
@@ -48,11 +51,11 @@ export const useAuthStore = create<AuthState>()(
             token = token.substring(7);
           }
 
-          // 保存 token 到 localStorage
-          localStorage.setItem('token', token);
+          // 先将 token 存入 zustand store，确保后续 API 请求能携带 Authorization 头
+          set({ token });
 
           // 获取完整用户信息
-          const userResponse = await authApi.getCurrentUser();
+          const userResponse = await getCurrentUser();
           const user = userResponse.data;
 
           if (!user) {
@@ -75,30 +78,16 @@ export const useAuthStore = create<AuthState>()(
       register: async (username: string, password: string, email: string, phone?: string) => {
         set({ isLoading: true, error: null });
         try {
-          const response = await authApi.register({ username, password, email, phone });
-          const data = response.data;
+          const response = await register({ username, password, email, phone });
 
-          if (!data) {
-            throw new Error('注册响应数据异常');
-          }
-
-          // 保存 token 到 localStorage
-          if (data.token) {
-            localStorage.setItem('token', data.token);
-          }
-
-          // 获取完整用户信息
-          const userResponse = await authApi.getCurrentUser();
-          const user = userResponse.data;
-
-          if (!user) {
-            throw new Error('获取用户信息失败');
+          if (response.success === false) {
+            throw new Error(response.error || '注册失败');
           }
 
           set({
-            user,
-            token: data.token,
-            isAuthenticated: true,
+            user: null,
+            token: null,
+            isAuthenticated: false,
             isLoading: false
           });
         } catch (err) {
@@ -111,11 +100,10 @@ export const useAuthStore = create<AuthState>()(
       logout: async () => {
         set({ isLoading: true });
         try {
-          await authApi.logout();
+          await logout();
         } catch {
           // 忽略登出错误
         } finally {
-          localStorage.removeItem('token');
           set({
             user: null,
             token: null,
@@ -126,15 +114,17 @@ export const useAuthStore = create<AuthState>()(
       },
 
       checkAuth: async () => {
-        const token = localStorage.getItem('token');
+        // 只从 zustand persist 读取 token，不读 localStorage
+        const { token } = get();
         if (!token) {
           set({ isAuthenticated: false, user: null });
           return;
         }
 
-        set({ isLoading: true });
+        const wasAuthenticated = get().isAuthenticated;
+        set({ isLoading: !wasAuthenticated });
         try {
-          const response = await authApi.getCurrentUser();
+          const response = await getCurrentUser();
           const user = response.data;
 
           if (!user) {
@@ -143,12 +133,10 @@ export const useAuthStore = create<AuthState>()(
 
           set({
             user,
-            token,
             isAuthenticated: true,
             isLoading: false
           });
         } catch {
-          localStorage.removeItem('token');
           set({
             user: null,
             token: null,
@@ -163,7 +151,7 @@ export const useAuthStore = create<AuthState>()(
       updateUser: async (data: Partial<User>) => {
         set({ isLoading: true, error: null });
         try {
-          const response = await authApi.updateUser(data);
+          const response = await updateUser(data);
           const updatedUser = response.data;
           if (!updatedUser) {
             throw new Error('更新用户信息失败');
@@ -179,7 +167,12 @@ export const useAuthStore = create<AuthState>()(
       changePassword: async (oldPassword: string, newPassword: string) => {
         set({ isLoading: true, error: null });
         try {
-          await authApi.changePassword(oldPassword, newPassword);
+          const result = await changePassword(oldPassword, newPassword);
+          if (!result.success) {
+            const message = result.error || '修改密码失败';
+            set({ error: message, isLoading: false });
+            throw new Error(message);
+          }
           set({ isLoading: false });
         } catch (err) {
           const message = err instanceof Error ? err.message : '修改密码失败';

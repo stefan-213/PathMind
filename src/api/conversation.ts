@@ -2,27 +2,25 @@
  * 会话对话 API 服务
  * 统一管理会话和对话
  */
-import { get, post } from './axios';
-import type { Agent } from '../types/api';
+import { post } from './axios';
+// import type { Agent } from '../types/api';
+import { AGENT_IDS } from '../constants';
+
+const DEFAULT_TRANSCRIPT_AGENT_ID = AGENT_IDS.COPILOT;
 
 // ==================== 智能体相关 ====================
 
-/**
- * 获取智能体列表
- */
-export const getAgents = () => {
-  return get<{
-    code: string;
-    info: string;
-    data: Agent[];
-  }>('/api/agent/list');
-};
+// STATUS: UNUSED — 未找到任何调用点，请确认后删除
+/** 获取智能体列表 */
+// export const getAgents = () => {
+//   return get<{
+//     code: string;
+//     info: string;
+//     data: Agent[];
+//   }>('/api/agent/list');
+// };
 
-
-
-/**
- * 创建 AI 对话会话
- */
+/** 创建 AI 对话会话 */
 export const createChatSession = (agentId: string) => {
   return post<{
     code: string;
@@ -32,9 +30,8 @@ export const createChatSession = (agentId: string) => {
     };
   }>('/api/agent/createSession', { agentId });
 };
-/**
- * 删除 AI 对话会话
- */
+
+/** 删除 AI 对话会话 */
 export const deleteChatSession = (sessionId: string, agentId: string) => {
   return post<{
     code: string;
@@ -42,46 +39,41 @@ export const deleteChatSession = (sessionId: string, agentId: string) => {
   }>('/api/agent/deleteSession', { sessionId, agentId });
 };
 
-/**
- * 获取会话列表
- */
-export const getChatSessions = (agentId: string) => {
+/** 获取会话列表 */
+export const getChatList = (agentId: string) => {
   return post<{
     code: string;
     info: string;
-    data: Record<string, string>; // { sessionId: title }
+    data: Record<string, string>;
   }>('/api/agent/getSessionList', { agentId });
 };
-/**
- * 流式对话（AI 助手）
- */
-// export const chatStream = (data: {
-//   agentId: string;
-//   sessionId: string;
-//   message: string;
-// }) => {
-//   return post<{ message: string; graphData?: unknown }>('/api/agent/chatStream', data);
-// };
 
-/**
- * 用户咨询助手（获取用户信息）
- */
+/** 用户咨询助手（获取用户信息） */
 export const consultation = (data: {
   agentId: string;
   sessionId: string;
   message: string;
 }) => {
   return post<{
-    message: string;
-  }>('/api/agent/consultation', data);
+    content?: string;
+    message?: string;
+  }>('/api/agent/goal', data);
 };
 
-/**
- * 获取会话记录
- */
+
+
+
+
+/** 获取会话记录 */
 export const getChatHistory = (data: {
   sessionId: string;
+  agentId?: string;
 }) => {
+  const requestData = {
+    sessionId: data.sessionId,
+    agentId: data.agentId ?? DEFAULT_TRANSCRIPT_AGENT_ID,
+  };
+
   return post<{
     code: string;
     info: string;
@@ -90,5 +82,5 @@ export const getChatHistory = (data: {
       role: 'user' | 'model';
       content: string;
     }[];
-  }>('/api/agent/transcript', data);
+  }>('/api/agent/transcript', requestData);
 };

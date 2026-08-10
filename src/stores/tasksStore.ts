@@ -2,11 +2,11 @@
  * 学习任务 Store
  */
 import { create } from 'zustand';
-import type { UserTask, UserProgress, PaginatedResponse } from '../types/api';
-import { tasksApi } from '../api/useApi';
+import type { UserProgress } from '../types/api';
+import { getScheduleList } from '../api/tasks';
 
 interface TasksState {
-  tasks: UserTask[];
+  tasks: unknown[];
   progress: UserProgress | null;
   isLoading: boolean;
   error: string | null;
@@ -18,7 +18,7 @@ interface TasksState {
   clearError: () => void;
 }
 
-export const useTasksStore = create<TasksState>((set, get) => ({
+export const useTasksStore = create<TasksState>((set) => ({
   tasks: [],
   progress: null,
   isLoading: false,
@@ -27,45 +27,23 @@ export const useTasksStore = create<TasksState>((set, get) => ({
   fetchTasks: async (goalId?: string) => {
     set({ isLoading: true, error: null });
     try {
-      const response = await tasksApi.getTasks(goalId ? { goalId } : undefined);
-      const tasks: UserTask[] = Array.isArray(response.data)
-        ? response.data
-        : (response.data as PaginatedResponse<UserTask>).items || [];
-      set({ tasks, isLoading: false });
+      const response = await getScheduleList(goalId ?? '');
+      const data = response.data;
+      set({ tasks: Array.isArray(data) ? data : [], isLoading: false });
     } catch (err) {
       const message = err instanceof Error ? err.message : '获取任务失败';
       set({ error: message, isLoading: false });
     }
   },
 
-  fetchProgress: async (goalId?: string) => {
-    set({ isLoading: true, error: null });
-    try {
-      const response = await tasksApi.getProgress(goalId ? { goalId } : undefined);
-      set({ progress: response.data as UserProgress, isLoading: false });
-    } catch (err) {
-      const message = err instanceof Error ? err.message : '获取进度失败';
-      set({ error: message, isLoading: false });
-    }
+  fetchProgress: async () => {
+    // TODO: 确认后端是否有独立的进度接口
+    set({ isLoading: false });
   },
 
-  updateTaskStatus: async (id: string, completed: boolean) => {
-    set({ isLoading: true, error: null });
-    try {
-      const response = await tasksApi.updateTask(id, { status: completed ? 'completed' : 'pending' });
-      const updatedTask = response.data as UserTask;
-      set(state => ({
-        tasks: state.tasks.map(t => t.id === id ? updatedTask : t),
-        isLoading: false
-      }));
-      // 状态变更后重新获取进度
-      get().fetchProgress();
-    } catch (err) {
-      const message = err instanceof Error ? err.message : '更新任务状态失败';
-      set({ error: message, isLoading: false });
-      throw err;
-    }
+  updateTaskStatus: async () => {
+    // TODO: 确认后端是否有更新任务状态的接口
   },
 
-  clearError: () => set({ error: null })
+  clearError: () => set({ error: null }),
 }));
