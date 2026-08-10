@@ -6,3 +6,16 @@ export { Input } from './Input';
 export { Textarea } from './Textarea';
 export { EmptyState } from './EmptyState';
 export { Spin } from './Spin';
+export { CelebrationModal } from './CelebrationModal';
+export { Skeleton, SkeletonText } from './Skeleton';
+export { TypingDots } from './TypingDots';
+export { ErrorBoundary } from './ErrorBoundary';
+export { ScrollToTop } from './ScrollToTop';
+export { ProtectedRoute, PublicRoute } from './ProtectedRoute';
+export {
+  ResourceSidebar,
+  type ResourceSidebarAction,
+  type ResourceSidebarHeader,
+  type ResourceSidebarItem,
+  type ResourceSidebarProps,
+} from './ResourceSidebar';

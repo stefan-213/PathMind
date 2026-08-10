@@ -4,8 +4,25 @@
 import axios from 'axios';
 import type { AxiosInstance, AxiosRequestConfig, AxiosResponse, InternalAxiosRequestConfig } from 'axios';
 import type { ApiResponse } from '../types/api';
+import { useAuthStore } from '../stores/authStore';
 
-const BASE_URL = import.meta.env.VITE_API_BASE_URL || '';
+// const normalizeBaseUrl = (baseUrl?: string) => {
+//   const trimmedBaseUrl = baseUrl?.trim() ?? '';
+
+//   if (!trimmedBaseUrl) {
+//     return '';
+//   }
+
+//   if (trimmedBaseUrl.startsWith('/') || /^https?:\/\//i.test(trimmedBaseUrl)) {
+//     return trimmedBaseUrl;
+//   }
+
+//   return `http://${trimmedBaseUrl}`;
+// };
+
+// const BASE_URL = import.meta.env.VITE_API_BASE_URL 
+//   ? normalizeBaseUrl(import.meta.env.VITE_API_BASE_URL) 
+//   : '/api';
 
 // 无需认证的接口白名单
 const NO_AUTH_WHITELIST = [
@@ -15,8 +32,8 @@ const NO_AUTH_WHITELIST = [
 ];
 
 export const axiosInstance: AxiosInstance = axios.create({
-  baseURL: BASE_URL,
-  timeout: 3000000,
+  baseURL: '',
+  timeout: 600000,
   headers: {
     'Content-Type': 'application/json',
   },
@@ -37,7 +54,22 @@ const endRequest = () => {
     document.body.style.cursor = 'default';
   }
 };
+const normalizeErrorMessage = (
+  value: unknown,
+  fallback = '请求失败，请稍后重试',
+) => {
+  if (typeof value !== 'string') {
+    return fallback;
+  }
 
+  const optionalMatch = value.match(/^Optional\[(.*)\]$/);
+
+  if (optionalMatch?.[1]) {
+    return optionalMatch[1];
+  }
+
+  return value || fallback;
+};
 // 请求拦截器
 axiosInstance.interceptors.request.use(
   (config: InternalAxiosRequestConfig) => {
@@ -46,9 +78,9 @@ axiosInstance.interceptors.request.use(
     // 检查是否在白名单中
     const isWhitelisted = NO_AUTH_WHITELIST.some(path => config.url?.includes(path));
 
-    // 从 localStorage 获取 token（非白名单接口才添加）
+    // 从 zustand store 获取 token（非白名单接口才添加）
     if (!isWhitelisted) {
-      const token = localStorage.getItem('token');
+      const token = useAuthStore.getState().token;
       if (token && config.headers) {
         config.headers.Authorization = `Bearer ${token}`;
       }
@@ -69,12 +101,14 @@ axiosInstance.interceptors.response.use(
 
     // 转换后端响应格式 { code, info, data } -> { success, data, error }
     const backendResponse = response.data;
-    if (backendResponse && 'code' in backendResponse) {
+    if (backendResponse && typeof backendResponse === 'object' && 'code' in backendResponse) {
       const isSuccess = backendResponse.code === '200' || backendResponse.code === 200;
       response.data = {
         success: isSuccess,
         data: backendResponse.data,
-        error: isSuccess ? undefined : backendResponse.info
+        error: isSuccess
+        ? undefined
+        : normalizeErrorMessage(backendResponse.info),
       };
     }
 
@@ -89,9 +123,14 @@ axiosInstance.interceptors.response.use(
       // 处理 HTTP 错误码
       switch (response.status) {
         case 401:
-          // 未授权，清除 token 并跳转到登录页
-          localStorage.removeItem('token');
-          window.location.href = '/login';
+          // 未授权，清除 zustand store 中的 token 并跳转到登录页
+          useAuthStore.getState().logout();
+          {
+            const loginUrl = `${import.meta.env.BASE_URL}login`;
+            if (!window.location.pathname.endsWith('/login')) {
+              window.location.href = loginUrl;
+            }
+          }
           break;
         case 403:
           console.error('没有权限访问');
@@ -117,44 +156,80 @@ axiosInstance.interceptors.response.use(
 /**
  * 封装 GET 请求
  */
-export const get = <T = any>(
+export const get = async <T = unknown>(
   url: string,
-  params?: Record<string, any>,
+  params?: AxiosRequestConfig['params'],
   config?: AxiosRequestConfig
 ): Promise<ApiResponse<T>> => {
-  return axiosInstance.get<ApiResponse<T>>(url, { ...config, params }).then(res => res.data);
+  const res = await axiosInstance.get<ApiResponse<T>>(url, { ...config, params });
+  return res.data;
 };
 
 /**
  * 封装 POST 请求
  */
-export const post = <T = any>(
+export const post = async <T = unknown>(
   url: string,
-  data?: any,
+  data?: unknown,
   config?: AxiosRequestConfig
 ): Promise<ApiResponse<T>> => {
-  return axiosInstance.post<ApiResponse<T>>(url, data, config).then(res => res.data);
+  const res = await axiosInstance.post<ApiResponse<T>>(url, data, config);
+  return res.data;
 };
 
 /**
  * 封装 PUT 请求
  */
-export const put = <T = any>(
+export const put = async <T = unknown>(
   url: string,
-  data?: any,
+  data?: unknown,
   config?: AxiosRequestConfig
 ): Promise<ApiResponse<T>> => {
-  return axiosInstance.put<ApiResponse<T>>(url, data, config).then(res => res.data);
+  const res = await axiosInstance.put<ApiResponse<T>>(url, data, config);
+  return res.data;
 };
 
 /**
  * 封装 DELETE 请求
  */
-export const del = <T = any>(
+export const del = async <T = unknown>(
   url: string,
   config?: AxiosRequestConfig
 ): Promise<ApiResponse<T>> => {
-  return axiosInstance.delete<ApiResponse<T>>(url, config).then(res => res.data);
+  const res = await axiosInstance.delete<ApiResponse<T>>(url, config);
+  return res.data;
+};
+
+/**
+ * 可取消请求的封装
+ */
+export interface CancellableRequest<T> {
+  promise: Promise<ApiResponse<T>>;
+  cancel: (reason?: string) => void;
+}
+
+export const cancellableGet = <T = unknown>(
+  url: string,
+  params?: AxiosRequestConfig['params'],
+  config?: AxiosRequestConfig,
+): CancellableRequest<T> => {
+  const controller = new AbortController();
+  return {
+    promise: axiosInstance.get<ApiResponse<T>>(url, { ...config, params, signal: controller.signal }).then(res => res.data),
+    cancel: (reason?: string) => controller.abort(reason),
+  };
+};
+
+export const cancellablePost = <T = unknown>(
+  url: string,
+  data?: unknown,
+  config?: AxiosRequestConfig,
+): CancellableRequest<T> => {
+  const controller = new AbortController();
+  return {
+    promise: axiosInstance.post<ApiResponse<T>>(url, data, { ...config, signal: controller.signal }).then(res => res.data),
+    cancel: (reason?: string) => controller.abort(reason),
+  };
 };
 
 export default axiosInstance;

@@ -1,4 +1,90 @@
-import type { UserProfile, Task, UserProgress } from '../types/copilot';
+/**
+ * PathMind 本地存储工具
+ * 提供 Consult/Graph/Tasks 页面的数据持久化功能
+ */
+
+import type { UserProfile, Task, LocalUserProgress as UserProgress } from '../types/copilot';
+import { STORAGE_KEYS as PATHMIND_KEYS } from '../constants';
+
+// ============================================================
+// PathMind Storage（Consult/Graph/Tasks 页面用）
+// ============================================================
+import type { Schedule } from '../types/api';
+
+export interface ConsultChartData {
+  agentId: string;
+  sessionId: string;
+  optionId?: string;
+}
+
+export const pathmindStorage = {
+  consult: {
+    save: (data: ConsultChartData): void => {
+      const key = data.sessionId
+        ? `${PATHMIND_KEYS.CONSULT_CHART}_${data.sessionId}`
+        : PATHMIND_KEYS.CONSULT_CHART;
+      localStorage.setItem(key, JSON.stringify(data));
+    },
+    load: (sessionId?: string): ConsultChartData | null => {
+      const key = sessionId
+        ? `${PATHMIND_KEYS.CONSULT_CHART}_${sessionId}`
+        : PATHMIND_KEYS.CONSULT_CHART;
+      const raw = localStorage.getItem(key);
+      return raw ? JSON.parse(raw) : null;
+    },
+    clear: (sessionId?: string): void => {
+      if (sessionId) {
+        localStorage.removeItem(`${PATHMIND_KEYS.CONSULT_CHART}_${sessionId}`);
+      } else {
+        localStorage.removeItem(PATHMIND_KEYS.CONSULT_CHART);
+      }
+    },
+  },
+  plan: {
+    save: (schedules: Schedule[], sessionId?: string): void => {
+      if (sessionId) {
+        localStorage.setItem(`${PATHMIND_KEYS.PLAN_DATA}_${sessionId}`, JSON.stringify(schedules));
+      } else {
+        localStorage.setItem(PATHMIND_KEYS.PLAN_DATA, JSON.stringify(schedules));
+      }
+    },
+    load: (sessionId?: string): Schedule[] => {
+      const key = sessionId ? `${PATHMIND_KEYS.PLAN_DATA}_${sessionId}` : PATHMIND_KEYS.PLAN_DATA;
+      const raw = localStorage.getItem(key);
+      return raw ? JSON.parse(raw) : [];
+    },
+    saveTitle: (title: string, sessionId?: string): void => {
+      if (!title.trim()) return;
+      if (sessionId) {
+        localStorage.setItem(`${PATHMIND_KEYS.PLAN_TITLE}_${sessionId}`, title);
+      } else {
+        localStorage.setItem(PATHMIND_KEYS.PLAN_TITLE, title);
+      }
+    },
+    loadTitle: (sessionId?: string): string => {
+      const key = sessionId ? `${PATHMIND_KEYS.PLAN_TITLE}_${sessionId}` : PATHMIND_KEYS.PLAN_TITLE;
+      return localStorage.getItem(key) || '';
+    },
+    clear: (sessionId?: string): void => {
+      if (sessionId) {
+        localStorage.removeItem(`${PATHMIND_KEYS.PLAN_DATA}_${sessionId}`);
+        localStorage.removeItem(`${PATHMIND_KEYS.PLAN_TITLE}_${sessionId}`);
+      } else {
+        localStorage.removeItem(PATHMIND_KEYS.PLAN_DATA);
+        localStorage.removeItem(PATHMIND_KEYS.PLAN_TITLE);
+      }
+    },
+  },
+  sessionCharts: {
+    save: (charts: Record<string, { xml: string; data?: unknown[]; repaired: boolean }>): void => {
+      localStorage.setItem(PATHMIND_KEYS.SESSION_CHARTS, JSON.stringify(charts));
+    },
+    load: (): Record<string, { xml: string; data?: unknown[]; repaired: boolean }> => {
+      const raw = localStorage.getItem(PATHMIND_KEYS.SESSION_CHARTS);
+      return raw ? JSON.parse(raw) : {};
+    },
+  },
+};
 
 const STORAGE_KEYS = {
   USER_GOAL: 'zaplink_user_goal',

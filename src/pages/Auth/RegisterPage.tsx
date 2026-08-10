@@ -1,97 +1,65 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../../stores/authStore';
+import { useFormValidation } from '../../hooks';
+import { getPasswordStrength } from './utils/password';
+import { rules } from './utils/validation';
 import './Auth.scss';
 
 export function RegisterPage() {
   const navigate = useNavigate();
-  const { register, isLoading, error, clearError } = useAuthStore();
+  const { register: authRegister, isLoading, error, clearError } = useAuthStore();
 
-  const [username, setUsername] = useState('');
-  const [password, setPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
-  const [email, setEmail] = useState('');
-  const [phone, setPhone] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [agreeTerms, setAgreeTerms] = useState(false);
-  const [formErrors, setFormErrors] = useState<{
-    username?: string;
-    password?: string;
-    confirmPassword?: string;
-    email?: string;
-    phone?: string;
-  }>({});
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [confirmPasswordError, setConfirmPasswordError] = useState<string>('');
 
-  const validate = () => {
-    const errors: typeof formErrors = {};
+  const { register, validate, touchAll } = useFormValidation({
+    rules,
+    initialValues: {
+      username: '',
+      email: '',
+      phone: '',
+      password: '',
+    },
+  });
 
-    if (!username) {
-      errors.username = '请输入用户名';
-    } else if (username.length < 2) {
-      errors.username = '用户名至少需要 2 位';
-    } else if (!/^[a-zA-Z0-9_\u4e00-\u9fa5]+$/.test(username)) {
-      errors.username = '用户名只能包含字母、数字、下划线';
-    }
-
-    if (!password) {
-      errors.password = '请输入密码';
-    } else if (password.length < 6) {
-      errors.password = '密码至少需要 6 位';
-    }
-
-    if (!confirmPassword) {
-      errors.confirmPassword = '请确认密码';
-    } else if (password !== confirmPassword) {
-      errors.confirmPassword = '两次输入的密码不一致';
-    }
-
-    if (!email) {
-      errors.email = '请输入邮箱';
-    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-      errors.email = '请输入有效的邮箱地址';
-    }
-
-    if (phone && !/^1[3-9]\d{9}$/.test(phone)) {
-      errors.phone = '请输入有效的手机号';
-    }
-
-    if (!agreeTerms) {
-      errors.confirmPassword = '请同意用户协议和隐私条款';
-    }
-
-    setFormErrors(errors);
-    return Object.keys(errors).length === 0;
-  };
-
-  const getPasswordStrength = (pwd: string): { level: number; text: string } => {
-    if (!pwd) return { level: 0, text: '' };
-    if (pwd.length < 6) return { level: 1, text: '太短' };
-    if (pwd.length < 8) return { level: 2, text: '一般' };
-    if (/[a-z]/.test(pwd) && /[A-Z]/.test(pwd) && /[0-9]/.test(pwd)) {
-      return { level: 4, text: '强' };
-    }
-    if (pwd.length >= 8 && (/[a-zA-Z]/.test(pwd) || /[0-9]/.test(pwd))) {
-      return { level: 3, text: '中等' };
-    }
-    return { level: 2, text: '一般' };
-  };
+  const passwordStrength = getPasswordStrength(register('password').value);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     clearError();
+    setConfirmPasswordError('');
+    touchAll();
 
-    if (!validate()) return;
+    // 手动检查密码确认
+    if (register('password').value !== confirmPassword) {
+      setConfirmPasswordError('两次输入的密码不一致');
+      return;
+    }
+
+    // 手动检查 agreeTerms（checkbox 不通过 register）
+    if (!agreeTerms) {
+      setConfirmPasswordError('请同意用户协议和隐私条款');
+      return;
+    }
+
+    if (!await validate()) return;
 
     try {
-      await register(username, password, email, phone || undefined);
-      navigate('/', { replace: true });
-    } catch (err) {
+      await authRegister(
+        register('username').value,
+        register('password').value,
+        register('email').value,
+        register('phone').value || undefined
+      );
+      navigate('/login', { replace: true });
+    } catch {
       // 错误已在 store 中处理
     }
   };
-
-  const passwordStrength = getPasswordStrength(password);
 
   return (
     <div className="auth-page">
@@ -115,55 +83,52 @@ export function RegisterPage() {
         <div className="auth-card">
           {/* 切换标签 */}
           <div className="tabs">
-            <Link to="/login" className="tab">登录</Link>
+            <Link to="/login" onClick={clearError} className="tab">登录</Link>
             <Link to="/register" className="tab active">注册</Link>
           </div>
 
           {/* 表单 */}
           <form onSubmit={handleSubmit}>
             <div className="form-group">
-              <label className="form-label">用户名</label>
+              <label className="form-label">用户名(不可重复)</label>
               <div className="input-wrapper">
                 <i className="fas fa-user input-icon"></i>
                 <input
                   type="text"
-                  className={`form-input ${formErrors.username ? 'error' : ''}`}
-                  placeholder="你的名字"
-                  value={username}
-                  onChange={(e) => setUsername(e.target.value)}
+                  className={`form-input ${register('username').error ? 'error' : ''}`}
+                  placeholder="你的昵称"
+                  {...register('username')}
                 />
               </div>
-              {formErrors.username && <span className="error-text">{formErrors.username}</span>}
+              {register('username').error && <span className="error-text">{register('username').error}</span>}
             </div>
 
             <div className="form-group">
-              <label className="form-label">邮箱</label>
+              <label className="form-label">邮箱(不可重复)</label>
               <div className="input-wrapper">
                 <i className="fas fa-envelope input-icon"></i>
                 <input
                   type="email"
-                  className={`form-input ${formErrors.email ? 'error' : ''}`}
+                  className={`form-input ${register('email').error ? 'error' : ''}`}
                   placeholder="your@email.com"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
+                  {...register('email')}
                 />
               </div>
-              {formErrors.email && <span className="error-text">{formErrors.email}</span>}
+              {register('email').error && <span className="error-text">{register('email').error}</span>}
             </div>
 
             <div className="form-group">
-              <label className="form-label">手机号 <span className="optional">(选填)</span></label>
+              <label className="form-label">手机号</label>
               <div className="input-wrapper">
                 <i className="fas fa-phone input-icon"></i>
                 <input
                   type="tel"
-                  className={`form-input ${formErrors.phone ? 'error' : ''}`}
+                  className={`form-input ${register('phone').error ? 'error' : ''}`}
                   placeholder="请输入手机号"
-                  value={phone}
-                  onChange={(e) => setPhone(e.target.value)}
+                  {...register('phone')}
                 />
               </div>
-              {formErrors.phone && <span className="error-text">{formErrors.phone}</span>}
+              {register('phone').error && <span className="error-text">{register('phone').error}</span>}
             </div>
 
             <div className="form-group">
@@ -172,17 +137,16 @@ export function RegisterPage() {
                 <i className="fas fa-lock input-icon"></i>
                 <input
                   type={showPassword ? 'text' : 'password'}
-                  className={`form-input ${formErrors.password ? 'error' : ''}`}
-                  placeholder="至少8位"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
+                  className={`form-input ${register('password').error ? 'error' : ''}`}
+                  placeholder="至少6位"
+                  {...register('password')}
                 />
                 <i
                   className={`fas password-toggle ${showPassword ? 'fa-eye' : 'fa-eye-slash'}`}
                   onClick={() => setShowPassword(!showPassword)}
                 ></i>
               </div>
-              {password && (
+              {register('password').value && (
                 <div className="password-strength">
                   <div className="strength-bar">
                     <div
@@ -195,7 +159,7 @@ export function RegisterPage() {
                   </span>
                 </div>
               )}
-              {formErrors.password && <span className="error-text">{formErrors.password}</span>}
+              {register('password').error && <span className="error-text">{register('password').error}</span>}
             </div>
 
             <div className="form-group">
@@ -204,17 +168,20 @@ export function RegisterPage() {
                 <i className="fas fa-lock input-icon"></i>
                 <input
                   type={showConfirmPassword ? 'text' : 'password'}
-                  className={`form-input ${formErrors.confirmPassword ? 'error' : ''}`}
+                  className={`form-input ${confirmPasswordError ? 'error' : ''}`}
                   placeholder="再次输入密码"
                   value={confirmPassword}
-                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  onChange={(e) => {
+                    setConfirmPassword(e.target.value);
+                    setConfirmPasswordError('');
+                  }}
                 />
                 <i
                   className={`fas password-toggle ${showConfirmPassword ? 'fa-eye' : 'fa-eye-slash'}`}
                   onClick={() => setShowConfirmPassword(!showConfirmPassword)}
                 ></i>
               </div>
-              {formErrors.confirmPassword && <span className="error-text">{formErrors.confirmPassword}</span>}
+              {confirmPasswordError && <span className="error-text">{confirmPasswordError}</span>}
             </div>
 
             <div className="form-options">

@@ -18,46 +18,38 @@ $consult-outline-variant: #c2c7cf;
 $consult-on-surface-variant: #42474e;
 $consult-on-primary: #ffffff;
 
-// ---------- 通用样式 ----------
-// 打字动画
-.typing-dots {
-  display: flex;
-  gap: 4px;
-
-  span {
-    width: 8px;
-    height: 8px;
-    background: #94a3b8;
-    border-radius: 50%;
-    animation: blink 1.4s infinite;
-
-    &:nth-child(2) {
-      animation-delay: 0.2s;
-    }
-
-    &:nth-child(3) {
-      animation-delay: 0.4s;
-    }
-  }
-}
-
-@keyframes blink {
-  0%, 60%, 100% {
-    opacity: 0.3;
-    transform: translateY(0);
-  }
-  30% {
-    opacity: 1;
-    transform: translateY(-4px);
-  }
-}
-
 // ---------- 页面布局 ----------
 .consult-page {
   display: flex;
   flex-direction: column;
   height: 100vh;
   background: $consult-background;
+  position: relative;
+}
+
+// ---------- 生成图表 Loading ----------
+.consult-loading-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba($consult-background, 1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+}
+.consult-generation-status {
+  width: min(360px, calc(100vw - 48px));
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 18px;
+}
+
+.consult-generation-hint {
+  color: var(--text-secondary);
+  font-size: 13px;
+  line-height: 1.5;
+  text-align: center;
 }
 
 // ---------- 主内容容器（侧边栏+聊天） ----------
@@ -67,435 +59,8 @@ $consult-on-primary: #ffffff;
   overflow: hidden;
 }
 
-// ---------- 侧边栏 ----------
-.consult-sidebar {
-  display: flex;
-  flex-direction: column;
-  width: 280px;
-  height: 100vh;
-  background: $consult-surface-lowest;
-  border-right: 1px solid rgba($consult-outline-variant, 0.15);
-  transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  position: relative;
-  flex-shrink: 0;
-  box-shadow: 2px 0 12px rgba(0, 0, 0, 0.04);
-
-  &--collapsed {
-    width: 64px;
-    background: transparent;
-    border-right: none;
-    box-shadow: none;
-
-    .sidebar-header,
-    .sidebar-history,
-    .sidebar-footer,
-    .new-session-btn-expand,
-    .sidebar-title-area,
-    .sidebar-collapse-btn {
-      display: none !important;
-    }
-
-    .btn-capsule {
-      flex-direction: column;
-      align-items: center;
-      margin-top: 8px;
-      gap: 8px;
-      background: transparent;
-      box-shadow: none;
-      padding: 0;
-    }
-
-    .collapse-btn,
-    .new-session-btn {
-      width: 40px;
-      height: 40px;
-    }
-  }
-}
-
-.sidebar-header {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 16px;
-  border-bottom: 1px solid rgba($consult-outline-variant, 0.08);
-}
-
-.sidebar-logo {
-  width: 36px;
-  height: 36px;
-  border-radius: 10px;
-  background: $consult-primary;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: white;
-  flex-shrink: 0;
-  font-size: 16px;
-  box-shadow: 0 2px 8px rgba($consult-primary, 0.3);
-}
-
-.sidebar-header-text {
-  overflow: hidden;
-  flex: 1;
-}
-
-.sidebar-title {
-  font-size: 16px;
-  font-weight: 800;
-  color: $consult-primary-text;
-  letter-spacing: -0.02em;
-  margin: 0;
-  line-height: 1.2;
-}
-
-.sidebar-subtitle {
-  font-size: 11px;
-  color: $consult-on-surface-variant;
-  margin: 2px 0 0;
-  font-weight: 500;
-}
-
-.btn-capsule {
-  display: flex;
-  gap: 6px;
-  background: $consult-surface-low;
-  padding: 6px;
-  border-radius: 12px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06), inset 0 1px 0 rgba(255, 255, 255, 0.8);
-}
-
-.collapse-btn,
-.new-session-btn {
-  width: 32px;
-  height: 32px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 8px;
-  margin: 0;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  border: none;
-}
-
-.collapse-btn {
-  background: transparent;
-  color: $consult-on-surface-variant;
-
-  &:hover {
-    background: rgba($consult-primary, 0.08);
-    color: $consult-primary;
-  }
-
-  .fas {
-    font-size: 14px;
-  }
-}
-
-.new-session-btn {
-  background: $consult-primary;
-  color: white;
-  box-shadow: 0 2px 4px rgba($consult-primary, 0.25);
-
-  &:hover {
-    background: $consult-primary-text;
-    box-shadow: 0 4px 8px rgba($consult-primary, 0.3);
-    transform: translateY(-1px);
-  }
-
-  &:active {
-    transform: translateY(0);
-  }
-
-  .fas {
-    font-size: 13px;
-  }
-}
-
-.new-session-btn-expand {
-  width: calc(100% - 32px);
-  margin: 16px;
-  padding: 12px 16px;
-  background: $consult-primary;
-  color: white;
-  border: none;
-  border-radius: 12px;
-  font-weight: 600;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  font-size: 14px;
-  box-shadow: 0 4px 12px rgba($consult-primary, 0.25);
-
-  &:hover {
-    box-shadow: 0 6px 16px rgba($consult-primary, 0.35);
-    transform: translateY(-1px);
-  }
-
-  &:active {
-    transform: translateY(0);
-    box-shadow: 0 2px 8px rgba($consult-primary, 0.2);
-  }
-
-  .fas {
-    font-size: 13px;
-  }
-}
-
-// 顶部标题区域收起按钮
-.sidebar-title-area {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  flex: 1;
-}
-
-.sidebar-collapse-btn {
-  width: 28px;
-  height: 28px;
-  border-radius: 8px;
-  background: transparent;
-  border: none;
-  color: $consult-on-surface-variant;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: all 0.2s ease;
-  flex-shrink: 0;
-
-  &:hover {
-    background: rgba($consult-primary, 0.08);
-    color: $consult-primary;
-  }
-
-  .fas {
-    font-size: 14px;
-  }
-}
-
-.new-consult-text {
-  white-space: nowrap;
-}
-
-// 历史记录
-.sidebar-history {
-  flex: 1;
-  overflow-y: auto;
-  padding: 8px 0;
-
-  &::-webkit-scrollbar {
-    width: 4px;
-  }
-
-  &::-webkit-scrollbar-track {
-    background: transparent;
-  }
-
-  &::-webkit-scrollbar-thumb {
-    background: $consult-surface-variant;
-    border-radius: 10px;
-  }
-}
-
-.recent-label {
-  font-size: 11px;
-  font-weight: 700;
-  color: $consult-on-surface-variant;
-  padding: 8px 16px;
-  margin-bottom: 4px;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-  display: block;
-  opacity: 0.7;
-}
-
-.history-list {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  padding: 0 8px;
-}
-
-.history-item {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 10px 12px;
-  border-radius: 10px;
-  cursor: pointer;
-  transition: all 0.2s ease;
-
-  &:hover {
-    background: rgba($consult-primary, 0.06);
-
-    .delete-session-btn {
-      opacity: 1;
-    }
-  }
-
-  &--active {
-    background: rgba($consult-primary, 0.1);
-
-    .history-title {
-      color: $consult-primary;
-      font-weight: 600;
-    }
-
-    .history-icon {
-      color: $consult-primary;
-    }
-  }
-}
-
-.history-item-content {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  overflow: hidden;
-  flex: 1;
-}
-
-.history-icon {
-  font-size: 14px;
-  color: $consult-on-surface-variant;
-  flex-shrink: 0;
-  transition: color 0.2s;
-}
-
-.history-title {
-  font-size: 13px;
-  font-weight: 500;
-  color: $consult-on-surface-variant;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  transition: color 0.2s;
-}
-
-.delete-session-btn {
-  opacity: 0;
-  background: none;
-  border: none;
-  cursor: pointer;
-  padding: 4px;
-  transition: all 0.2s;
-  border-radius: 6px;
-
-  &:hover {
-    background: rgba(#ef4444, 0.1);
-
-    .fas {
-      color: #ef4444;
-    }
-  }
-
-  .fas {
-    font-size: 13px;
-    color: $consult-on-surface-variant;
-    transition: color 0.2s;
-  }
-}
-
-// 底部
-.sidebar-footer {
-  padding: 12px;
-  border-top: 1px solid rgba($consult-outline-variant, 0.1);
-  margin-top: auto;
-}
-
-.help-item {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 10px 12px;
-  color: $consult-on-surface-variant;
-  border-radius: 10px;
-  cursor: pointer;
-  transition: all 0.2s;
-  font-size: 13px;
-
-  &:hover {
-    background: rgba($consult-primary, 0.06);
-    color: $consult-primary;
-  }
-
-  .fas {
-    font-size: 15px;
-    flex-shrink: 0;
-  }
-
-  .help-text {
-    font-size: 13px;
-    font-weight: 500;
-  }
-}
-
-.user-item {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 10px 12px;
-  margin-top: 4px;
-  overflow: hidden;
-  border-radius: 10px;
-  transition: background 0.2s;
-
-  &:hover {
-    background: rgba($consult-primary, 0.04);
-  }
-}
-
-.user-avatar {
-  width: 34px;
-  height: 34px;
-  border-radius: 10px;
-  background: $consult-primary;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-  box-shadow: 0 2px 6px rgba($consult-primary, 0.2);
-
-  .fas {
-    font-size: 14px;
-    color: white;
-  }
-}
-
-.user-info {
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-  flex: 1;
-}
-
-.user-name {
-  font-size: 13px;
-  font-weight: 600;
-  color: $consult-primary-text;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.user-workspace {
-  font-size: 11px;
-  color: $consult-on-surface-variant;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  margin-top: 2px;
-}
-
-.sidebar-footer-text {
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
+.consult-mobile-toolbar {
+  display: none;
 }
 
 // ---------- 主内容区 ----------
@@ -506,6 +71,9 @@ $consult-on-primary: #ffffff;
   height: 100vh;
   overflow: hidden;
   position: relative;
+  section{
+    margin: 10px 0;
+  }
 }
 
 // 聊天区域
@@ -541,6 +109,12 @@ $consult-on-primary: #ffffff;
   flex-direction: column;
   gap: 8px;
   max-width: 85%;
+
+  &--plan-options {
+    max-width: 141%;
+    margin-left: -20%;
+    margin-right: -21%;
+  }
 
   &--user {
     margin-left: auto;
@@ -650,15 +224,30 @@ $consult-on-primary: #ffffff;
     display: flex;
     align-items: flex-start;
     gap: 0.5rem;
+    width: 100%;
     padding: 0.5rem 0.75rem;
     background: #f5f7fa;
+    border: none;
     border-radius: 0.5rem;
+    color: inherit;
     cursor: pointer;
+    font: inherit;
+    text-align: left;
     transition: all 0.2s ease;
 
     &:hover {
       background: #e8edf5;
       transform: translateX(4px);
+    }
+
+    &:disabled {
+      cursor: not-allowed;
+      opacity: 0.58;
+    }
+
+    &:disabled:hover {
+      background: #f5f7fa;
+      transform: none;
     }
 
     .option-prefix {
@@ -722,6 +311,241 @@ $consult-on-primary: #ffffff;
         }
       }
     }
+  }
+}
+
+.plan-comparison {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  width: 100%;
+}
+
+.plan-comparison-table-wrap {
+  width: 100%;
+  overflow-x: auto;
+  border: 1px solid $consult-surface-variant;
+  border-radius: 12px;
+  background: $consult-surface-lowest;
+}
+
+.plan-comparison-table {
+  width: 100%;
+  min-width: 1080px;
+  border-collapse: collapse;
+  color: $consult-on-surface-variant;
+  font-size: 13px;
+  table-layout: fixed;
+
+  th,
+  td {
+    padding: 12px;
+    border-bottom: 1px solid rgba($consult-outline-variant, 0.25);
+    border-right: 1px solid rgba($consult-outline-variant, 0.18);
+    vertical-align: top;
+    text-align: left;
+  }
+
+  th:last-child,
+  td:last-child {
+    border-right: none;
+  }
+
+  th {
+    color: $consult-primary-text;
+    background: $consult-surface-low;
+    font-weight: 700;
+  }
+
+  tr:last-child td {
+    border-bottom: none;
+  }
+
+  tr:last-child th {
+    border-bottom: none;
+  }
+
+  &__metric {
+    width: 120px;
+    color: $consult-primary;
+    background: $consult-surface-low;
+    white-space: nowrap;
+  }
+
+  &__column--recommended {
+    background: rgba(245, 158, 11, 0.08);
+
+    &:not(.plan-comparison-table__metric) {
+      // border-left: 2px solid rgba(245, 158, 11, 0.35);
+    }
+  }
+
+  thead .plan-comparison-table__column--recommended {
+    border-top: 3px solid #F59E0B;
+  }
+}
+
+.plan-comparison-cards {
+  display: none;
+}
+
+.plan-comparison-card {
+  padding: 14px 16px;
+  border: 1px solid $consult-surface-variant;
+  border-radius: 14px;
+  background: $consult-surface-lowest;
+}
+
+.plan-comparison-card--recommended {
+  border-color: rgba(245, 158, 11, 0.45);
+  background: rgba(245, 158, 11, 0.06);
+}
+
+.plan-comparison-card__header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 12px;
+
+  h3 {
+    margin: 0;
+    color: $consult-primary-text;
+    font-size: 15px;
+    line-height: 1.35;
+  }
+}
+
+.plan-comparison-card__body {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.plan-comparison-card__row {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.plan-comparison-card__label {
+  color: $consult-primary;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.plan-comparison-card__value {
+  color: $consult-on-surface-variant;
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+.plan-option-name {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 6px;
+  color: $consult-primary-text;
+  font-weight: 700;
+  line-height: 1.4;
+}
+
+.plan-comparison-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin: 0;
+  padding-left: 16px;
+  list-style: disc;
+
+  li {
+    line-height: 1.5;
+  }
+}
+
+.plan-comparison-empty {
+  color: #94a3b8;
+}
+
+.plan-recommendation,
+.plan-decision-points {
+  padding: 14px 16px;
+  border-radius: 12px;
+  background: $consult-surface-low;
+  border: 1px solid rgba($consult-outline-variant, 0.2);
+  margin: 0;
+}
+
+.plan-recommendation {
+  border-left: 3px solid $consult-secondary;
+
+  &__title {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: $consult-primary;
+    font-size: 13px;
+    font-weight: 700;
+    margin-bottom: 8px;
+
+    .fas {
+      color: #F59E0B;
+      font-size: 14px;
+    }
+  }
+
+  &__name {
+    color: $consult-primary-text;
+    font-size: 15px;
+    font-weight: 700;
+    margin-bottom: 6px;
+  }
+
+  &__reason {
+    color: $consult-on-surface-variant;
+    font-size: 13px;
+    line-height: 1.7;
+  }
+}
+
+.plan-decision-points {
+  &__title {
+    color: $consult-primary-text;
+    font-size: 13px;
+    font-weight: 700;
+    margin-bottom: 8px;
+  }
+
+  ul {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin: 0;
+    padding-left: 16px;
+    list-style: disc;
+  }
+
+  li {
+    color: $consult-on-surface-variant;
+    font-size: 13px;
+    line-height: 1.6;
+  }
+}
+
+.plan-option-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  padding-top: 2px;
+
+  .btn {
+    flex: 1 1 180px;
+    min-width: 0;
+    white-space: normal;
+    line-height: 1.3;
+    padding: 10px 16px;
+    font-size: 13px;
   }
 }
 
@@ -860,6 +684,21 @@ $consult-on-primary: #ffffff;
 
   &:active {
     transform: translateY(0);
+  }
+
+  &:disabled {
+    color: $consult-on-surface-variant;
+    background: $consult-surface-low;
+    border-color: $consult-surface-variant;
+    cursor: not-allowed;
+    opacity: 0.6;
+  }
+
+  &:disabled:hover {
+    color: $consult-on-surface-variant;
+    background: $consult-surface-low;
+    border-color: $consult-surface-variant;
+    transform: none;
   }
 }
 
@@ -1334,25 +1173,97 @@ $consult-on-primary: #ffffff;
 
 // ---------- 响应式 ----------
 @media (max-width: 768px) {
-  .consult-sidebar {
-    display: none;
+  .consult-page {
+    height: calc(100dvh - var(--mobile-nav-height) - var(--mobile-safe-bottom));
+    min-height: 0;
   }
 
-  .consult-header {
-    padding: 20px 16px 12px;
+  .consult-container {
+    min-height: 0;
+  }
+
+  .consult-main {
+    height: 100%;
+    min-height: 0;
+  }
+
+  .consult-mobile-toolbar {
+    display: flex;
+    justify-content: flex-start;
+    padding: 12px 16px 0;
+
+    button {
+      min-height: 38px;
+      padding: 0 14px;
+      border: 1px solid $consult-surface-variant;
+      border-radius: 999px;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      color: $consult-primary;
+      background: $consult-surface-lowest;
+      font: inherit;
+      font-size: 13px;
+      font-weight: 700;
+      cursor: pointer;
+    }
   }
 
   .chat-area {
-    padding: 0 16px 16px;
+    padding: 0 16px 12px;
   }
 
-  .input-area {
+  .chat-messages {
+    max-width: none;
+    gap: 16px;
+  }
+
+  .message-item,
+  .message-item--plan-options {
+    max-width: 100%;
+    margin-left: 0;
+    margin-right: 0;
+  }
+
+  .message-bubble {
+    padding: 14px 16px;
+  }
+
+  .consult-input-area {
     padding: 12px 16px 16px;
+  }
+
+  .consult-input-wrapper {
+    border-radius: 14px;
   }
 
   .quick-option-btn {
     padding: 8px 14px;
     font-size: 12px;
+    white-space: normal;
+  }
+
+  .plan-comparison-table {
+    min-width: 920px;
+  }
+
+  .plan-comparison-table-wrap {
+    display: none;
+  }
+
+  .plan-comparison-cards {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .plan-option-actions {
+    flex-direction: column;
+
+    .btn {
+      width: 100%;
+      flex-basis: auto;
+    }
   }
 
   .topnav-links {
